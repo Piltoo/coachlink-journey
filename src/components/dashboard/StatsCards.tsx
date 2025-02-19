@@ -69,16 +69,6 @@ export const StatsCards = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {userRole === 'trainer' && (
-        <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
-          <div className="flex flex-col">
-            <h2 className="text-lg font-medium text-primary/80 mb-2">Pending Check-ins</h2>
-            <p className="text-4xl font-bold text-primary">{unreadCheckIns}</p>
-            <span className="text-sm text-accent mt-2">Requires your review</span>
-          </div>
-        </GlassCard>
-      )}
-      
       <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
         <div className="flex flex-col">
           <h2 className="text-lg font-medium text-primary/80 mb-2">Active Clients</h2>
@@ -94,6 +84,16 @@ export const StatsCards = () => {
           <span className="text-sm text-accent mt-2">Next session in 2h</span>
         </div>
       </GlassCard>
+
+      {userRole === 'trainer' && (
+        <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+          <div className="flex flex-col">
+            <h2 className="text-lg font-medium text-primary/80 mb-2">Pending Check-ins</h2>
+            <p className="text-4xl font-bold text-primary">{unreadCheckIns}</p>
+            <span className="text-sm text-accent mt-2">Requires your review</span>
+          </div>
+        </GlassCard>
+      )}
     </div>
   );
 };
