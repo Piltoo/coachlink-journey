@@ -1,8 +1,66 @@
 
+import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { WeeklyCheckInForm } from "@/components/check-ins/WeeklyCheckInForm";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+type UserRole = 'client' | 'trainer' | 'admin';
 
 const Dashboard = () => {
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [recentCheckIns, setRecentCheckIns] = useState<any[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load user profile",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setUserRole(profile.role as UserRole);
+
+      // If user is a trainer, fetch recent check-ins
+      if (profile.role === 'trainer') {
+        const { data: checkIns, error: checkInsError } = await supabase
+          .from('weekly_checkins')
+          .select(`
+            *,
+            profiles:client_id (full_name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (checkInsError) {
+          toast({
+            title: "Error",
+            description: "Failed to load recent check-ins",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setRecentCheckIns(checkIns);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -40,7 +98,31 @@ const Dashboard = () => {
             </GlassCard>
           </div>
 
-          <WeeklyCheckInForm />
+          {userRole === 'client' && <WeeklyCheckInForm />}
+
+          {userRole === 'trainer' && (
+            <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-6">
+              <h3 className="text-xl font-semibold text-primary mb-4">Recent Client Check-ins</h3>
+              <div className="space-y-4">
+                {recentCheckIns.map((checkIn) => (
+                  <div key={checkIn.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                    <div>
+                      <p className="font-medium text-primary">{checkIn.profiles.full_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Weight: {checkIn.weight_kg}kg
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-accent">
+                        {new Date(checkIn.created_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Check-in Complete</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-6">

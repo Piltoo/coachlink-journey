@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -29,7 +29,7 @@ export const WeeklyCheckInForm = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch questions on component mount
-  useState(() => {
+  useEffect(() => {
     const fetchQuestions = async () => {
       const { data, error } = await supabase
         .from('weekly_checkin_questions')
@@ -68,13 +68,17 @@ export const WeeklyCheckInForm = () => {
     setIsLoading(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
       // Create weekly check-in
       const { data: checkinData, error: checkinError } = await supabase
         .from('weekly_checkins')
-        .insert([{
+        .insert({
           weight_kg: parseFloat(weight),
-          status: 'completed'
-        }])
+          status: 'completed',
+          client_id: user.id
+        })
         .select()
         .single();
 
@@ -83,14 +87,14 @@ export const WeeklyCheckInForm = () => {
       // Add measurements
       const { error: measurementError } = await supabase
         .from('measurements')
-        .insert([{
+        .insert({
           checkin_id: checkinData.id,
           chest_cm: parseFloat(measurements.chest_cm),
           waist_cm: parseFloat(measurements.waist_cm),
           hips_cm: parseFloat(measurements.hips_cm),
           thigh_cm: parseFloat(measurements.thigh_cm),
           arm_cm: parseFloat(measurements.arm_cm),
-        }]);
+        });
 
       if (measurementError) throw measurementError;
 
