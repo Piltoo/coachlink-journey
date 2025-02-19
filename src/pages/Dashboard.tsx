@@ -4,13 +4,25 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { WeeklyCheckInForm } from "@/components/check-ins/WeeklyCheckInForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
+type CheckIn = {
+  id: string;
+  created_at: string;
+  weight_kg: number;
+  profiles: {
+    full_name: string | null;
+    email: string;
+  };
+};
+
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [recentCheckIns, setRecentCheckIns] = useState<any[]>([]);
+  const [recentCheckIns, setRecentCheckIns] = useState<CheckIn[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -39,8 +51,13 @@ const Dashboard = () => {
         const { data: checkIns, error: checkInsError } = await supabase
           .from('weekly_checkins')
           .select(`
-            *,
-            profiles:client_id (full_name)
+            id,
+            created_at,
+            weight_kg,
+            profiles:client_id (
+              full_name,
+              email
+            )
           `)
           .order('created_at', { ascending: false })
           .limit(5);
@@ -54,12 +71,17 @@ const Dashboard = () => {
           return;
         }
 
-        setRecentCheckIns(checkIns);
+        setRecentCheckIns(checkIns || []);
       }
     };
 
     fetchUserRole();
   }, []);
+
+  const handleCheckInClick = (checkInId: string) => {
+    // Navigate to the check-in details page (you'll need to create this page)
+    navigate(`/check-ins/${checkInId}`);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
@@ -105,9 +127,15 @@ const Dashboard = () => {
               <h3 className="text-xl font-semibold text-primary mb-4">Recent Client Check-ins</h3>
               <div className="space-y-4">
                 {recentCheckIns.map((checkIn) => (
-                  <div key={checkIn.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                  <div
+                    key={checkIn.id}
+                    onClick={() => handleCheckInClick(checkIn.id)}
+                    className="flex items-center justify-between p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors cursor-pointer"
+                  >
                     <div>
-                      <p className="font-medium text-primary">{checkIn.profiles.full_name}</p>
+                      <p className="font-medium text-primary">
+                        {checkIn.profiles.full_name || checkIn.profiles.email}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         Weight: {checkIn.weight_kg}kg
                       </p>
