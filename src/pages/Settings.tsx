@@ -14,13 +14,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings2, Palette } from "lucide-react";
 
-// Define the structure to match our database
-interface ThemePreference {
+// Define types to match our database schema
+type ThemePreferences = {
+  id: string;
   user_id: string;
   primary_color: string;
   secondary_color: string;
   accent_color: string;
-}
+  created_at: string;
+  updated_at: string;
+};
 
 export default function Settings() {
   const [primaryColor, setPrimaryColor] = useState("#1B4332");
@@ -47,17 +50,18 @@ export default function Settings() {
         setUserRole(profile.role);
       }
 
-      // Use maybeSingle() instead of single() to handle the case where no preferences exist
+      // Fetch theme preferences
       const { data: preferences } = await supabase
         .from('theme_preferences')
-        .select()
+        .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single();
 
       if (preferences) {
-        setPrimaryColor(preferences.primary_color);
-        setSecondaryColor(preferences.secondary_color);
-        setAccentColor(preferences.accent_color);
+        const themePrefs = preferences as ThemePreferences;
+        setPrimaryColor(themePrefs.primary_color);
+        setSecondaryColor(themePrefs.secondary_color);
+        setAccentColor(themePrefs.accent_color);
       }
     };
 
@@ -67,7 +71,6 @@ export default function Settings() {
   const handleSaveTheme = async () => {
     if (!userId) return;
 
-    // Create the theme preferences object
     const themeData = {
       user_id: userId,
       primary_color: primaryColor,
@@ -75,10 +78,9 @@ export default function Settings() {
       accent_color: accentColor,
     };
 
-    // Use the raw insert/update query to bypass type checking temporarily
     const { error } = await supabase
       .from('theme_preferences')
-      .upsert(themeData, { 
+      .upsert(themeData, {
         onConflict: 'user_id'
       });
 

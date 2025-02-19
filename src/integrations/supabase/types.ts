@@ -337,6 +337,36 @@ export type Database = {
           },
         ]
       }
+      theme_preferences: {
+        Row: {
+          accent_color: string
+          created_at: string
+          id: string
+          primary_color: string
+          secondary_color: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string
+          created_at?: string
+          id?: string
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string
+          created_at?: string
+          id?: string
+          primary_color?: string
+          secondary_color?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       weekly_checkin_questions: {
         Row: {
           created_at: string | null
