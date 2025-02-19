@@ -14,14 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings2, Palette } from "lucide-react";
 
-type ThemePreferences = {
+// Define the structure to match our database
+interface ThemePreference {
   user_id: string;
   primary_color: string;
   secondary_color: string;
   accent_color: string;
-  created_at: string;
-  updated_at: string;
-};
+}
 
 export default function Settings() {
   const [primaryColor, setPrimaryColor] = useState("#1B4332");
@@ -48,18 +47,17 @@ export default function Settings() {
         setUserRole(profile.role);
       }
 
-      // Fetch theme preferences using type assertion for the custom table
+      // Use maybeSingle() instead of single() to handle the case where no preferences exist
       const { data: preferences } = await supabase
         .from('theme_preferences')
-        .select('*')
+        .select()
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (preferences) {
-        const themePrefs = preferences as ThemePreferences;
-        setPrimaryColor(themePrefs.primary_color);
-        setSecondaryColor(themePrefs.secondary_color);
-        setAccentColor(themePrefs.accent_color);
+        setPrimaryColor(preferences.primary_color);
+        setSecondaryColor(preferences.secondary_color);
+        setAccentColor(preferences.accent_color);
       }
     };
 
@@ -69,18 +67,23 @@ export default function Settings() {
   const handleSaveTheme = async () => {
     if (!userId) return;
 
-    const themePrefs: Partial<ThemePreferences> = {
+    // Create the theme preferences object
+    const themeData = {
       user_id: userId,
       primary_color: primaryColor,
       secondary_color: secondaryColor,
       accent_color: accentColor,
     };
 
+    // Use the raw insert/update query to bypass type checking temporarily
     const { error } = await supabase
       .from('theme_preferences')
-      .upsert(themePrefs);
+      .upsert(themeData, { 
+        onConflict: 'user_id'
+      });
 
     if (error) {
+      console.error('Error saving theme preferences:', error);
       toast({
         title: "Error",
         description: "Failed to save theme preferences",
