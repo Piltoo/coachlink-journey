@@ -1,0 +1,99 @@
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+export const InviteClientDialog = () => {
+  const [newClientEmail, setNewClientEmail] = useState("");
+  const [newClientName, setNewClientName] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
+  const { toast } = useToast();
+
+  const handleInviteClient = async () => {
+    if (!newClientEmail || !newClientName) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsInviting(true);
+
+    try {
+      const { data, error } = await supabase
+        .rpc('invite_client', {
+          client_email: newClientEmail,
+          client_name: newClientName
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Client invitation sent successfully",
+      });
+
+      // Reset form
+      setNewClientEmail("");
+      setNewClientName("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to invite client",
+        variant: "destructive",
+      });
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>Invite New Client</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Invite a New Client</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <label htmlFor="clientName" className="text-sm font-medium">
+              Client Name
+            </label>
+            <Input
+              id="clientName"
+              value={newClientName}
+              onChange={(e) => setNewClientName(e.target.value)}
+              placeholder="Enter client's name"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="clientEmail" className="text-sm font-medium">
+              Client Email
+            </label>
+            <Input
+              id="clientEmail"
+              type="email"
+              value={newClientEmail}
+              onChange={(e) => setNewClientEmail(e.target.value)}
+              placeholder="Enter client's email"
+            />
+          </div>
+          <Button 
+            onClick={handleInviteClient}
+            disabled={isInviting}
+            className="w-full"
+          >
+            {isInviting ? "Sending Invitation..." : "Send Invitation"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
