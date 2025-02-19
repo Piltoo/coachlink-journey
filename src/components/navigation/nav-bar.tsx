@@ -11,6 +11,7 @@ type UserRole = 'client' | 'trainer' | 'admin';
 export function NavBar() {
   const [user, setUser] = React.useState(null);
   const [userRole, setUserRole] = React.useState<UserRole | null>(null);
+  const [companyName, setCompanyName] = React.useState("FitCoach");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -20,6 +21,7 @@ export function NavBar() {
       setUser(session?.user || null);
       if (session?.user) {
         fetchUserRole(session.user.id);
+        fetchCompanyName(session.user.id);
       }
     });
 
@@ -30,8 +32,10 @@ export function NavBar() {
       setUser(session?.user || null);
       if (session?.user) {
         fetchUserRole(session.user.id);
+        fetchCompanyName(session.user.id);
       } else {
         setUserRole(null);
+        setCompanyName("FitCoach");
       }
     });
 
@@ -55,6 +59,40 @@ export function NavBar() {
     }
 
     setUserRole(profile.role as UserRole);
+  };
+
+  const fetchCompanyName = async (userId: string) => {
+    // If user is a client, fetch their coach's theme preferences
+    if (userRole === 'client') {
+      const { data: relationship } = await supabase
+        .from('coach_clients')
+        .select('coach_id')
+        .eq('client_id', userId)
+        .single();
+
+      if (relationship) {
+        const { data: themePrefs } = await supabase
+          .from('theme_preferences')
+          .select('company_name')
+          .eq('user_id', relationship.coach_id)
+          .single();
+
+        if (themePrefs?.company_name) {
+          setCompanyName(themePrefs.company_name);
+        }
+      }
+    } else {
+      // For trainers, fetch their own theme preferences
+      const { data: themePrefs } = await supabase
+        .from('theme_preferences')
+        .select('company_name')
+        .eq('user_id', userId)
+        .single();
+
+      if (themePrefs?.company_name) {
+        setCompanyName(themePrefs.company_name);
+      }
+    }
   };
 
   const handleSignOut = async () => {
@@ -82,7 +120,7 @@ export function NavBar() {
               to="/"
               className="text-xl font-bold text-primary hover:text-accent transition-colors"
             >
-              FitCoach
+              {companyName}
             </Link>
           </div>
           <div className="flex items-center space-x-1">

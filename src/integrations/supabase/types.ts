@@ -340,6 +340,7 @@ export type Database = {
       theme_preferences: {
         Row: {
           accent_color: string
+          company_name: string | null
           created_at: string
           id: string
           primary_color: string
@@ -349,6 +350,7 @@ export type Database = {
         }
         Insert: {
           accent_color?: string
+          company_name?: string | null
           created_at?: string
           id?: string
           primary_color?: string
@@ -358,6 +360,7 @@ export type Database = {
         }
         Update: {
           accent_color?: string
+          company_name?: string | null
           created_at?: string
           id?: string
           primary_color?: string
