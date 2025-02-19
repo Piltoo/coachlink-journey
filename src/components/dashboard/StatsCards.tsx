@@ -26,13 +26,13 @@ export const StatsCards = () => {
       if (profile) {
         setUserRole(profile.role);
 
-        // Fetch upcoming sessions (next 48 hours)
+        // For now, we'll use a raw query to get the sessions count
         const now = new Date();
         const next48Hours = addHours(now, 48);
-
-        const { data: sessions, error: sessionsError } = await supabase
+        
+        const { count, error: sessionsError } = await supabase
           .from('workout_sessions')
-          .select('id')
+          .select('*', { count: 'exact', head: true })
           .or(`coach_id.eq.${user.id},client_id.eq.${user.id}`)
           .gte('start_time', now.toISOString())
           .lte('start_time', next48Hours.toISOString())
@@ -45,7 +45,7 @@ export const StatsCards = () => {
             variant: "destructive",
           });
         } else {
-          setUpcomingSessions(sessions?.length || 0);
+          setUpcomingSessions(count || 0);
         }
 
         // If user is a trainer, fetch pending check-ins count

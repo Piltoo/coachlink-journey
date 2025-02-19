@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { addHours, format } from "date-fns";
+import { addHours } from "date-fns";
 
 export const BookSessionDialog = ({ coachId }: { coachId: string }) => {
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -28,14 +28,13 @@ export const BookSessionDialog = ({ coachId }: { coachId: string }) => {
     const startTime = selectedDate;
     const endTime = addHours(startTime, 1);
 
-    const { error } = await supabase
-      .from('workout_sessions')
-      .insert({
-        client_id: user.id,
-        coach_id: coachId,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-      });
+    // Use a raw insert query
+    const { error } = await supabase.rpc('book_workout_session', {
+      p_client_id: user.id,
+      p_coach_id: coachId,
+      p_start_time: startTime.toISOString(),
+      p_end_time: endTime.toISOString()
+    });
 
     if (error) {
       toast({
