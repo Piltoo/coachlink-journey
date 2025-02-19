@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { WeeklyCheckInForm } from "@/components/check-ins/WeeklyCheckInForm";
@@ -62,16 +63,16 @@ const Dashboard = () => {
       if (profile.role === 'trainer') {
         // Fetch coach's clients
         const { data: clientsData, error: clientsError } = await supabase
-          .from('coach_clients')
+          .from('profiles')
           .select(`
-            client:client_id (
-              id,
-              full_name,
-              email
-            ),
-            status
+            id,
+            full_name,
+            email,
+            coach_clients!inner (
+              status
+            )
           `)
-          .eq('coach_id', user.id);
+          .eq('coach_clients.coach_id', user.id);
 
         if (clientsError) {
           toast({
@@ -83,10 +84,10 @@ const Dashboard = () => {
         }
 
         setClients(clientsData.map(c => ({
-          id: c.client.id,
-          full_name: c.client.full_name,
-          email: c.client.email,
-          status: c.status
+          id: c.id,
+          full_name: c.full_name,
+          email: c.email,
+          status: c.coach_clients[0].status
         })));
 
         // Fetch recent check-ins
