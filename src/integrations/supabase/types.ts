@@ -97,6 +97,7 @@ export type Database = {
           front_photo_url: string | null
           hips_cm: number | null
           id: string
+          neck_cm: number | null
           side_photo_url: string | null
           thigh_cm: number | null
           waist_cm: number | null
@@ -110,6 +111,7 @@ export type Database = {
           front_photo_url?: string | null
           hips_cm?: number | null
           id?: string
+          neck_cm?: number | null
           side_photo_url?: string | null
           thigh_cm?: number | null
           waist_cm?: number | null
@@ -123,6 +125,7 @@ export type Database = {
           front_photo_url?: string | null
           hips_cm?: number | null
           id?: string
+          neck_cm?: number | null
           side_photo_url?: string | null
           thigh_cm?: number | null
           waist_cm?: number | null
