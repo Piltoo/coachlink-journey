@@ -102,20 +102,28 @@ export function NavBar() {
                     >
                       Clients
                     </Link>
-                    <Link
-                      to="/nutrition-training"
-                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
+                      size="icon"
+                      title="Nutrition & Training"
                     >
-                      <Dumbbell className="h-4 w-4" />
-                      Nutrition & Training
-                    </Link>
-                    <Link
-                      to="/settings"
-                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                      <Link to="/nutrition-training">
+                        <Dumbbell className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
+                      size="icon"
+                      title="Settings"
                     >
-                      <Settings2 className="h-4 w-4" />
-                      Settings
-                    </Link>
+                      <Link to="/settings">
+                        <Settings2 className="h-4 w-4" />
+                      </Link>
+                    </Button>
                   </>
                 )}
                 {userRole === 'client' && (
