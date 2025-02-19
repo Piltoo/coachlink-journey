@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { MessageCircle } from "lucide-react";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
@@ -125,6 +126,13 @@ export function NavBar() {
                     </Link>
                   </>
                 )}
+                <Link
+                  to="/messages"
+                  className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Messages
+                </Link>
                 <Button
                   variant="ghost"
                   onClick={handleSignOut}
@@ -147,4 +155,4 @@ export function NavBar() {
       </div>
     </nav>
   );
-};
+}
