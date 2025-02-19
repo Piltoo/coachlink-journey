@@ -3,35 +3,13 @@ import { useEffect, useState } from "react";
 import { WeeklyCheckInForm } from "@/components/check-ins/WeeklyCheckInForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ClientList } from "@/components/dashboard/ClientList";
-import { InviteClientDialog } from "@/components/dashboard/InviteClientDialog";
-import { RecentCheckIns } from "@/components/dashboard/RecentCheckIns";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
-type Client = {
-  id: string;
-  full_name: string | null;
-  email: string;
-  status: string;
-};
-
-type CheckIn = {
-  id: string;
-  created_at: string;
-  weight_kg: number;
-  profiles: {
-    full_name: string | null;
-    email: string;
-  };
-};
-
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [recentCheckIns, setRecentCheckIns] = useState<CheckIn[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,63 +33,6 @@ const Dashboard = () => {
       }
 
       setUserRole(profile.role as UserRole);
-
-      if (profile.role === 'trainer') {
-        // Fetch coach's clients
-        const { data: clientsData, error: clientsError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            full_name,
-            email,
-            coach_clients!inner (
-              status
-            )
-          `)
-          .eq('coach_clients.coach_id', user.id);
-
-        if (clientsError) {
-          toast({
-            title: "Error",
-            description: "Failed to load clients",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        setClients(clientsData.map(c => ({
-          id: c.id,
-          full_name: c.full_name,
-          email: c.email,
-          status: c.coach_clients[0].status
-        })));
-
-        // Fetch recent check-ins
-        const { data: checkIns, error: checkInsError } = await supabase
-          .from('weekly_checkins')
-          .select(`
-            id,
-            created_at,
-            weight_kg,
-            profiles:client_id (
-              full_name,
-              email
-            )
-          `)
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        if (checkInsError) {
-          toast({
-            title: "Error",
-            description: "Failed to load recent check-ins",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        setRecentCheckIns(checkIns || []);
-      }
     };
 
     fetchUserRole();
@@ -127,18 +48,6 @@ const Dashboard = () => {
               {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
           </div>
-
-          {userRole === 'trainer' && (
-            <>
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-primary">My Clients</h2>
-                <InviteClientDialog />
-              </div>
-
-              <ClientList clients={clients} />
-              <RecentCheckIns checkIns={recentCheckIns} />
-            </>
-          )}
 
           {userRole === 'client' && <WeeklyCheckInForm />}
 
