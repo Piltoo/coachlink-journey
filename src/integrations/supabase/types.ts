@@ -90,31 +90,40 @@ export type Database = {
       measurements: {
         Row: {
           arm_cm: number | null
+          back_photo_url: string | null
           checkin_id: string
           chest_cm: number | null
           created_at: string | null
+          front_photo_url: string | null
           hips_cm: number | null
           id: string
+          side_photo_url: string | null
           thigh_cm: number | null
           waist_cm: number | null
         }
         Insert: {
           arm_cm?: number | null
+          back_photo_url?: string | null
           checkin_id: string
           chest_cm?: number | null
           created_at?: string | null
+          front_photo_url?: string | null
           hips_cm?: number | null
           id?: string
+          side_photo_url?: string | null
           thigh_cm?: number | null
           waist_cm?: number | null
         }
         Update: {
           arm_cm?: number | null
+          back_photo_url?: string | null
           checkin_id?: string
           chest_cm?: number | null
           created_at?: string | null
+          front_photo_url?: string | null
           hips_cm?: number | null
           id?: string
+          side_photo_url?: string | null
           thigh_cm?: number | null
           waist_cm?: number | null
         }
