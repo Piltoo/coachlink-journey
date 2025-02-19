@@ -279,13 +279,22 @@ export type Database = {
         }
         Returns: undefined
       }
-      invite_client: {
-        Args: {
-          client_email: string
-          client_name: string
-        }
-        Returns: string
-      }
+      invite_client:
+        | {
+            Args: {
+              client_email: string
+              client_name: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              client_email: string
+              client_name: string
+              client_password: string
+            }
+            Returns: string
+          }
     }
     Enums: {
       answer_status: "pending" | "completed"
