@@ -12,15 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings2, Palette } from "lucide-react";
+import { Settings2, Palette, Building2 } from "lucide-react";
 
-// Define types to match our database schema
 type ThemePreferences = {
   id: string;
   user_id: string;
   primary_color: string;
   secondary_color: string;
   accent_color: string;
+  company_name: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -29,6 +29,7 @@ export default function Settings() {
   const [primaryColor, setPrimaryColor] = useState("#1B4332");
   const [secondaryColor, setSecondaryColor] = useState("#95D5B2");
   const [accentColor, setAccentColor] = useState("#2D6A4F");
+  const [companyName, setCompanyName] = useState("FitCoach");
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -62,6 +63,7 @@ export default function Settings() {
         setPrimaryColor(themePrefs.primary_color);
         setSecondaryColor(themePrefs.secondary_color);
         setAccentColor(themePrefs.accent_color);
+        setCompanyName(themePrefs.company_name || "FitCoach");
       }
     };
 
@@ -76,6 +78,7 @@ export default function Settings() {
       primary_color: primaryColor,
       secondary_color: secondaryColor,
       accent_color: accentColor,
+      company_name: companyName
     };
 
     const { error } = await supabase
@@ -132,6 +135,10 @@ export default function Settings() {
                   <Palette className="h-4 w-4" />
                   Theme
                 </TabsTrigger>
+                <TabsTrigger value="branding" className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Branding
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="theme" className="space-y-6">
@@ -186,12 +193,28 @@ export default function Settings() {
                       />
                     </div>
                   </div>
-
-                  <Button onClick={handleSaveTheme} className="w-full sm:w-auto">
-                    Save Theme
-                  </Button>
                 </div>
               </TabsContent>
+
+              <TabsContent value="branding" className="space-y-6">
+                <div className="grid gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="company-name">Company Name</Label>
+                    <Input
+                      id="company-name"
+                      type="text"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Enter your company name"
+                      className="max-w-md"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <Button onClick={handleSaveTheme} className="w-full sm:w-auto mt-6">
+                Save Changes
+              </Button>
             </Tabs>
           </Card>
         </div>
