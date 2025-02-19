@@ -28,14 +28,16 @@ export const BookSessionDialog = ({ coachId }: { coachId: string }) => {
     const startTime = selectedDate;
     const endTime = addHours(startTime, 1);
 
-    // Since we can't use the RPC function directly, let's insert into the table
-    const { error } = await supabase.from('workout_sessions').insert([{
-      client_id: user.id,
-      coach_id: coachId,
-      start_time: startTime.toISOString(),
-      end_time: endTime.toISOString(),
-      status: 'pending'
-    }] as any); // Using 'as any' temporarily until types are updated
+    // Use direct table insert with type assertion
+    const { error } = await supabase
+      .from('workout_sessions' as any)
+      .insert([{
+        client_id: user.id,
+        coach_id: coachId,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        status: 'pending'
+      }]);
 
     if (error) {
       toast({

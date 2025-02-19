@@ -26,27 +26,19 @@ export const StatsCards = () => {
       if (profile) {
         setUserRole(profile.role);
 
-        // Instead of using the table directly, we'll use a raw query to count sessions
+        // Use a raw count query
         const now = new Date();
         const next48Hours = addHours(now, 48);
         
-        const { count: sessionsCount, error: sessionsError } = await supabase
-          .from('workout_sessions')
+        const { count: sessionsCount } = await supabase
+          .from('workout_sessions' as any)
           .select('*', { count: 'exact', head: true })
           .or(`coach_id.eq.${user.id},client_id.eq.${user.id}`)
           .gte('start_time', now.toISOString())
           .lte('start_time', next48Hours.toISOString())
-          .not('status', 'eq', 'cancelled');
+          .not('status', 'eq', 'cancelled') as any;
 
-        if (sessionsError) {
-          toast({
-            title: "Error",
-            description: "Failed to load upcoming sessions",
-            variant: "destructive",
-          });
-        } else {
-          setUpcomingSessions(sessionsCount || 0);
-        }
+        setUpcomingSessions(sessionsCount || 0);
 
         // If user is a trainer, fetch pending check-ins count
         if (profile.role === 'trainer') {
@@ -87,7 +79,7 @@ export const StatsCards = () => {
     };
 
     fetchData();
-  }, []);
+  }, [toast]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

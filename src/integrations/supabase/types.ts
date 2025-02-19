@@ -214,11 +214,71 @@ export type Database = {
           },
         ]
       }
+      workout_sessions: {
+        Row: {
+          client_id: string
+          coach_id: string
+          created_at: string | null
+          end_time: string
+          id: string
+          notes: string | null
+          start_time: string
+          status: Database["public"]["Enums"]["session_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          coach_id: string
+          created_at?: string | null
+          end_time: string
+          id?: string
+          notes?: string | null
+          start_time: string
+          status?: Database["public"]["Enums"]["session_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          coach_id?: string
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          notes?: string | null
+          start_time?: string
+          status?: Database["public"]["Enums"]["session_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workout_sessions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      book_workout_session: {
+        Args: {
+          p_client_id: string
+          p_coach_id: string
+          p_start_time: string
+          p_end_time: string
+        }
+        Returns: undefined
+      }
       invite_client: {
         Args: {
           client_email: string
@@ -229,6 +289,7 @@ export type Database = {
     }
     Enums: {
       answer_status: "pending" | "completed"
+      session_status: "pending" | "confirmed" | "completed" | "cancelled"
       user_role: "admin" | "trainer" | "client"
     }
     CompositeTypes: {
