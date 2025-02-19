@@ -134,13 +134,17 @@ export function NavBar() {
                     </Link>
                   </>
                 )}
-                <Link
-                  to="/messages"
-                  className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
+                  size="icon"
+                  title="Messages"
                 >
-                  <MessageCircle className="h-4 w-4" />
-                  Messages
-                </Link>
+                  <Link to="/messages">
+                    <MessageCircle className="h-4 w-4" />
+                  </Link>
+                </Button>
                 <Button
                   variant="ghost"
                   onClick={handleSignOut}
