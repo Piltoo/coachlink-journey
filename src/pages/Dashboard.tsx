@@ -1,6 +1,5 @@
 
 import { useEffect, useState } from "react";
-import { WeeklyCheckInForm } from "@/components/check-ins/WeeklyCheckInForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
@@ -67,8 +66,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
-          {userRole === 'client' && <WeeklyCheckInForm />}
 
           <StatsCards />
         </div>
