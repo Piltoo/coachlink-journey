@@ -9,6 +9,7 @@ export const StatsCards = () => {
   const [unreadCheckIns, setUnreadCheckIns] = useState(0);
   const [upcomingSessions, setUpcomingSessions] = useState(0);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -82,6 +83,9 @@ export const StatsCards = () => {
           }
 
           setUnreadCheckIns(checkIns?.length || 0);
+          
+          // TODO: Replace with actual messages query once message table is created
+          setUnreadMessages(3); // Temporary mock data
         }
       }
     };
@@ -90,7 +94,7 @@ export const StatsCards = () => {
   }, [toast]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
         <div className="flex flex-col">
           <h2 className="text-lg font-medium text-primary/80 mb-2">Active Clients</h2>
@@ -108,13 +112,23 @@ export const StatsCards = () => {
       </GlassCard>
 
       {userRole === 'trainer' && (
-        <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
-          <div className="flex flex-col">
-            <h2 className="text-lg font-medium text-primary/80 mb-2">Pending Check-ins</h2>
-            <p className="text-4xl font-bold text-primary">{unreadCheckIns}</p>
-            <span className="text-sm text-accent mt-2">Requires your review</span>
-          </div>
-        </GlassCard>
+        <>
+          <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+            <div className="flex flex-col">
+              <h2 className="text-lg font-medium text-primary/80 mb-2">Pending Check-ins</h2>
+              <p className="text-4xl font-bold text-primary">{unreadCheckIns}</p>
+              <span className="text-sm text-accent mt-2">Requires your review</span>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="bg-white/40 backdrop-blur-lg border border-blue-100">
+            <div className="flex flex-col">
+              <h2 className="text-lg font-medium text-primary/80 mb-2">Unread Messages</h2>
+              <p className="text-4xl font-bold text-primary">{unreadMessages}</p>
+              <span className="text-sm text-accent mt-2">New messages</span>
+            </div>
+          </GlassCard>
+        </>
       )}
     </div>
   );
