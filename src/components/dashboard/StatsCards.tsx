@@ -143,19 +143,20 @@ export const StatsCards = () => {
 
     return (
       <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
-        <div className="flex flex-col h-[200px]">
-          <h2 className="text-lg font-medium text-primary/80 mb-2">{title}</h2>
+        <div className="flex flex-col h-[150px]">
+          <h2 className="text-sm font-medium text-primary/80 mb-1">{title}</h2>
           {data.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data}>
                 <XAxis 
                   dataKey="date" 
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 10 }}
                   interval="preserveStartEnd"
                 />
                 <YAxis 
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 10 }}
                   domain={['auto', 'auto']}
+                  width={25}
                 />
                 <Tooltip />
                 <Area 
@@ -168,7 +169,7 @@ export const StatsCards = () => {
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-muted-foreground">No measurement data recorded</p>
+            <p className="text-xs text-muted-foreground">No measurement data recorded</p>
           )}
         </div>
       </GlassCard>
@@ -176,30 +177,30 @@ export const StatsCards = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {userRole === 'trainer' && (
         <>
           <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
             <div className="flex flex-col">
-              <h2 className="text-lg font-medium text-primary/80 mb-2">Active Clients</h2>
-              <p className="text-4xl font-bold text-primary">12</p>
-              <span className="text-sm text-accent mt-2">↑ 2 new this week</span>
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Active Clients</h2>
+              <p className="text-2xl font-bold text-primary">12</p>
+              <span className="text-xs text-accent mt-1">↑ 2 new this week</span>
             </div>
           </GlassCard>
 
           <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
             <div className="flex flex-col">
-              <h2 className="text-lg font-medium text-primary/80 mb-2">Pending Check-ins</h2>
-              <p className="text-4xl font-bold text-primary">{unreadCheckIns}</p>
-              <span className="text-sm text-accent mt-2">Requires your review</span>
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Pending Check-ins</h2>
+              <p className="text-2xl font-bold text-primary">{unreadCheckIns}</p>
+              <span className="text-xs text-accent mt-1">Requires review</span>
             </div>
           </GlassCard>
 
           <GlassCard className="bg-white/40 backdrop-blur-lg border border-blue-100">
             <div className="flex flex-col">
-              <h2 className="text-lg font-medium text-primary/80 mb-2">Unread Messages</h2>
-              <p className="text-4xl font-bold text-primary">{unreadMessages}</p>
-              <span className="text-sm text-accent mt-2">New messages</span>
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Unread Messages</h2>
+              <p className="text-2xl font-bold text-primary">{unreadMessages}</p>
+              <span className="text-xs text-accent mt-1">New messages</span>
             </div>
           </GlassCard>
         </>
@@ -208,31 +209,31 @@ export const StatsCards = () => {
         <>
           <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
             <div className="flex flex-col">
-              <h2 className="text-lg font-medium text-primary/80 mb-2">Completed Workouts</h2>
-              <p className="text-4xl font-bold text-primary">8</p>
-              <span className="text-sm text-accent mt-2">This month</span>
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Completed Workouts</h2>
+              <p className="text-2xl font-bold text-primary">8</p>
+              <span className="text-xs text-accent mt-1">This month</span>
             </div>
           </GlassCard>
 
           <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
             <div className="flex flex-col">
-              <h2 className="text-lg font-medium text-primary/80 mb-2">Weight Progress</h2>
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Weight Progress</h2>
               {recentWeight ? (
                 <>
-                  <p className="text-xl font-semibold mb-2">{recentWeight.weight_kg}kg</p>
-                  <div className="space-y-2">
-                    <Progress value={calculateWeightProgress()} className="h-2" />
-                    <div className="flex justify-between text-sm">
+                  <p className="text-lg font-semibold mb-1">{recentWeight.weight_kg}kg</p>
+                  <div className="space-y-1">
+                    <Progress value={calculateWeightProgress()} className="h-1.5" />
+                    <div className="flex justify-between text-xs">
                       <span>Current: {recentWeight.weight_kg}kg</span>
                       <span>Target: {targetWeight}kg</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {calculateWeightProgress().toFixed(1)}% to goal
                     </p>
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">No weight data recorded yet</p>
+                <p className="text-xs text-muted-foreground">No weight data recorded yet</p>
               )}
             </div>
           </GlassCard>
