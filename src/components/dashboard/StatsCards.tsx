@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
@@ -10,13 +11,22 @@ type WeightData = {
   created_at: string;
 };
 
+type MeasurementsData = {
+  waist_cm: number | null;
+  chest_cm: number | null;
+  hips_cm: number | null;
+  thigh_cm: number | null;
+  arm_cm: number | null;
+  created_at: string;
+};
+
 export const StatsCards = () => {
   const [unreadCheckIns, setUnreadCheckIns] = useState(0);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [recentWeight, setRecentWeight] = useState<WeightData | null>(null);
   const [targetWeight, setTargetWeight] = useState<number>(75); // Mock target weight
-  const [recentMeasurements, setRecentMeasurements] = useState<any>(null);
+  const [recentMeasurements, setRecentMeasurements] = useState<MeasurementsData | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,6 +64,9 @@ export const StatsCards = () => {
             .select(`
               waist_cm,
               chest_cm,
+              hips_cm,
+              thigh_cm,
+              arm_cm,
               created_at
             `)
             .order('created_at', { ascending: false })
@@ -121,6 +134,26 @@ export const StatsCards = () => {
     ));
   };
 
+  const renderMeasurementCard = (title: string, value: number | null, unit: string) => {
+    return (
+      <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+        <div className="flex flex-col">
+          <h2 className="text-lg font-medium text-primary/80 mb-2">{title}</h2>
+          {value ? (
+            <>
+              <p className="text-2xl font-bold text-primary">{value}{unit}</p>
+              <span className="text-sm text-accent mt-2">
+                Last updated: {recentMeasurements?.created_at ? new Date(recentMeasurements.created_at).toLocaleDateString() : 'N/A'}
+              </span>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">No measurement recorded</p>
+          )}
+        </div>
+      </GlassCard>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {userRole === 'trainer' && (
@@ -162,25 +195,6 @@ export const StatsCards = () => {
 
           <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
             <div className="flex flex-col">
-              <h2 className="text-lg font-medium text-primary/80 mb-2">Recent Measurements</h2>
-              {recentMeasurements ? (
-                <>
-                  <div className="space-y-1">
-                    <p className="text-sm">Waist: {recentMeasurements.waist_cm}cm</p>
-                    <p className="text-sm">Chest: {recentMeasurements.chest_cm}cm</p>
-                  </div>
-                  <span className="text-sm text-accent mt-2">
-                    Last updated: {new Date(recentMeasurements.created_at).toLocaleDateString()}
-                  </span>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">No measurements recorded yet</p>
-              )}
-            </div>
-          </GlassCard>
-
-          <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
-            <div className="flex flex-col">
               <h2 className="text-lg font-medium text-primary/80 mb-2">Weight Progress</h2>
               {recentWeight ? (
                 <>
@@ -201,6 +215,12 @@ export const StatsCards = () => {
               )}
             </div>
           </GlassCard>
+
+          {renderMeasurementCard("Waist", recentMeasurements?.waist_cm, "cm")}
+          {renderMeasurementCard("Chest", recentMeasurements?.chest_cm, "cm")}
+          {renderMeasurementCard("Hips", recentMeasurements?.hips_cm, "cm")}
+          {renderMeasurementCard("Thigh", recentMeasurements?.thigh_cm, "cm")}
+          {renderMeasurementCard("Arm", recentMeasurements?.arm_cm, "cm")}
         </>
       )}
     </div>
