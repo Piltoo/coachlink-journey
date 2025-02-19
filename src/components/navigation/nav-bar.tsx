@@ -93,19 +93,29 @@ export function NavBar() {
                 >
                   Dashboard
                 </Link>
-                <Link
-                  to="/clients"
-                  className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                >
-                  Clients
-                </Link>
-                {userRole === 'client' && (
+                {userRole === 'trainer' && (
                   <Link
-                    to="/measurements"
+                    to="/clients"
                     className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
                   >
-                    Measurements
+                    Clients
                   </Link>
+                )}
+                {userRole === 'client' && (
+                  <>
+                    <Link
+                      to="/program"
+                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                    >
+                      Program
+                    </Link>
+                    <Link
+                      to="/measurements"
+                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                    >
+                      Measurements
+                    </Link>
+                  </>
                 )}
                 <Button
                   variant="ghost"
