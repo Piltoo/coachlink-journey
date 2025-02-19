@@ -44,10 +44,16 @@ const Program = () => {
       setUserRole(profile.role);
       
       if (profile.role === 'trainer') {
-        // Fetch trainer's clients
+        // Fetch trainer's clients with explicit column selection
         const { data: clientsData } = await supabase
           .from('coach_clients')
-          .select('client_id, profiles(id, full_name)')
+          .select(`
+            client_id,
+            profiles!coach_clients_client_id_fkey (
+              id,
+              full_name
+            )
+          `)
           .eq('coach_id', user.id);
           
         if (clientsData) {
