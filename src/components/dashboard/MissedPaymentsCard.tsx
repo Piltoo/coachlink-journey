@@ -63,7 +63,7 @@ export const MissedPaymentsCard = () => {
         <div className="space-y-4">
           <div className="text-2xl font-bold text-red-600">
             {totalMissed.toFixed(2)} kr
-            <span className="text-sm font-normal text-muted-foreground ml-2">incoming</span>
+            <span className="text-sm font-normal text-muted-foreground ml-2">incoming funds</span>
           </div>
           <div className="space-y-2">
             {missedPayments.map((payment) => (

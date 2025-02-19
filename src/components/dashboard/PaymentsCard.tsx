@@ -64,7 +64,7 @@ export const PaymentsCard = () => {
         <div className="space-y-4">
           <div className="text-2xl font-bold text-primary">
             {totalDue.toFixed(2)} kr
-            <span className="text-sm font-normal text-muted-foreground ml-2">incoming</span>
+            <span className="text-sm font-normal text-muted-foreground ml-2">incoming funds</span>
           </div>
           <div className="space-y-2">
             {upcomingPayments.map((payment) => (
