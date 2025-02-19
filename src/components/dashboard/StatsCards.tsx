@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
@@ -177,7 +176,7 @@ export const StatsCards = () => {
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-4 gap-4">
       {userRole === 'trainer' && (
         <>
           <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
@@ -215,7 +214,7 @@ export const StatsCards = () => {
             </div>
           </GlassCard>
 
-          <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+          <GlassCard className="col-span-3 bg-white/40 backdrop-blur-lg border border-green-100">
             <div className="flex flex-col">
               <h2 className="text-sm font-medium text-primary/80 mb-1">Weight Progress</h2>
               {recentWeight ? (
@@ -239,7 +238,6 @@ export const StatsCards = () => {
           </GlassCard>
 
           {renderMeasurementCard("Waist", "waist_cm")}
-          {renderMeasurementCard("Chest", "chest_cm")}
           {renderMeasurementCard("Hips", "hips_cm")}
           {renderMeasurementCard("Thigh", "thigh_cm")}
           {renderMeasurementCard("Arm", "arm_cm")}
