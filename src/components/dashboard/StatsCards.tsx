@@ -26,19 +26,27 @@ export const StatsCards = () => {
       if (profile) {
         setUserRole(profile.role);
 
-        // Use a raw count query
+        // Use type assertion for workout_sessions table
         const now = new Date();
         const next48Hours = addHours(now, 48);
         
-        const { count: sessionsCount } = await supabase
+        const { count, error: sessionsError } = await supabase
           .from('workout_sessions' as any)
           .select('*', { count: 'exact', head: true })
           .or(`coach_id.eq.${user.id},client_id.eq.${user.id}`)
           .gte('start_time', now.toISOString())
           .lte('start_time', next48Hours.toISOString())
-          .not('status', 'eq', 'cancelled') as any;
+          .not('status', 'eq', 'cancelled');
 
-        setUpcomingSessions(sessionsCount || 0);
+        if (sessionsError) {
+          toast({
+            title: "Error",
+            description: "Failed to load upcoming sessions",
+            variant: "destructive",
+          });
+        } else {
+          setUpcomingSessions(count || 0);
+        }
 
         // If user is a trainer, fetch pending check-ins count
         if (profile.role === 'trainer') {

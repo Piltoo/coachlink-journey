@@ -28,7 +28,7 @@ export const BookSessionDialog = ({ coachId }: { coachId: string }) => {
     const startTime = selectedDate;
     const endTime = addHours(startTime, 1);
 
-    // Use direct table insert with type assertion
+    // Use type assertion for workout_sessions table
     const { error } = await supabase
       .from('workout_sessions' as any)
       .insert([{
