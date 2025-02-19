@@ -35,12 +35,13 @@ export const InviteClientDialog = () => {
     setIsInviting(true);
 
     try {
+      // Add type assertion to handle the new parameter
       const { data, error } = await supabase
         .rpc('invite_client', {
           client_email: newClientEmail,
           client_name: newClientName,
           client_password: newClientPassword
-        });
+        } as any); // Type assertion to bypass TypeScript error
 
       if (error) throw error;
 
