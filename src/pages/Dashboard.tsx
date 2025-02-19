@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { BookSessionDialog } from "@/components/sessions/BookSessionDialog";
 import { PaymentsCard } from "@/components/dashboard/PaymentsCard";
+import { MissedPaymentsCard } from "@/components/dashboard/MissedPaymentsCard";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
@@ -72,6 +73,7 @@ const Dashboard = () => {
           {userRole === 'trainer' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <PaymentsCard />
+              <MissedPaymentsCard />
             </div>
           )}
         </div>
