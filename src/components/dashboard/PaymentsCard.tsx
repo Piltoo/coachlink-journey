@@ -58,13 +58,13 @@ export const PaymentsCard = () => {
   return (
     <Card className="bg-white/40 backdrop-blur-lg border border-green-100">
       <CardHeader>
-        <CardTitle className="text-lg font-medium text-primary/80">Upcoming Payments</CardTitle>
+        <CardTitle className="text-lg font-medium text-primary/80">Kommande Betalningar</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="text-2xl font-bold text-primary">
             {totalDue.toFixed(2)} kr
-            <span className="text-sm font-normal text-muted-foreground ml-2">total due</span>
+            <span className="text-sm font-normal text-muted-foreground ml-2">totalt att betala</span>
           </div>
           <div className="space-y-2">
             {upcomingPayments.map((payment) => (
@@ -72,7 +72,7 @@ export const PaymentsCard = () => {
                 <div className="flex flex-col">
                   <span className="font-medium">{payment.subscription.client.full_name}</span>
                   <span className="text-muted-foreground">
-                    Due {format(new Date(payment.due_date), 'MMM d, yyyy')}
+                    Förfaller {format(new Date(payment.due_date), 'MMM d, yyyy')}
                   </span>
                 </div>
                 <span className="font-medium">{Number(payment.amount).toFixed(2)} kr</span>
