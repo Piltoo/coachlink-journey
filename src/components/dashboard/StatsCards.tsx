@@ -89,14 +89,6 @@ export const StatsCards = () => {
       
       <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
         <div className="flex flex-col">
-          <h2 className="text-lg font-medium text-primary/80 mb-2">Programs</h2>
-          <p className="text-4xl font-bold text-primary">8</p>
-          <span className="text-sm text-accent mt-2">↑ 1 new this month</span>
-        </div>
-      </GlassCard>
-      
-      <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
-        <div className="flex flex-col">
           <h2 className="text-lg font-medium text-primary/80 mb-2">Today's Sessions</h2>
           <p className="text-4xl font-bold text-primary">5</p>
           <span className="text-sm text-accent mt-2">Next session in 2h</span>
