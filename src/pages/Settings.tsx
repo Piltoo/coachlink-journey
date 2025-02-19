@@ -14,6 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings2, Palette } from "lucide-react";
 
+type ThemePreferences = {
+  user_id: string;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export default function Settings() {
   const [primaryColor, setPrimaryColor] = useState("#1B4332");
   const [secondaryColor, setSecondaryColor] = useState("#95D5B2");
@@ -39,7 +48,7 @@ export default function Settings() {
         setUserRole(profile.role);
       }
 
-      // Fetch theme preferences
+      // Fetch theme preferences using type assertion for the custom table
       const { data: preferences } = await supabase
         .from('theme_preferences')
         .select('*')
@@ -47,9 +56,10 @@ export default function Settings() {
         .single();
 
       if (preferences) {
-        setPrimaryColor(preferences.primary_color);
-        setSecondaryColor(preferences.secondary_color);
-        setAccentColor(preferences.accent_color);
+        const themePrefs = preferences as ThemePreferences;
+        setPrimaryColor(themePrefs.primary_color);
+        setSecondaryColor(themePrefs.secondary_color);
+        setAccentColor(themePrefs.accent_color);
       }
     };
 
@@ -59,14 +69,16 @@ export default function Settings() {
   const handleSaveTheme = async () => {
     if (!userId) return;
 
+    const themePrefs: Partial<ThemePreferences> = {
+      user_id: userId,
+      primary_color: primaryColor,
+      secondary_color: secondaryColor,
+      accent_color: accentColor,
+    };
+
     const { error } = await supabase
       .from('theme_preferences')
-      .upsert({
-        user_id: userId,
-        primary_color: primaryColor,
-        secondary_color: secondaryColor,
-        accent_color: accentColor,
-      });
+      .upsert(themePrefs);
 
     if (error) {
       toast({
