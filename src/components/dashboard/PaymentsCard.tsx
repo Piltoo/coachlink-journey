@@ -63,7 +63,7 @@ export const PaymentsCard = () => {
       <CardContent>
         <div className="space-y-4">
           <div className="text-2xl font-bold text-primary">
-            ${totalDue.toFixed(2)}
+            {totalDue.toFixed(2)} kr
             <span className="text-sm font-normal text-muted-foreground ml-2">total due</span>
           </div>
           <div className="space-y-2">
@@ -75,7 +75,7 @@ export const PaymentsCard = () => {
                     Due {format(new Date(payment.due_date), 'MMM d, yyyy')}
                   </span>
                 </div>
-                <span className="font-medium">${Number(payment.amount).toFixed(2)}</span>
+                <span className="font-medium">{Number(payment.amount).toFixed(2)} kr</span>
               </div>
             ))}
           </div>

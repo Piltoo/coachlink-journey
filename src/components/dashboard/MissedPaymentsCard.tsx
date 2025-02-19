@@ -62,7 +62,7 @@ export const MissedPaymentsCard = () => {
       <CardContent>
         <div className="space-y-4">
           <div className="text-2xl font-bold text-red-600">
-            ${totalMissed.toFixed(2)}
+            {totalMissed.toFixed(2)} kr
             <span className="text-sm font-normal text-muted-foreground ml-2">total overdue</span>
           </div>
           <div className="space-y-2">
@@ -74,7 +74,7 @@ export const MissedPaymentsCard = () => {
                     Due {format(new Date(payment.due_date), 'MMM d, yyyy')}
                   </span>
                 </div>
-                <span className="font-medium text-red-600">${Number(payment.amount).toFixed(2)}</span>
+                <span className="font-medium text-red-600">{Number(payment.amount).toFixed(2)} kr</span>
               </div>
             ))}
           </div>
