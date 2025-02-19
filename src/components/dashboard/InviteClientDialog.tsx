@@ -36,26 +36,42 @@ export const InviteClientDialog = () => {
     setIsInviting(true);
 
     try {
-      // Create the client account
-      const { data, error } = await supabase
-        .rpc('invite_client', {
-          client_email: newClientEmail,
-          client_name: newClientName,
-          client_password: newClientPassword
-        } as any);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Client account created successfully",
+      // First, sign up the user directly
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newClientEmail,
+        password: newClientPassword,
+        options: {
+          data: {
+            full_name: newClientName,
+          },
+        },
       });
 
-      // Reset form and close dialog
-      setNewClientEmail("");
-      setNewClientName("");
-      setNewClientPassword("");
-      setIsOpen(false);
+      if (authError) throw authError;
+
+      if (authData && authData.user) {
+        // Create the coach-client relationship
+        const { error: relationError } = await supabase
+          .from('coach_clients')
+          .insert({
+            coach_id: (await supabase.auth.getUser()).data.user?.id,
+            client_id: authData.user.id,
+            status: 'active'
+          });
+
+        if (relationError) throw relationError;
+
+        toast({
+          title: "Success",
+          description: "Client account created successfully",
+        });
+
+        // Reset form and close dialog
+        setNewClientEmail("");
+        setNewClientName("");
+        setNewClientPassword("");
+        setIsOpen(false);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
