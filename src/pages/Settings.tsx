@@ -36,34 +36,53 @@ export default function Settings() {
 
   useEffect(() => {
     const fetchUserAndPreferences = async () => {
+      console.log("Fetching user and preferences...");
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log("No user found");
+        return;
+      }
+      console.log("User found:", user.id);
       setUserId(user.id);
 
       // Fetch user role
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single();
 
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        return;
+      }
+
       if (profile) {
+        console.log("User role:", profile.role);
         setUserRole(profile.role);
       }
 
       // Fetch theme preferences
-      const { data: preferences } = await supabase
+      const { data: preferences, error: preferencesError } = await supabase
         .from('theme_preferences')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
+      if (preferencesError) {
+        console.error("Error fetching preferences:", preferencesError);
+        return;
+      }
+
       if (preferences) {
+        console.log("Loaded preferences:", preferences);
         const themePrefs = preferences as ThemePreferences;
         setPrimaryColor(themePrefs.primary_color);
         setSecondaryColor(themePrefs.secondary_color);
         setAccentColor(themePrefs.accent_color);
         setCompanyName(themePrefs.company_name || "FitCoach");
+      } else {
+        console.log("No existing preferences found");
       }
     };
 
@@ -71,19 +90,34 @@ export default function Settings() {
   }, []);
 
   const handleSaveTheme = async () => {
-    if (!userId) return;
+    if (!userId) {
+      console.error("No user ID found");
+      toast({
+        title: "Error",
+        description: "User not found. Please try logging in again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const themeData = {
+    console.log("Saving theme preferences...");
+    console.log("Theme data:", {
       user_id: userId,
       primary_color: primaryColor,
       secondary_color: secondaryColor,
       accent_color: accentColor,
       company_name: companyName
-    };
+    });
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('theme_preferences')
-      .upsert(themeData, {
+      .upsert({
+        user_id: userId,
+        primary_color: primaryColor,
+        secondary_color: secondaryColor,
+        accent_color: accentColor,
+        company_name: companyName
+      }, {
         onConflict: 'user_id'
       });
 
@@ -91,12 +125,13 @@ export default function Settings() {
       console.error('Error saving theme preferences:', error);
       toast({
         title: "Error",
-        description: "Failed to save theme preferences",
+        description: "Failed to save theme preferences: " + error.message,
         variant: "destructive",
       });
       return;
     }
 
+    console.log("Save successful:", data);
     toast({
       title: "Success",
       description: "Theme preferences saved successfully",
