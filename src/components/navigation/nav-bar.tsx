@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { MessageCircle, Dumbbell } from "lucide-react";
+import { MessageCircle, Dumbbell, Settings2 } from "lucide-react";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
@@ -110,10 +110,11 @@ export function NavBar() {
                       Nutrition & Training
                     </Link>
                     <Link
-                      to="/subscriptions"
-                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                      to="/settings"
+                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                     >
-                      Subscriptions
+                      <Settings2 className="h-4 w-4" />
+                      Settings
                     </Link>
                   </>
                 )}
