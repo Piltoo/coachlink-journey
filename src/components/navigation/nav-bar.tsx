@@ -176,12 +176,17 @@ export function NavBar() {
                 )}
                 {userRole === 'client' && (
                   <>
-                    <Link
-                      to="/program"
-                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
+                      size="icon"
+                      title="Workout Plan"
                     >
-                      Program
-                    </Link>
+                      <Link to="/program">
+                        <Dumbbell className="h-4 w-4" />
+                      </Link>
+                    </Button>
                     <Button
                       asChild
                       variant="ghost"
