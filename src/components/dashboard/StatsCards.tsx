@@ -124,7 +124,7 @@ export const StatsCards = () => {
 
   const calculateWeightProgress = () => {
     if (!recentWeight) return 0;
-    const initialWeight = 85;
+    const initialWeight = 85; // Starting weight
     const current = recentWeight.weight_kg;
     const target = targetWeight;
     
@@ -219,16 +219,32 @@ export const StatsCards = () => {
               <h2 className="text-sm font-medium text-primary/80 mb-1">Weight Progress</h2>
               {recentWeight ? (
                 <>
-                  <p className="text-lg font-semibold mb-1">{recentWeight.weight_kg}kg</p>
-                  <div className="space-y-1">
-                    <Progress value={calculateWeightProgress()} className="h-1.5" />
-                    <div className="flex justify-between text-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-lg font-semibold">{recentWeight.weight_kg}kg</p>
+                    <span className="text-xs text-accent">
+                      {calculateWeightProgress().toFixed(1)}% to goal
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <Progress value={calculateWeightProgress()} className="h-2" />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Start: 85kg</span>
                       <span>Current: {recentWeight.weight_kg}kg</span>
                       <span>Target: {targetWeight}kg</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {calculateWeightProgress().toFixed(1)}% to goal
-                    </p>
+                  </div>
+                  <div className="mt-4 h-[60px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={[
+                        { value: 85, date: 'Start' },
+                        { value: recentWeight.weight_kg, date: 'Current' },
+                        { value: targetWeight, date: 'Goal' }
+                      ]}>
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 10 }} domain={['auto', 'auto']} width={25} />
+                        <Area type="monotone" dataKey="value" stroke="#2D6A4F" fill="#95D5B2" fillOpacity={0.3} />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
                 </>
               ) : (
