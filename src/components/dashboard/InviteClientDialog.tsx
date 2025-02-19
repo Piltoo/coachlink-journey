@@ -11,6 +11,7 @@ export const InviteClientDialog = () => {
   const [newClientName, setNewClientName] = useState("");
   const [newClientPassword, setNewClientPassword] = useState("");
   const [isInviting, setIsInviting] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleInviteClient = async () => {
@@ -35,29 +36,30 @@ export const InviteClientDialog = () => {
     setIsInviting(true);
 
     try {
-      // Add type assertion to handle the new parameter
+      // Create the client account
       const { data, error } = await supabase
         .rpc('invite_client', {
           client_email: newClientEmail,
           client_name: newClientName,
           client_password: newClientPassword
-        } as any); // Type assertion to bypass TypeScript error
+        } as any);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Client invitation sent successfully",
+        description: "Client account created successfully",
       });
 
-      // Reset form
+      // Reset form and close dialog
       setNewClientEmail("");
       setNewClientName("");
       setNewClientPassword("");
+      setIsOpen(false);
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to invite client",
+        description: error.message || "Failed to create client account",
         variant: "destructive",
       });
     } finally {
@@ -66,13 +68,13 @@ export const InviteClientDialog = () => {
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>Invite New Client</Button>
+        <Button onClick={() => setIsOpen(true)}>Invite New Client</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Invite a New Client</DialogTitle>
+          <DialogTitle>Create New Client Account</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
@@ -100,7 +102,7 @@ export const InviteClientDialog = () => {
           </div>
           <div className="space-y-2">
             <label htmlFor="clientPassword" className="text-sm font-medium">
-              Set Initial Password
+              Set Password
             </label>
             <Input
               id="clientPassword"
@@ -110,16 +112,13 @@ export const InviteClientDialog = () => {
               placeholder="Set a password for the client"
               minLength={6}
             />
-            <p className="text-xs text-muted-foreground">
-              The client can change this password after their first login
-            </p>
           </div>
           <Button 
             onClick={handleInviteClient}
             disabled={isInviting}
             className="w-full"
           >
-            {isInviting ? "Sending Invitation..." : "Send Invitation"}
+            {isInviting ? "Creating Account..." : "Create Client Account"}
           </Button>
         </div>
       </DialogContent>
