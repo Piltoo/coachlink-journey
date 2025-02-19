@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
+type UserRole = 'client' | 'trainer' | 'admin';
+
 export function NavBar() {
   const [user, setUser] = React.useState(null);
+  const [userRole, setUserRole] = React.useState<UserRole | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -14,6 +17,9 @@ export function NavBar() {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        fetchUserRole(session.user.id);
+      }
     });
 
     // Listen for auth changes
@@ -21,10 +27,34 @@ export function NavBar() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
+      if (session?.user) {
+        fetchUserRole(session.user.id);
+      } else {
+        setUserRole(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUserRole = async (userId: string) => {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load user profile",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUserRole(profile.role as UserRole);
+  };
 
   const handleSignOut = async () => {
     try {
@@ -69,12 +99,14 @@ export function NavBar() {
                 >
                   Clients
                 </Link>
-                <Link
-                  to="/measurements"
-                  className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                >
-                  Measurements
-                </Link>
+                {userRole === 'client' && (
+                  <Link
+                    to="/measurements"
+                    className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                  >
+                    Measurements
+                  </Link>
+                )}
                 <Button
                   variant="ghost"
                   onClick={handleSignOut}
