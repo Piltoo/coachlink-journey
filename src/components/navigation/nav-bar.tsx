@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { MessageCircle, Dumbbell, Settings2, LogOut, Home, Users } from "lucide-react";
+import { MessageCircle, Dumbbell, Settings2, LogOut, Home, Users, Ruler } from "lucide-react";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
@@ -182,12 +182,17 @@ export function NavBar() {
                     >
                       Program
                     </Link>
-                    <Link
-                      to="/measurements"
-                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
+                      size="icon"
+                      title="Measurements"
                     >
-                      Measurements
-                    </Link>
+                      <Link to="/measurements">
+                        <Ruler className="h-4 w-4" />
+                      </Link>
+                    </Button>
                   </>
                 )}
                 <Button
