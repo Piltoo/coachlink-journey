@@ -4,15 +4,17 @@ import { WeeklyCheckInForm } from "@/components/check-ins/WeeklyCheckInForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
+import { BookSessionDialog } from "@/components/sessions/BookSessionDialog";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [coachId, setCoachId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -32,9 +34,22 @@ const Dashboard = () => {
       }
 
       setUserRole(profile.role as UserRole);
+
+      // If user is a client, fetch their coach's ID
+      if (profile.role === 'client') {
+        const { data: coachClient } = await supabase
+          .from('coach_clients')
+          .select('coach_id')
+          .eq('client_id', user.id)
+          .single();
+
+        if (coachClient) {
+          setCoachId(coachClient.coach_id);
+        }
+      }
     };
 
-    fetchUserRole();
+    fetchUserData();
   }, []);
 
   return (
@@ -43,8 +58,13 @@ const Dashboard = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-primary">Welcome Back</h1>
-            <div className="text-sm text-muted-foreground">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            <div className="flex items-center gap-4">
+              {userRole === 'client' && coachId && (
+                <BookSessionDialog coachId={coachId} />
+              )}
+              <div className="text-sm text-muted-foreground">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
             </div>
           </div>
 
