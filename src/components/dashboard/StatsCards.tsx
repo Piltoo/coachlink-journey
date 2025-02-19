@@ -4,7 +4,8 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { addHours } from "date-fns";
+import { addHours, subDays } from "date-fns";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 type WeightData = {
   weight_kg: number;
@@ -25,8 +26,8 @@ export const StatsCards = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [recentWeight, setRecentWeight] = useState<WeightData | null>(null);
-  const [targetWeight, setTargetWeight] = useState<number>(75); // Mock target weight
-  const [recentMeasurements, setRecentMeasurements] = useState<MeasurementsData | null>(null);
+  const [targetWeight, setTargetWeight] = useState<number>(75);
+  const [measurementsHistory, setMeasurementsHistory] = useState<MeasurementsData[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -34,7 +35,6 @@ export const StatsCards = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get user role and data
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -45,6 +45,8 @@ export const StatsCards = () => {
         setUserRole(profile.role);
 
         if (profile.role === 'client') {
+          const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+
           // Fetch most recent weight
           const { data: weightData } = await supabase
             .from('weekly_checkins')
@@ -58,7 +60,7 @@ export const StatsCards = () => {
             setRecentWeight(weightData);
           }
 
-          // Fetch most recent measurements
+          // Fetch measurements history
           const { data: measurementsData } = await supabase
             .from('measurements')
             .select(`
@@ -69,12 +71,11 @@ export const StatsCards = () => {
               arm_cm,
               created_at
             `)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+            .gte('created_at', thirtyDaysAgo)
+            .order('created_at', { ascending: true });
 
           if (measurementsData) {
-            setRecentMeasurements(measurementsData);
+            setMeasurementsHistory(measurementsData);
           }
         }
 
@@ -124,7 +125,7 @@ export const StatsCards = () => {
 
   const calculateWeightProgress = () => {
     if (!recentWeight) return 0;
-    const initialWeight = 85; // Mock initial weight
+    const initialWeight = 85;
     const current = recentWeight.weight_kg;
     const target = targetWeight;
     
@@ -134,20 +135,40 @@ export const StatsCards = () => {
     ));
   };
 
-  const renderMeasurementCard = (title: string, value: number | null, unit: string) => {
+  const renderMeasurementCard = (title: string, measurementKey: keyof MeasurementsData) => {
+    const data = measurementsHistory.map(m => ({
+      value: m[measurementKey],
+      date: new Date(m.created_at).toLocaleDateString()
+    })).filter(d => d.value !== null);
+
     return (
       <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
-        <div className="flex flex-col">
+        <div className="flex flex-col h-[200px]">
           <h2 className="text-lg font-medium text-primary/80 mb-2">{title}</h2>
-          {value ? (
-            <>
-              <p className="text-2xl font-bold text-primary">{value}{unit}</p>
-              <span className="text-sm text-accent mt-2">
-                Last updated: {recentMeasurements?.created_at ? new Date(recentMeasurements.created_at).toLocaleDateString() : 'N/A'}
-              </span>
-            </>
+          {data.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data}>
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 12 }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  domain={['auto', 'auto']}
+                />
+                <Tooltip />
+                <Area 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#2D6A4F" 
+                  fill="#95D5B2" 
+                  fillOpacity={0.3}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-muted-foreground">No measurement recorded</p>
+            <p className="text-sm text-muted-foreground">No measurement data recorded</p>
           )}
         </div>
       </GlassCard>
@@ -216,11 +237,11 @@ export const StatsCards = () => {
             </div>
           </GlassCard>
 
-          {renderMeasurementCard("Waist", recentMeasurements?.waist_cm, "cm")}
-          {renderMeasurementCard("Chest", recentMeasurements?.chest_cm, "cm")}
-          {renderMeasurementCard("Hips", recentMeasurements?.hips_cm, "cm")}
-          {renderMeasurementCard("Thigh", recentMeasurements?.thigh_cm, "cm")}
-          {renderMeasurementCard("Arm", recentMeasurements?.arm_cm, "cm")}
+          {renderMeasurementCard("Waist", "waist_cm")}
+          {renderMeasurementCard("Chest", "chest_cm")}
+          {renderMeasurementCard("Hips", "hips_cm")}
+          {renderMeasurementCard("Thigh", "thigh_cm")}
+          {renderMeasurementCard("Arm", "arm_cm")}
         </>
       )}
     </div>
