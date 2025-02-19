@@ -6,6 +6,7 @@ import { StatsCards } from "@/components/dashboard/StatsCards";
 import { BookSessionDialog } from "@/components/sessions/BookSessionDialog";
 import { PaymentsCard } from "@/components/dashboard/PaymentsCard";
 import { MissedPaymentsCard } from "@/components/dashboard/MissedPaymentsCard";
+import { ClientProgress } from "@/components/dashboard/ClientProgress";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
@@ -50,7 +51,7 @@ const Dashboard = () => {
     };
 
     fetchUserData();
-  }, []);
+  }, [toast]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
@@ -63,12 +64,21 @@ const Dashboard = () => {
                 <BookSessionDialog coachId={coachId} />
               )}
               <div className="text-sm text-muted-foreground">
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                {new Date().toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
               </div>
             </div>
           </div>
 
           <StatsCards />
+          
+          {userRole === 'client' && (
+            <ClientProgress />
+          )}
           
           {userRole === 'trainer' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
