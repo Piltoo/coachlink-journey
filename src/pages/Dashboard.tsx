@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { BookSessionDialog } from "@/components/sessions/BookSessionDialog";
+import { PaymentsCard } from "@/components/dashboard/PaymentsCard";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
@@ -34,7 +35,6 @@ const Dashboard = () => {
 
       setUserRole(profile.role as UserRole);
 
-      // If user is a client, fetch their coach's ID
       if (profile.role === 'client') {
         const { data: coachClient } = await supabase
           .from('coach_clients')
@@ -68,6 +68,12 @@ const Dashboard = () => {
           </div>
 
           <StatsCards />
+          
+          {userRole === 'trainer' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <PaymentsCard />
+            </div>
+          )}
         </div>
       </div>
     </div>

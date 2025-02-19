@@ -128,6 +128,44 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          due_date: string
+          id: string
+          paid_at: string | null
+          status: string | null
+          subscription_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          due_date: string
+          id?: string
+          paid_at?: string | null
+          status?: string | null
+          subscription_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          paid_at?: string | null
+          status?: string | null
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -193,6 +231,60 @@ export type Database = {
           },
           {
             foreignKeyName: "programs_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          billing_cycle_days: number
+          client_id: string
+          coach_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["subscription_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          billing_cycle_days: number
+          client_id: string
+          coach_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          billing_cycle_days?: number
+          client_id?: string
+          coach_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["subscription_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_coach_id_fkey"
             columns: ["coach_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -344,6 +436,7 @@ export type Database = {
     Enums: {
       answer_status: "pending" | "completed"
       session_status: "pending" | "confirmed" | "completed" | "cancelled"
+      subscription_status: "active" | "pending" | "cancelled" | "expired"
       user_role: "admin" | "trainer" | "client"
     }
     CompositeTypes: {

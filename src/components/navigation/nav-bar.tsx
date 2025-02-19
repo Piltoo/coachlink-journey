@@ -94,12 +94,20 @@ export function NavBar() {
                   Dashboard
                 </Link>
                 {userRole === 'trainer' && (
-                  <Link
-                    to="/clients"
-                    className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                  >
-                    Clients
-                  </Link>
+                  <>
+                    <Link
+                      to="/clients"
+                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                    >
+                      Clients
+                    </Link>
+                    <Link
+                      to="/subscriptions"
+                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                    >
+                      Subscriptions
+                    </Link>
+                  </>
                 )}
                 {userRole === 'client' && (
                   <>
@@ -139,4 +147,4 @@ export function NavBar() {
       </div>
     </nav>
   );
-}
+};
