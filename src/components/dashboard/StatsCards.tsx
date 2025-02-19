@@ -130,6 +130,33 @@ export const StatsCards = () => {
           </GlassCard>
         </>
       )}
+      {userRole === 'client' && (
+        <>
+          <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+            <div className="flex flex-col">
+              <h2 className="text-lg font-medium text-primary/80 mb-2">Upcoming Sessions</h2>
+              <p className="text-4xl font-bold text-primary">{upcomingSessions}</p>
+              <span className="text-sm text-accent mt-2">Next 48 hours</span>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+            <div className="flex flex-col">
+              <h2 className="text-lg font-medium text-primary/80 mb-2">Completed Workouts</h2>
+              <p className="text-4xl font-bold text-primary">8</p>
+              <span className="text-sm text-accent mt-2">This month</span>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+            <div className="flex flex-col">
+              <h2 className="text-lg font-medium text-primary/80 mb-2">Active Programs</h2>
+              <p className="text-4xl font-bold text-primary">2</p>
+              <span className="text-sm text-accent mt-2">In progress</span>
+            </div>
+          </GlassCard>
+        </>
+      )}
     </div>
   );
 };
