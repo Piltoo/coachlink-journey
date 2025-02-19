@@ -9,6 +9,7 @@ import { UploadCloud } from "lucide-react";
 import { format, isAfter, parseISO, addDays } from "date-fns";
 
 type Measurement = {
+  neck_cm: string;
   waist_cm: string;
   hips_cm: string;
   thigh_cm: string;
@@ -19,6 +20,7 @@ export const WeeklyCheckInForm = () => {
   const { toast } = useToast();
   const [weight, setWeight] = useState("");
   const [measurements, setMeasurements] = useState<Measurement>({
+    neck_cm: "",
     waist_cm: "",
     hips_cm: "",
     thigh_cm: "",
@@ -176,6 +178,7 @@ export const WeeklyCheckInForm = () => {
         .from('measurements')
         .insert({
           checkin_id: checkinData.id,
+          neck_cm: parseFloat(measurements.neck_cm),
           waist_cm: parseFloat(measurements.waist_cm),
           hips_cm: parseFloat(measurements.hips_cm),
           thigh_cm: parseFloat(measurements.thigh_cm),
@@ -205,9 +208,10 @@ export const WeeklyCheckInForm = () => {
         description: "Your weekly check-in has been submitted.",
       });
 
-      // Reset form and update state
+      // Reset form
       setWeight("");
       setMeasurements({
+        neck_cm: "",
         waist_cm: "",
         hips_cm: "",
         thigh_cm: "",
@@ -262,39 +266,57 @@ export const WeeklyCheckInForm = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <Label htmlFor="weight" className="text-sm font-medium text-gray-700">
-              Weight (kg)
-            </Label>
-            <Input 
-              id="weight"
-              type="number"
-              step="0.1"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              placeholder="Enter weight in kg"
-              required
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="weight" className="text-sm font-medium text-gray-700">
+                Weight (kg)
+              </Label>
+              <Input 
+                id="weight"
+                type="number"
+                step="0.1"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="Enter weight in kg"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="neck_cm" className="text-sm font-medium text-gray-700">
+                Neck (cm)
+              </Label>
+              <Input
+                id="neck_cm"
+                type="number"
+                step="0.1"
+                value={measurements.neck_cm}
+                onChange={(e) => handleMeasurementChange('neck_cm', e.target.value)}
+                placeholder="Enter neck measurement"
+                required
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(measurements).map(([key, value]) => (
-              <div key={key}>
-                <Label htmlFor={key} className="text-sm font-medium text-gray-700">
-                  {key.replace('_cm', '').split('_').map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                  ).join(' ')} (cm)
-                </Label>
-                <Input
-                  id={key}
-                  type="number"
-                  step="0.1"
-                  value={value}
-                  onChange={(e) => handleMeasurementChange(key as keyof Measurement, e.target.value)}
-                  placeholder={`Enter ${key.replace('_cm', '')} measurement`}
-                  required
-                />
-              </div>
+            {Object.entries(measurements)
+              .filter(([key]) => key !== 'neck_cm')
+              .map(([key, value]) => (
+                <div key={key}>
+                  <Label htmlFor={key} className="text-sm font-medium text-gray-700">
+                    {key.replace('_cm', '').split('_').map(word => 
+                      word.charAt(0).toUpperCase() + word.slice(1)
+                    ).join(' ')} (cm)
+                  </Label>
+                  <Input
+                    id={key}
+                    type="number"
+                    step="0.1"
+                    value={value}
+                    onChange={(e) => handleMeasurementChange(key as keyof Measurement, e.target.value)}
+                    placeholder={`Enter ${key.replace('_cm', '')} measurement`}
+                    required
+                  />
+                </div>
             ))}
           </div>
 
@@ -355,6 +377,7 @@ export const WeeklyCheckInForm = () => {
                 </p>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <p className="text-sm text-gray-600">Weight: {measurement.weekly_checkins.weight_kg} kg</p>
+                  <p className="text-sm text-gray-600">Neck: {measurement.neck_cm} cm</p>
                   <p className="text-sm text-gray-600">Waist: {measurement.waist_cm} cm</p>
                   <p className="text-sm text-gray-600">Hips: {measurement.hips_cm} cm</p>
                   <p className="text-sm text-gray-600">Thigh: {measurement.thigh_cm} cm</p>
