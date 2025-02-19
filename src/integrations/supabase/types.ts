@@ -9,6 +9,86 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      checkin_answers: {
+        Row: {
+          answer: string
+          checkin_id: string
+          created_at: string | null
+          id: string
+          question_id: string
+        }
+        Insert: {
+          answer: string
+          checkin_id: string
+          created_at?: string | null
+          id?: string
+          question_id: string
+        }
+        Update: {
+          answer?: string
+          checkin_id?: string
+          created_at?: string | null
+          id?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkin_answers_checkin_id_fkey"
+            columns: ["checkin_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_checkins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkin_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_checkin_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      measurements: {
+        Row: {
+          arm_cm: number | null
+          checkin_id: string
+          chest_cm: number | null
+          created_at: string | null
+          hips_cm: number | null
+          id: string
+          thigh_cm: number | null
+          waist_cm: number | null
+        }
+        Insert: {
+          arm_cm?: number | null
+          checkin_id: string
+          chest_cm?: number | null
+          created_at?: string | null
+          hips_cm?: number | null
+          id?: string
+          thigh_cm?: number | null
+          waist_cm?: number | null
+        }
+        Update: {
+          arm_cm?: number | null
+          checkin_id?: string
+          chest_cm?: number | null
+          created_at?: string | null
+          hips_cm?: number | null
+          id?: string
+          thigh_cm?: number | null
+          waist_cm?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "measurements_checkin_id_fkey"
+            columns: ["checkin_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_checkins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -36,6 +116,65 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_checkin_questions: {
+        Row: {
+          created_at: string | null
+          id: string
+          question: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      weekly_checkins: {
+        Row: {
+          check_in_date: string | null
+          client_id: string
+          created_at: string | null
+          id: string
+          status: Database["public"]["Enums"]["answer_status"] | null
+          updated_at: string | null
+          weight_kg: number | null
+        }
+        Insert: {
+          check_in_date?: string | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["answer_status"] | null
+          updated_at?: string | null
+          weight_kg?: number | null
+        }
+        Update: {
+          check_in_date?: string | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["answer_status"] | null
+          updated_at?: string | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_checkins_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -44,6 +183,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      answer_status: "pending" | "completed"
       user_role: "admin" | "trainer" | "client"
     }
     CompositeTypes: {

@@ -1,5 +1,6 @@
 
 import { GlassCard } from "@/components/ui/glass-card";
+import { WeeklyCheckInForm } from "@/components/check-ins/WeeklyCheckInForm";
 
 const Dashboard = () => {
   return (
@@ -39,7 +40,9 @@ const Dashboard = () => {
             </GlassCard>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          <WeeklyCheckInForm />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-6">
               <h3 className="text-xl font-semibold text-primary mb-4">Upcoming Sessions</h3>
               <div className="space-y-4">
