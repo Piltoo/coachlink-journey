@@ -70,10 +70,10 @@ export function NavBar() {
                   Clients
                 </Link>
                 <Link
-                  to="/programs"
+                  to="/measurements"
                   className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
                 >
-                  Programs
+                  Measurements
                 </Link>
                 <Button
                   variant="ghost"
