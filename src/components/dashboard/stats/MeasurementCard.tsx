@@ -1,6 +1,7 @@
 
 import { GlassCard } from "@/components/ui/glass-card";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Ruler } from "lucide-react";
 
 type MeasurementData = {
   value: number | null;
@@ -16,7 +17,10 @@ export const MeasurementCard = ({ title, data }: MeasurementCardProps) => {
   return (
     <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
       <div className="flex flex-col h-[150px]">
-        <h2 className="text-sm font-medium text-primary/80 mb-1">{title}</h2>
+        <div className="flex items-center gap-2 mb-1">
+          <Ruler className="w-4 h-4 text-primary/80" />
+          <h2 className="text-sm font-medium text-primary/80">{title}</h2>
+        </div>
         {data.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
