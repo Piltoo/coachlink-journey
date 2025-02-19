@@ -1,12 +1,21 @@
-
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { WeeklyCheckInForm } from "@/components/check-ins/WeeklyCheckInForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 type UserRole = 'client' | 'trainer' | 'admin';
+
+type Client = {
+  id: string;
+  full_name: string | null;
+  email: string;
+  status: string;
+};
 
 type CheckIn = {
   id: string;
@@ -21,6 +30,10 @@ type CheckIn = {
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [recentCheckIns, setRecentCheckIns] = useState<CheckIn[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [newClientEmail, setNewClientEmail] = useState("");
+  const [newClientName, setNewClientName] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -46,8 +59,37 @@ const Dashboard = () => {
 
       setUserRole(profile.role as UserRole);
 
-      // If user is a trainer, fetch recent check-ins
       if (profile.role === 'trainer') {
+        // Fetch coach's clients
+        const { data: clientsData, error: clientsError } = await supabase
+          .from('coach_clients')
+          .select(`
+            client:client_id (
+              id,
+              full_name,
+              email
+            ),
+            status
+          `)
+          .eq('coach_id', user.id);
+
+        if (clientsError) {
+          toast({
+            title: "Error",
+            description: "Failed to load clients",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setClients(clientsData.map(c => ({
+          id: c.client.id,
+          full_name: c.client.full_name,
+          email: c.client.email,
+          status: c.status
+        })));
+
+        // Fetch recent check-ins
         const { data: checkIns, error: checkInsError } = await supabase
           .from('weekly_checkins')
           .select(`
@@ -79,8 +121,51 @@ const Dashboard = () => {
   }, []);
 
   const handleCheckInClick = (checkInId: string) => {
-    // Navigate to the check-in details page (you'll need to create this page)
     navigate(`/check-ins/${checkInId}`);
+  };
+
+  const handleClientClick = (clientId: string) => {
+    navigate(`/clients/${clientId}`);
+  };
+
+  const handleInviteClient = async () => {
+    if (!newClientEmail || !newClientName) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsInviting(true);
+
+    try {
+      const { data, error } = await supabase
+        .rpc('invite_client', {
+          client_email: newClientEmail,
+          client_name: newClientName
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Client invitation sent successfully",
+      });
+
+      // Reset form
+      setNewClientEmail("");
+      setNewClientName("");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to invite client",
+        variant: "destructive",
+      });
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   return (
@@ -93,7 +178,111 @@ const Dashboard = () => {
               {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
           </div>
-          
+
+          {userRole === 'trainer' && (
+            <>
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-primary">My Clients</h2>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>Invite New Client</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Invite a New Client</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label htmlFor="clientName" className="text-sm font-medium">
+                          Client Name
+                        </label>
+                        <Input
+                          id="clientName"
+                          value={newClientName}
+                          onChange={(e) => setNewClientName(e.target.value)}
+                          placeholder="Enter client's name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="clientEmail" className="text-sm font-medium">
+                          Client Email
+                        </label>
+                        <Input
+                          id="clientEmail"
+                          type="email"
+                          value={newClientEmail}
+                          onChange={(e) => setNewClientEmail(e.target.value)}
+                          placeholder="Enter client's email"
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleInviteClient}
+                        disabled={isInviting}
+                        className="w-full"
+                      >
+                        {isInviting ? "Sending Invitation..." : "Send Invitation"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {clients.map((client) => (
+                  <GlassCard
+                    key={client.id}
+                    className="bg-white/40 backdrop-blur-lg border border-green-100 p-6 cursor-pointer hover:bg-white/50 transition-colors"
+                    onClick={() => handleClientClick(client.id)}
+                  >
+                    <div className="flex flex-col space-y-2">
+                      <h3 className="font-semibold text-lg text-primary">
+                        {client.full_name || client.email}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{client.email}</p>
+                      <span className={`text-sm px-2 py-1 rounded-full w-fit ${
+                        client.status === 'active' 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {client.status}
+                      </span>
+                    </div>
+                  </GlassCard>
+                ))}
+              </div>
+
+              <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-6">
+                <h3 className="text-xl font-semibold text-primary mb-4">Recent Client Check-ins</h3>
+                <div className="space-y-4">
+                  {recentCheckIns.map((checkIn) => (
+                    <div
+                      key={checkIn.id}
+                      onClick={() => handleCheckInClick(checkIn.id)}
+                      className="flex items-center justify-between p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors cursor-pointer"
+                    >
+                      <div>
+                        <p className="font-medium text-primary">
+                          {checkIn.profiles.full_name || checkIn.profiles.email}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Weight: {checkIn.weight_kg}kg
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-accent">
+                          {new Date(checkIn.created_at).toLocaleDateString()}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Check-in Complete</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </GlassCard>
+            </>
+          )}
+
+          {userRole === 'client' && <WeeklyCheckInForm />}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
               <div className="flex flex-col">
@@ -119,38 +308,6 @@ const Dashboard = () => {
               </div>
             </GlassCard>
           </div>
-
-          {userRole === 'client' && <WeeklyCheckInForm />}
-
-          {userRole === 'trainer' && (
-            <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-6">
-              <h3 className="text-xl font-semibold text-primary mb-4">Recent Client Check-ins</h3>
-              <div className="space-y-4">
-                {recentCheckIns.map((checkIn) => (
-                  <div
-                    key={checkIn.id}
-                    onClick={() => handleCheckInClick(checkIn.id)}
-                    className="flex items-center justify-between p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors cursor-pointer"
-                  >
-                    <div>
-                      <p className="font-medium text-primary">
-                        {checkIn.profiles.full_name || checkIn.profiles.email}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Weight: {checkIn.weight_kg}kg
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-accent">
-                        {new Date(checkIn.created_at).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Check-in Complete</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </GlassCard>
-          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-6">
