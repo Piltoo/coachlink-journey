@@ -1,9 +1,71 @@
 
+import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const StatsCards = () => {
+  const [unreadCheckIns, setUnreadCheckIns] = useState(0);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get user role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setUserRole(profile.role);
+
+        // If user is a trainer, fetch pending check-ins count
+        if (profile.role === 'trainer') {
+          const { data: checkIns, error } = await supabase
+            .from('weekly_checkins')
+            .select('id, client_id', { count: 'exact' })
+            .eq('status', 'pending')
+            .in('client_id', 
+              supabase
+                .from('coach_clients')
+                .select('client_id')
+                .eq('coach_id', user.id)
+            );
+
+          if (error) {
+            toast({
+              title: "Error",
+              description: "Failed to load check-ins count",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          setUnreadCheckIns(checkIns?.length || 0);
+        }
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {userRole === 'trainer' && (
+        <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+          <div className="flex flex-col">
+            <h2 className="text-lg font-medium text-primary/80 mb-2">Pending Check-ins</h2>
+            <p className="text-4xl font-bold text-primary">{unreadCheckIns}</p>
+            <span className="text-sm text-accent mt-2">Requires your review</span>
+          </div>
+        </GlassCard>
+      )}
+      
       <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
         <div className="flex flex-col">
           <h2 className="text-lg font-medium text-primary/80 mb-2">Active Clients</h2>
