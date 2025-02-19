@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { MessageCircle, Dumbbell, Settings2, LogOut } from "lucide-react";
+import { MessageCircle, Dumbbell, Settings2, LogOut, Home, Users } from "lucide-react";
 
 type UserRole = 'client' | 'trainer' | 'admin';
 
@@ -88,20 +88,30 @@ export function NavBar() {
           <div className="flex items-center space-x-1">
             {user ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
+                  size="icon"
+                  title="Dashboard"
                 >
-                  Dashboard
-                </Link>
+                  <Link to="/dashboard">
+                    <Home className="h-4 w-4" />
+                  </Link>
+                </Button>
                 {userRole === 'trainer' && (
                   <>
-                    <Link
-                      to="/clients"
-                      className="text-primary hover:text-accent hover:bg-secondary px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
+                      size="icon"
+                      title="Clients"
                     >
-                      Clients
-                    </Link>
+                      <Link to="/clients">
+                        <Users className="h-4 w-4" />
+                      </Link>
+                    </Button>
                     <Button
                       asChild
                       variant="ghost"
