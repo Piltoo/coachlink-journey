@@ -1,6 +1,8 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { subDays } from "date-fns";
 import { WorkoutCard } from "./stats/WorkoutCard";
 import { WeightProgressCard } from "./stats/WeightProgressCard";
 import { MeasurementCard } from "./stats/MeasurementCard";
@@ -111,8 +113,6 @@ export const StatsCards = () => {
           }
 
           setUnreadCheckIns(checkIns?.length || 0);
-          
-          // TODO: Replace with actual messages query once message table is created
           setUnreadMessages(3); // Temporary mock data
         }
       }
@@ -122,10 +122,12 @@ export const StatsCards = () => {
   }, [toast]);
 
   const getMeasurementData = (key: keyof MeasurementsData) => {
-    return measurementsHistory.map(m => ({
-      value: m[key],
-      date: new Date(m.created_at).toLocaleDateString()
-    })).filter(d => d.value !== null);
+    return measurementsHistory
+      .map(m => ({
+        value: m[key] as number | null,
+        date: new Date(m.created_at).toLocaleDateString()
+      }))
+      .filter((d): d is { value: number; date: string } => d.value !== null);
   };
 
   return (
