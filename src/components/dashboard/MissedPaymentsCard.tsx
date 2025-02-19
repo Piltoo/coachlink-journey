@@ -57,13 +57,13 @@ export const MissedPaymentsCard = () => {
   return (
     <Card className="bg-white/40 backdrop-blur-lg border border-red-100">
       <CardHeader>
-        <CardTitle className="text-lg font-medium text-red-600">Förfallna Betalningar</CardTitle>
+        <CardTitle className="text-lg font-medium text-red-600">Missed Payments</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="text-2xl font-bold text-red-600">
             {totalMissed.toFixed(2)} kr
-            <span className="text-sm font-normal text-muted-foreground ml-2">totalt förfallet</span>
+            <span className="text-sm font-normal text-muted-foreground ml-2">total overdue</span>
           </div>
           <div className="space-y-2">
             {missedPayments.map((payment) => (
@@ -71,7 +71,7 @@ export const MissedPaymentsCard = () => {
                 <div className="flex flex-col">
                   <span className="font-medium">{payment.subscription.client.full_name}</span>
                   <span className="text-red-500">
-                    Förföll {format(new Date(payment.due_date), 'MMM d, yyyy')}
+                    Due {format(new Date(payment.due_date), 'MMM d, yyyy')}
                   </span>
                 </div>
                 <span className="font-medium text-red-600">{Number(payment.amount).toFixed(2)} kr</span>
