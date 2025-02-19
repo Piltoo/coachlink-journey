@@ -26,16 +26,29 @@ export const StatsCards = () => {
 
         // If user is a trainer, fetch pending check-ins count
         if (profile.role === 'trainer') {
+          // First, get the client IDs for this coach
+          const { data: coachClients, error: clientsError } = await supabase
+            .from('coach_clients')
+            .select('client_id')
+            .eq('coach_id', user.id);
+
+          if (clientsError) {
+            toast({
+              title: "Error",
+              description: "Failed to load clients",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          const clientIds = coachClients?.map(client => client.client_id) || [];
+
+          // Then fetch pending check-ins for these clients
           const { data: checkIns, error } = await supabase
             .from('weekly_checkins')
-            .select('id, client_id', { count: 'exact' })
+            .select('id, client_id')
             .eq('status', 'pending')
-            .in('client_id', 
-              supabase
-                .from('coach_clients')
-                .select('client_id')
-                .eq('coach_id', user.id)
-            );
+            .in('client_id', clientIds);
 
           if (error) {
             toast({
