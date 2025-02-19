@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Clients from "./pages/Clients";
 import Measurements from "./pages/Measurements";
 import Program from "./pages/Program";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import NutritionAndTraining from "./pages/NutritionAndTraining";
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/clients" element={<Clients />} />
             <Route path="/measurements" element={<Measurements />} />
             <Route path="/program" element={<Program />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="/nutrition-training" element={<NutritionAndTraining />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
