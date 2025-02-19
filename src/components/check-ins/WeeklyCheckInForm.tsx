@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,6 @@ import { UploadCloud } from "lucide-react";
 import { format, isAfter, parseISO, addDays } from "date-fns";
 
 type Measurement = {
-  chest_cm: string;
   waist_cm: string;
   hips_cm: string;
   thigh_cm: string;
@@ -21,7 +19,6 @@ export const WeeklyCheckInForm = () => {
   const { toast } = useToast();
   const [weight, setWeight] = useState("");
   const [measurements, setMeasurements] = useState<Measurement>({
-    chest_cm: "",
     waist_cm: "",
     hips_cm: "",
     thigh_cm: "",
@@ -179,7 +176,6 @@ export const WeeklyCheckInForm = () => {
         .from('measurements')
         .insert({
           checkin_id: checkinData.id,
-          chest_cm: parseFloat(measurements.chest_cm),
           waist_cm: parseFloat(measurements.waist_cm),
           hips_cm: parseFloat(measurements.hips_cm),
           thigh_cm: parseFloat(measurements.thigh_cm),
@@ -212,7 +208,6 @@ export const WeeklyCheckInForm = () => {
       // Reset form and update state
       setWeight("");
       setMeasurements({
-        chest_cm: "",
         waist_cm: "",
         hips_cm: "",
         thigh_cm: "",
@@ -271,7 +266,7 @@ export const WeeklyCheckInForm = () => {
             <Label htmlFor="weight" className="text-sm font-medium text-gray-700">
               Weight (kg)
             </Label>
-            <Input
+            <Input 
               id="weight"
               type="number"
               step="0.1"
@@ -360,7 +355,6 @@ export const WeeklyCheckInForm = () => {
                 </p>
                 <div className="grid grid-cols-2 gap-4 mt-2">
                   <p className="text-sm text-gray-600">Weight: {measurement.weekly_checkins.weight_kg} kg</p>
-                  <p className="text-sm text-gray-600">Chest: {measurement.chest_cm} cm</p>
                   <p className="text-sm text-gray-600">Waist: {measurement.waist_cm} cm</p>
                   <p className="text-sm text-gray-600">Hips: {measurement.hips_cm} cm</p>
                   <p className="text-sm text-gray-600">Thigh: {measurement.thigh_cm} cm</p>
