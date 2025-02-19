@@ -27,7 +27,7 @@ const Index = () => {
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-white rounded-lg text-base font-medium"
               >
-                <Link to="/dashboard">Launch Platform</Link>
+                <Link to="/auth">Launch Platform</Link>
               </Button>
               <Button
                 asChild
@@ -35,7 +35,7 @@ const Index = () => {
                 size="lg"
                 className="border-accent text-accent hover:bg-accent hover:text-white rounded-lg text-base font-medium"
               >
-                <Link to="/programs">View Features</Link>
+                <Link to="/auth">View Features</Link>
               </Button>
             </div>
           </div>
