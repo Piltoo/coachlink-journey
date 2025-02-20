@@ -234,15 +234,27 @@ const Dashboard = () => {
                 </GlassCard>
 
                 <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-6">
-                  <h2 className="text-xl font-semibold text-primary mb-4">Pending Check-ins</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-primary">Unread Check-ins</h2>
+                    {pendingCheckIns.length > 0 && (
+                      <span className="inline-flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground rounded-full text-sm font-medium">
+                        {pendingCheckIns.length}
+                      </span>
+                    )}
+                  </div>
                   <div className="space-y-4">
                     {pendingCheckIns.map((checkIn) => (
                       <div 
                         key={checkIn.id} 
-                        className="p-4 bg-white/60 rounded-lg space-y-2 cursor-pointer hover:bg-white/80 transition-colors"
+                        className="p-4 bg-white/60 rounded-lg space-y-2 cursor-pointer hover:bg-white/80 transition-colors border-l-4 border-primary"
                         onClick={() => handleCheckInClick(checkIn.id)}
                       >
-                        <p className="font-medium">{checkIn.client.full_name || checkIn.client.email}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium">{checkIn.client.full_name || checkIn.client.email}</p>
+                          <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded-full">
+                            Unread
+                          </span>
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           Submitted: {new Date(checkIn.created_at).toLocaleDateString()}
                         </p>
@@ -250,7 +262,7 @@ const Dashboard = () => {
                       </div>
                     ))}
                     {pendingCheckIns.length === 0 && (
-                      <p className="text-center text-muted-foreground">No pending check-ins</p>
+                      <p className="text-center text-muted-foreground">No unread check-ins</p>
                     )}
                   </div>
                 </GlassCard>
