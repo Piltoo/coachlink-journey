@@ -33,13 +33,20 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      console.log("Current user:", user);
+      
+      if (!user) {
+        console.log("No user found");
+        return;
+      }
 
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
         .single();
+
+      console.log("User profile:", profile, "Error:", error);
 
       if (error) {
         toast({
@@ -71,6 +78,8 @@ const Dashboard = () => {
           .eq('status', 'pending')
           .order('start_time', { ascending: true });
 
+        console.log("Session requests:", sessions, "Error:", sessionsError);
+
         if (sessionsError) {
           console.error('Sessions error:', sessionsError);
           toast({
@@ -89,6 +98,7 @@ const Dashboard = () => {
               email: session.client_profile?.email
             }
           }));
+          console.log("Formatted sessions:", formattedSessions);
           setSessionRequests(formattedSessions);
         }
       }
