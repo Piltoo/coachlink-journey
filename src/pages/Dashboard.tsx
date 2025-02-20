@@ -143,40 +143,45 @@ const Dashboard = () => {
           
           {userRole === 'trainer' && (
             <>
-              <div className="grid grid-cols-1 gap-6">
-                <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-6">
-                  <h2 className="text-xl font-semibold text-primary mb-4">Pending Session Requests</h2>
-                  <div className="space-y-4">
+              <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-4">
+                <h2 className="text-lg font-semibold text-primary mb-2">Pending Session Requests</h2>
+                {sessionRequests.length > 0 ? (
+                  <div className="space-y-3">
                     {sessionRequests.map((session) => (
-                      <div key={session.id} className="p-4 bg-white/60 rounded-lg space-y-2">
-                        <p className="font-medium">{session.client.full_name || session.client.email}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(session.start_time).toLocaleString()}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button 
-                            size="sm"
-                            variant="default"
-                            onClick={() => handleSessionResponse(session.id, true)}
-                          >
-                            Approve
-                          </Button>
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleSessionResponse(session.id, false)}
-                          >
-                            Decline
-                          </Button>
+                      <div key={session.id} className="p-3 bg-white/60 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{session.client.full_name || session.client.email}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(session.start_time).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm"
+                              variant="default"
+                              className="h-8 px-3 text-xs"
+                              onClick={() => handleSessionResponse(session.id, true)}
+                            >
+                              Approve
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-3 text-xs"
+                              onClick={() => handleSessionResponse(session.id, false)}
+                            >
+                              Decline
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
-                    {sessionRequests.length === 0 && (
-                      <p className="text-center text-muted-foreground">No pending session requests</p>
-                    )}
                   </div>
-                </GlassCard>
-              </div>
+                ) : (
+                  <p className="text-center text-muted-foreground text-sm py-2">No pending session requests</p>
+                )}
+              </GlassCard>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <PaymentsCard />
