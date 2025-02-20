@@ -66,7 +66,7 @@ const Dashboard = () => {
 
       // Fetch session requests and check-ins for trainers
       if (profile.role === 'trainer') {
-        // Fetch pending session requests
+        // Fetch pending session requests with client profile information
         const { data: sessions, error: sessionsError } = await supabase
           .from('workout_sessions')
           .select(`
@@ -74,7 +74,8 @@ const Dashboard = () => {
             start_time,
             end_time,
             status,
-            client:client_id (
+            client_id,
+            client_profile:profiles!workout_sessions_client_id_fkey (
               full_name,
               email
             )
@@ -84,16 +85,28 @@ const Dashboard = () => {
           .order('start_time', { ascending: true });
 
         if (sessionsError) {
+          console.error('Sessions error:', sessionsError);
           toast({
             title: "Error",
             description: "Failed to load session requests",
             variant: "destructive",
           });
         } else {
-          setSessionRequests(sessions || []);
+          // Transform the data to match the SessionRequest type
+          const formattedSessions: SessionRequest[] = (sessions || []).map(session => ({
+            id: session.id,
+            start_time: session.start_time,
+            end_time: session.end_time,
+            status: session.status,
+            client: {
+              full_name: session.client_profile?.full_name,
+              email: session.client_profile?.email
+            }
+          }));
+          setSessionRequests(formattedSessions);
         }
 
-        // Fetch pending check-ins
+        // Fetch pending check-ins with client profile information
         const { data: checkIns, error: checkInsError } = await supabase
           .from('weekly_checkins')
           .select(`
@@ -101,7 +114,7 @@ const Dashboard = () => {
             created_at,
             weight_kg,
             status,
-            client:client_id (
+            client_profile:profiles!weekly_checkins_client_id_fkey (
               full_name,
               email
             )
@@ -110,13 +123,25 @@ const Dashboard = () => {
           .order('created_at', { ascending: false });
 
         if (checkInsError) {
+          console.error('Check-ins error:', checkInsError);
           toast({
             title: "Error",
             description: "Failed to load check-ins",
             variant: "destructive",
           });
         } else {
-          setPendingCheckIns(checkIns || []);
+          // Transform the data to match the CheckIn type
+          const formattedCheckIns: CheckIn[] = (checkIns || []).map(checkIn => ({
+            id: checkIn.id,
+            created_at: checkIn.created_at,
+            weight_kg: checkIn.weight_kg,
+            status: checkIn.status,
+            client: {
+              full_name: checkIn.client_profile?.full_name,
+              email: checkIn.client_profile?.email
+            }
+          }));
+          setPendingCheckIns(formattedCheckIns);
         }
       }
     };
