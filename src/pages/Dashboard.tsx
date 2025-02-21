@@ -117,7 +117,7 @@ const Dashboard = () => {
     try {
       const { error } = await supabase
         .from('workout_sessions')
-        .update({ status: approved ? 'approved' : 'rejected' })
+        .update({ status: approved ? 'confirmed' : 'cancelled' })
         .eq('id', sessionId);
 
       if (error) throw error;
@@ -126,7 +126,7 @@ const Dashboard = () => {
       
       toast({
         title: "Success",
-        description: `Session ${approved ? 'approved' : 'rejected'} successfully`,
+        description: `Session ${approved ? 'confirmed' : 'cancelled'} successfully`,
       });
     } catch (error) {
       console.error('Error updating session:', error);
