@@ -91,30 +91,34 @@ export function StatsCards() {
   if (userRole !== 'coach') return null;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <GlassCard className="p-4">
-        <h3 className="text-sm font-medium text-gray-600 mb-2">Active Clients</h3>
-        <p className="text-4xl font-bold text-[#1B4332]">{stats.activeClients.value}</p>
-        <p className="text-xs text-green-600 mt-1">{stats.activeClients.description}</p>
-      </GlassCard>
+    <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-2 gap-4">
+        <GlassCard className="p-4">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Active Clients</h3>
+          <p className="text-4xl font-bold text-[#1B4332]">{stats.activeClients.value}</p>
+          <p className="text-xs text-green-600 mt-1">{stats.activeClients.description}</p>
+        </GlassCard>
 
-      <GlassCard className="p-4">
-        <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Check-ins</h3>
-        <p className="text-4xl font-bold text-[#1B4332]">{stats.pendingCheckins.value}</p>
-        <p className="text-xs text-gray-500 mt-1">{stats.pendingCheckins.description}</p>
-      </GlassCard>
+        <GlassCard className="p-4">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Check-ins</h3>
+          <p className="text-4xl font-bold text-[#1B4332]">{stats.pendingCheckins.value}</p>
+          <p className="text-xs text-gray-500 mt-1">{stats.pendingCheckins.description}</p>
+        </GlassCard>
+      </div>
 
-      <GlassCard className="p-4">
-        <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
-        <p className="text-4xl font-bold text-[#1B4332]">0</p>
-        <p className="text-xs text-gray-500 mt-1">No assignments today</p>
-      </GlassCard>
+      <div className="grid grid-cols-2 gap-4">
+        <GlassCard className="p-4">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
+          <p className="text-4xl font-bold text-[#1B4332]">0</p>
+          <p className="text-xs text-gray-500 mt-1">No assignments today</p>
+        </GlassCard>
 
-      <GlassCard className="p-4">
-        <h3 className="text-sm font-medium text-gray-600 mb-2">Unread Messages</h3>
-        <p className="text-4xl font-bold text-[#1B4332]">{stats.unreadMessages.value}</p>
-        <p className="text-xs text-gray-500 mt-1">{stats.unreadMessages.description}</p>
-      </GlassCard>
+        <GlassCard className="p-4">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Unread Messages</h3>
+          <p className="text-4xl font-bold text-[#1B4332]">{stats.unreadMessages.value}</p>
+          <p className="text-xs text-gray-500 mt-1">{stats.unreadMessages.description}</p>
+        </GlassCard>
+      </div>
     </div>
   );
 }
