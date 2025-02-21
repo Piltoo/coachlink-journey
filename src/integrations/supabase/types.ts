@@ -142,6 +142,7 @@ export type Database = {
           coach_id: string
           created_at: string | null
           fats_per_100g: number
+          fiber_per_100g: number
           id: string
           name: string
           protein_per_100g: number
@@ -152,6 +153,7 @@ export type Database = {
           coach_id: string
           created_at?: string | null
           fats_per_100g: number
+          fiber_per_100g?: number
           id?: string
           name: string
           protein_per_100g: number
@@ -162,6 +164,7 @@ export type Database = {
           coach_id?: string
           created_at?: string | null
           fats_per_100g?: number
+          fiber_per_100g?: number
           id?: string
           name?: string
           protein_per_100g?: number

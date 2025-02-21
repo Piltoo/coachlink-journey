@@ -15,6 +15,7 @@ type Ingredient = {
   protein_per_100g: number;
   carbs_per_100g: number;
   fats_per_100g: number;
+  fiber_per_100g: number;
 };
 
 type IngredientsSectionProps = {
@@ -30,6 +31,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
     protein_per_100g: "",
     carbs_per_100g: "",
     fats_per_100g: "",
+    fiber_per_100g: "",
   });
   const { toast } = useToast();
 
@@ -44,6 +46,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         protein_per_100g: parseFloat(newIngredient.protein_per_100g),
         carbs_per_100g: parseFloat(newIngredient.carbs_per_100g),
         fats_per_100g: parseFloat(newIngredient.fats_per_100g),
+        fiber_per_100g: parseFloat(newIngredient.fiber_per_100g),
         coach_id: user.id,
       };
 
@@ -65,6 +68,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         protein_per_100g: "",
         carbs_per_100g: "",
         fats_per_100g: "",
+        fiber_per_100g: "",
       });
       onIngredientAdded();
     } catch (error) {
@@ -143,6 +147,16 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
                     placeholder="0"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fiber">Fiber (g)</Label>
+                  <Input
+                    id="fiber"
+                    type="number"
+                    value={newIngredient.fiber_per_100g}
+                    onChange={(e) => setNewIngredient({ ...newIngredient, fiber_per_100g: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
               </div>
               <Button onClick={handleAddIngredient} className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white">
                 Add Ingredient
@@ -160,7 +174,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
                 <h3 className="font-medium">{ingredient.name}</h3>
                 <p className="text-sm text-gray-500">
                   Per 100g: {ingredient.calories_per_100g} cal | P: {ingredient.protein_per_100g}g | 
-                  C: {ingredient.carbs_per_100g}g | F: {ingredient.fats_per_100g}g
+                  C: {ingredient.carbs_per_100g}g | F: {ingredient.fats_per_100g}g | Fiber: {ingredient.fiber_per_100g}g
                 </p>
               </div>
             </div>
