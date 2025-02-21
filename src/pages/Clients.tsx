@@ -31,13 +31,13 @@ const Clients = () => {
 
     console.log("Current coach ID:", user.id);
 
-    // First, let's get all coach-client relationships with explicit foreign key reference
+    // Fetch coach-client relationships
     const { data: clientsData, error: clientsError } = await supabase
       .from('coach_clients')
       .select(`
         client_id,
         status,
-        profiles!coach_clients_client_id_fkey (
+        profiles (
           id,
           full_name,
           email
