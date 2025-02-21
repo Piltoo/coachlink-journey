@@ -4,16 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GlassCard } from "@/components/ui/glass-card";
 
-interface DashboardStat {
+type DashboardStat = {
   value: number;
   description: string;
-}
+};
 
-interface DashboardStats {
+type DashboardStats = {
   activeClients: DashboardStat;
   pendingCheckins: DashboardStat;
   unreadMessages: DashboardStat;
-}
+};
 
 export function StatsCards() {
   const [stats, setStats] = useState<DashboardStats>({

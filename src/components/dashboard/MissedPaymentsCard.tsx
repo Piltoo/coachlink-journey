@@ -1,8 +1,9 @@
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { GlassCard } from "@/components/ui/glass-card";
 
 type MissedPayment = {
   id: string;
@@ -55,11 +56,11 @@ export const MissedPaymentsCard = () => {
   }, []);
 
   return (
-    <Card className="bg-white/40 backdrop-blur-lg border border-red-100">
+    <GlassCard>
       <CardHeader>
         <CardTitle className="text-lg font-medium text-red-600">Missed Payments</CardTitle>
       </CardHeader>
-      <CardContent>
+      <div className="p-6 pt-0">
         <div className="space-y-4">
           <div className="text-2xl font-bold text-red-600">
             {totalMissed.toFixed(2)} kr
@@ -79,7 +80,7 @@ export const MissedPaymentsCard = () => {
             ))}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </GlassCard>
   );
 };
