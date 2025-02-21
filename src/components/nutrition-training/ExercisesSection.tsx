@@ -1,48 +1,19 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Exercise, muscleGroups } from "./types/exercise";
+import { ExerciseListView } from "./exercise/ExerciseListView";
+import { ExerciseCardView } from "./exercise/ExerciseCardView";
+import { ExerciseForm } from "./exercise/ExerciseForm";
 
-type Exercise = {
-  id: string;
-  name: string;
-  description: string;
-  muscle_group: string;
-  start_position_image: string | null;
-  mid_position_image: string | null;
-  difficulty_level: string;
-  equipment_needed: string | null;
-  instructions: string;
-};
-
-type ExercisesSectionProps = {
+interface ExercisesSectionProps {
   exercises: Exercise[];
   onExerciseChange: () => void;
-};
-
-const muscleGroups = [
-  "All",
-  "Shoulders",
-  "Chest",
-  "Biceps",
-  "Triceps",
-  "Abdominal",
-  "Quadriceps",
-  "Hamstrings",
-  "Gluts"
-];
-
-const difficultyLevels = [
-  "Beginner",
-  "Intermediate",
-  "Advanced",
-];
+}
 
 export function ExercisesSection({ exercises, onExerciseChange }: ExercisesSectionProps) {
   const [showAddExercise, setShowAddExercise] = useState(false);
@@ -187,80 +158,6 @@ export function ExercisesSection({ exercises, onExerciseChange }: ExercisesSecti
     selectedMuscleGroup === "All" || exercise.muscle_group === selectedMuscleGroup
   );
 
-  const renderExerciseList = () => {
-    if (selectedMuscleGroup === "All") {
-      return (
-        <div className="space-y-2">
-          {filteredExercises.map((exercise) => (
-            <div
-              key={exercise.id}
-              onClick={() => handleExerciseClick(exercise)}
-              className="p-4 bg-white/60 hover:bg-white/80 cursor-pointer border-b border-gray-200/50 transition-colors duration-200 flex justify-between items-center"
-            >
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">{exercise.name}</h3>
-                  <span className="text-sm text-gray-500">{exercise.muscle_group}</span>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">{exercise.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredExercises.map((exercise) => (
-          <div
-            key={exercise.id}
-            className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out cursor-pointer hover:bg-white/80"
-            onClick={() => handleExerciseClick(exercise)}
-          >
-            <div className="space-y-2">
-              <div className="flex justify-between items-start">
-                <h3 className="font-medium text-lg">{exercise.name}</h3>
-                <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                  {exercise.difficulty_level}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600">{exercise.description}</p>
-              <div className="flex items-center text-sm text-gray-500">
-                <span className="font-medium">Muscle Group:</span>
-                <span className="ml-2">{exercise.muscle_group}</span>
-              </div>
-              {exercise.equipment_needed && (
-                <div className="flex items-center text-sm text-gray-500">
-                  <span className="font-medium">Equipment:</span>
-                  <span className="ml-2">{exercise.equipment_needed}</span>
-                </div>
-              )}
-              {(exercise.start_position_image || exercise.mid_position_image) && (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {exercise.start_position_image && (
-                    <img
-                      src={exercise.start_position_image}
-                      alt="Start position"
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                  )}
-                  {exercise.mid_position_image && (
-                    <img
-                      src={exercise.mid_position_image}
-                      alt="Mid position"
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <div className="bg-white/40 backdrop-blur-lg rounded-lg border border-gray-200/50 p-6 shadow-sm transition-all duration-200 ease-in-out">
       <div className="flex flex-col space-y-6">
@@ -277,103 +174,10 @@ export function ExercisesSection({ exercises, onExerciseChange }: ExercisesSecti
               <DialogHeader>
                 <DialogTitle>Add New Exercise</DialogTitle>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Exercise Name</Label>
-                    <Input
-                      id="name"
-                      value={newExercise.name}
-                      onChange={(e) => setNewExercise({ ...newExercise, name: e.target.value })}
-                      placeholder="Enter exercise name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="muscle-group">Muscle Group</Label>
-                    <Select
-                      value={newExercise.muscle_group}
-                      onValueChange={(value) => setNewExercise({ ...newExercise, muscle_group: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select muscle group" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {muscleGroups.filter(group => group !== "All").map((group) => (
-                          <SelectItem key={group} value={group}>{group}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="difficulty">Difficulty Level</Label>
-                    <Select
-                      value={newExercise.difficulty_level}
-                      onValueChange={(value) => setNewExercise({ ...newExercise, difficulty_level: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select difficulty" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {difficultyLevels.map((level) => (
-                          <SelectItem key={level} value={level}>{level}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="equipment">Equipment Needed</Label>
-                    <Input
-                      id="equipment"
-                      value={newExercise.equipment_needed}
-                      onChange={(e) => setNewExercise({ ...newExercise, equipment_needed: e.target.value })}
-                      placeholder="Required equipment"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Short Description</Label>
-                  <Textarea
-                    id="description"
-                    value={newExercise.description}
-                    onChange={(e) => setNewExercise({ ...newExercise, description: e.target.value })}
-                    placeholder="Brief description of the exercise"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="instructions">Detailed Instructions</Label>
-                  <Textarea
-                    id="instructions"
-                    value={newExercise.instructions}
-                    onChange={(e) => setNewExercise({ ...newExercise, instructions: e.target.value })}
-                    placeholder="Step-by-step instructions"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="start-image">Start Position Image URL</Label>
-                    <Input
-                      id="start-image"
-                      value={newExercise.start_position_image}
-                      onChange={(e) => setNewExercise({ ...newExercise, start_position_image: e.target.value })}
-                      placeholder="URL for starting position"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="mid-image">Mid Position Image URL</Label>
-                    <Input
-                      id="mid-image"
-                      value={newExercise.mid_position_image}
-                      onChange={(e) => setNewExercise({ ...newExercise, mid_position_image: e.target.value })}
-                      placeholder="URL for mid position"
-                    />
-                  </div>
-                </div>
-                <Button onClick={handleAddExercise} className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white">
-                  Add Exercise
-                </Button>
-              </div>
+              <ExerciseForm data={newExercise} onChange={setNewExercise} />
+              <Button onClick={handleAddExercise} className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white">
+                Add Exercise
+              </Button>
             </DialogContent>
           </Dialog>
         </div>
@@ -396,7 +200,17 @@ export function ExercisesSection({ exercises, onExerciseChange }: ExercisesSecti
         </div>
 
         {filteredExercises.length > 0 ? (
-          renderExerciseList()
+          selectedMuscleGroup === "All" ? (
+            <ExerciseListView 
+              exercises={filteredExercises}
+              onExerciseClick={handleExerciseClick}
+            />
+          ) : (
+            <ExerciseCardView
+              exercises={filteredExercises}
+              onExerciseClick={handleExerciseClick}
+            />
+          )
         ) : (
           <div className="text-center py-12 text-gray-500">
             {selectedMuscleGroup === "All" 
@@ -411,110 +225,23 @@ export function ExercisesSection({ exercises, onExerciseChange }: ExercisesSecti
           <DialogHeader>
             <DialogTitle>Edit or Delete Exercise</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Exercise Name</Label>
-                <Input
-                  id="edit-name"
-                  value={editingExercise.name}
-                  onChange={(e) => setEditingExercise({ ...editingExercise, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-muscle-group">Muscle Group</Label>
-                <Select
-                  value={editingExercise.muscle_group}
-                  onValueChange={(value) => setEditingExercise({ ...editingExercise, muscle_group: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {muscleGroups.map((group) => (
-                      <SelectItem key={group} value={group}>{group}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-difficulty">Difficulty Level</Label>
-                <Select
-                  value={editingExercise.difficulty_level}
-                  onValueChange={(value) => setEditingExercise({ ...editingExercise, difficulty_level: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {difficultyLevels.map((level) => (
-                      <SelectItem key={level} value={level}>{level}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-equipment">Equipment Needed</Label>
-                <Input
-                  id="edit-equipment"
-                  value={editingExercise.equipment_needed}
-                  onChange={(e) => setEditingExercise({ ...editingExercise, equipment_needed: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Short Description</Label>
-              <Textarea
-                id="edit-description"
-                value={editingExercise.description}
-                onChange={(e) => setEditingExercise({ ...editingExercise, description: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-instructions">Detailed Instructions</Label>
-              <Textarea
-                id="edit-instructions"
-                value={editingExercise.instructions}
-                onChange={(e) => setEditingExercise({ ...editingExercise, instructions: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-start-image">Start Position Image URL</Label>
-                <Input
-                  id="edit-start-image"
-                  value={editingExercise.start_position_image}
-                  onChange={(e) => setEditingExercise({ ...editingExercise, start_position_image: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-mid-image">Mid Position Image URL</Label>
-                <Input
-                  id="edit-mid-image"
-                  value={editingExercise.mid_position_image}
-                  onChange={(e) => setEditingExercise({ ...editingExercise, mid_position_image: e.target.value })}
-                />
-              </div>
-            </div>
-            <DialogFooter className="flex justify-between gap-4 sm:justify-between">
-              <Button
-                variant="destructive"
-                onClick={handleDeleteExercise}
-                className="flex-1"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </Button>
-              <Button
-                onClick={handleUpdateExercise}
-                className="flex-1 bg-[#a7cca4] hover:bg-[#96bb93] text-white"
-              >
-                Update Exercise
-              </Button>
-            </DialogFooter>
-          </div>
+          <ExerciseForm data={editingExercise} onChange={setEditingExercise} isEdit />
+          <DialogFooter className="flex justify-between gap-4 sm:justify-between">
+            <Button
+              variant="destructive"
+              onClick={handleDeleteExercise}
+              className="flex-1"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+            <Button
+              onClick={handleUpdateExercise}
+              className="flex-1 bg-[#a7cca4] hover:bg-[#96bb93] text-white"
+            >
+              Update Exercise
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
