@@ -4,20 +4,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GlassCard } from "@/components/ui/glass-card";
 
-// Define simple, non-recursive types for stats
-type Stat = {
+interface DashboardStat {
   value: number;
   description: string;
-};
+}
 
-type Stats = {
-  activeClients: Stat;
-  pendingCheckins: Stat;
-  unreadMessages: Stat;
-};
+interface DashboardStats {
+  activeClients: DashboardStat;
+  pendingCheckins: DashboardStat;
+  unreadMessages: DashboardStat;
+}
 
 export function StatsCards() {
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState<DashboardStats>({
     activeClients: { value: 0, description: "0 new this week" },
     pendingCheckins: { value: 0, description: "Requires review" },
     unreadMessages: { value: 0, description: "New messages" }
@@ -123,12 +122,7 @@ export function StatsCards() {
         </GlassCard>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <GlassCard>
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Pending Session Requests</h3>
-          <p className="text-sm text-gray-500">No pending session requests</p>
-        </GlassCard>
-
+      <div className="grid grid-cols-1 gap-6">
         <GlassCard>
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Unread Messages</h3>
           <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.unreadMessages.value}</p>
