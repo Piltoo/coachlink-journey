@@ -9,11 +9,11 @@ type DashboardStat = {
   description: string;
 };
 
-type DashboardStats = {
+interface DashboardStats {
   activeClients: DashboardStat;
   pendingCheckins: DashboardStat;
   unreadMessages: DashboardStat;
-};
+}
 
 export function StatsCards() {
   const [stats, setStats] = useState<DashboardStats>({
