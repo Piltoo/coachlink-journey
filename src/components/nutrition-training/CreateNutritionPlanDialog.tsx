@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Ingredient, PartialMeal, MealIngredient, PartialMealIngredient } from "./types";
@@ -22,6 +22,8 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [expandedMealIndex, setExpandedMealIndex] = useState<number | null>(null);
+  const [selectedMealIndex, setSelectedMealIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
   const searchIngredients = async (search: string) => {
@@ -33,7 +35,6 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
     try {
       console.log("Searching for:", search.trim());
 
-      // Search in coach's ingredients with improved query
       const { data: coachIngredients, error: coachError } = await supabase
         .from("ingredients")
         .select()
@@ -47,7 +48,6 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
 
       console.log("Coach ingredients found:", coachIngredients);
 
-      // Search in all coaches ingredients with improved query
       const { data: allCoachesIngredients, error: allCoachesError } = await supabase
         .from("ingredients_all_coaches")
         .select()
@@ -61,11 +61,10 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
 
       console.log("All coaches ingredients found:", allCoachesIngredients);
 
-      // Convert all_coaches ingredients to match Ingredient type
       const convertedAllCoachesIngredients: Ingredient[] = (allCoachesIngredients || [])
-        .filter(item => item.name && item.calories_per_100g) // Filter out invalid entries
+        .filter(item => item.name && item.calories_per_100g)
         .map(item => ({
-          id: `template_${item.name}`, // Temporary ID for template ingredients
+          id: `template_${item.name}`,
           name: item.name || "",
           calories_per_100g: Number(item.calories_per_100g) || 0,
           protein_per_100g: Number(item.protein_per_100g) || 0,
@@ -74,7 +73,6 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
           fiber_per_100g: Number(item.fibers_per_100g) || 0
         }));
 
-      // Combine and deduplicate results based on name
       const combined = [...(coachIngredients || []), ...convertedAllCoachesIngredients];
       const uniqueIngredients = combined.filter((item, index, self) =>
         index === self.findIndex(t => t.name.toLowerCase() === item.name.toLowerCase())
@@ -93,9 +91,22 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
   };
 
   const addMeal = () => {
+    const lastMeal = meals[meals.length - 1];
+    if (meals.length > 0 && (!lastMeal.ingredients || lastMeal.ingredients.length === 0)) {
+      toast({
+        title: "Warning",
+        description: "Please add ingredients to the current meal before creating a new one",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const defaultMealNames = ["Frukost", "Mellanmål", "Lunch", "Mellanmål", "Middag", "Mellanmål"];
     const newMealName = defaultMealNames[meals.length] || `Meal ${meals.length + 1}`;
+    const newMealIndex = meals.length;
     setMeals([...meals, { name: newMealName, ingredients: [] }]);
+    setExpandedMealIndex(newMealIndex);
+    setSelectedMealIndex(newMealIndex);
   };
 
   const removeMeal = (index: number) => {
@@ -108,8 +119,20 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
     setMeals(updatedMeals);
   };
 
-  const addIngredientToMeal = async (mealIndex: number, ingredient: Ingredient) => {
-    // If this is a template ingredient, create it first
+  const toggleMealExpansion = (index: number) => {
+    setExpandedMealIndex(expandedMealIndex === index ? null : index);
+  };
+
+  const addIngredientToMeal = async (ingredient: Ingredient) => {
+    if (selectedMealIndex === null) {
+      toast({
+        title: "Warning",
+        description: "Please select a meal first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     let ingredientId = ingredient.id;
     if (ingredient.id.startsWith('template_')) {
       try {
@@ -145,8 +168,10 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
       ingredient,
       quantity_grams: 100
     };
-    updatedMeals[mealIndex].ingredients.push(newIngredient);
+    updatedMeals[selectedMealIndex].ingredients.push(newIngredient);
     setMeals(updatedMeals);
+    setSearchTerm("");
+    setIngredients([]);
   };
 
   const updateIngredientQuantity = (mealIndex: number, ingredientIndex: number, quantity: number) => {
@@ -208,7 +233,6 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
-      // Create nutrition plan
       const { data: planData, error: planError } = await supabase
         .from("nutrition_plans")
         .insert([
@@ -223,7 +247,6 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
 
       if (planError) throw planError;
 
-      // Create meals
       for (let i = 0; i < meals.length; i++) {
         const meal = meals[i];
         const { data: mealData, error: mealError } = await supabase
@@ -240,7 +263,6 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
 
         if (mealError) throw mealError;
 
-        // Create meal ingredients
         if (meal.ingredients && meal.ingredients.length > 0) {
           const { error: ingredientsError } = await supabase
             .from("meal_ingredients")
@@ -310,122 +332,138 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
             </div>
           </div>
 
+          <div className="grid grid-cols-4 items-center gap-4">
+            <div className="col-span-3">
+              <Input
+                type="text"
+                placeholder="Search ingredients..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  searchIngredients(e.target.value);
+                }}
+              />
+              {searchTerm && ingredients.length > 0 && (
+                <div className="absolute z-10 w-[calc(75%-1rem)] mt-1 bg-white border rounded-md shadow-lg">
+                  {ingredients.map((ingredient) => (
+                    <div
+                      key={ingredient.id}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => addIngredientToMeal(ingredient)}
+                    >
+                      {ingredient.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button onClick={addMeal} className="col-span-1">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Meal
+            </Button>
+          </div>
+
           <ScrollArea className="flex-1 px-4">
-            <div className="space-y-6">
+            <div className="space-y-4">
               {meals.map((meal, mealIndex) => (
-                <div key={mealIndex} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-4">
+                <div 
+                  key={mealIndex} 
+                  className={`border rounded-lg ${selectedMealIndex === mealIndex ? 'ring-2 ring-primary' : ''}`}
+                >
+                  <div 
+                    className="flex justify-between items-center p-4 cursor-pointer"
+                    onClick={() => {
+                      toggleMealExpansion(mealIndex);
+                      setSelectedMealIndex(mealIndex);
+                    }}
+                  >
                     <Input
                       value={meal.name}
-                      onChange={(e) => updateMealName(mealIndex, e.target.value)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        updateMealName(mealIndex, e.target.value);
+                      }}
                       className="w-48"
                       placeholder="Meal name"
+                      onClick={(e) => e.stopPropagation()}
                     />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeMeal(mealIndex)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  <div className="mb-4">
-                    <Label>Add Ingredients</Label>
-                    <div className="relative">
-                      <Input
-                        type="text"
-                        placeholder="Search ingredients..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value);
-                          searchIngredients(e.target.value);
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeMeal(mealIndex);
                         }}
-                      />
-                      {searchTerm && ingredients.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
-                          {ingredients.map((ingredient) => (
-                            <div
-                              key={ingredient.id}
-                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                              onClick={() => {
-                                addIngredientToMeal(mealIndex, ingredient);
-                                setSearchTerm("");
-                                setIngredients([]);
-                              }}
-                            >
-                              {ingredient.name}
-                            </div>
-                          ))}
-                        </div>
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                      {expandedMealIndex === mealIndex ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
                       )}
                     </div>
                   </div>
 
-                  {meal.ingredients && meal.ingredients.length > 0 && (
-                    <div className="space-y-4">
-                      {meal.ingredients.map((ingredient, ingredientIndex) => (
-                        <div
-                          key={ingredientIndex}
-                          className="flex items-center gap-4 bg-gray-50 p-2 rounded"
-                        >
-                          <span className="flex-1">{ingredient.ingredient.name}</span>
-                          <Input
-                            type="number"
-                            value={ingredient.quantity_grams}
-                            onChange={(e) =>
-                              updateIngredientQuantity(
-                                mealIndex,
-                                ingredientIndex,
-                                Number(e.target.value)
-                              )
-                            }
-                            className="w-24"
-                            min="0"
-                          />
-                          <span className="text-sm text-gray-500">grams</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              removeIngredientFromMeal(mealIndex, ingredientIndex)
-                            }
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
+                  {expandedMealIndex === mealIndex && (
+                    <div className="p-4 border-t">
+                      {meal.ingredients && meal.ingredients.length > 0 && (
+                        <div className="space-y-4">
+                          {meal.ingredients.map((ingredient, ingredientIndex) => (
+                            <div
+                              key={ingredientIndex}
+                              className="flex items-center gap-4 bg-gray-50 p-2 rounded"
+                            >
+                              <span className="flex-1">{ingredient.ingredient.name}</span>
+                              <Input
+                                type="number"
+                                value={ingredient.quantity_grams}
+                                onChange={(e) =>
+                                  updateIngredientQuantity(
+                                    mealIndex,
+                                    ingredientIndex,
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-24"
+                                min="0"
+                              />
+                              <span className="text-sm text-gray-500">grams</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  removeIngredientFromMeal(mealIndex, ingredientIndex)
+                                }
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
 
-                      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium mb-2">Meal Nutrition</h4>
-                        <div className="text-sm text-gray-600">
-                          {Object.entries(calculateMealNutrition(meal.ingredients)).map(
-                            ([key, value]) => (
-                              <div key={key} className="flex justify-between">
-                                <span className="capitalize">{key}:</span>
-                                <span>
-                                  {Math.round(value)}
-                                  {key === "calories" ? " kcal" : "g"}
-                                </span>
-                              </div>
-                            )
-                          )}
+                          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-medium mb-2">Meal Nutrition</h4>
+                            <div className="text-sm text-gray-600">
+                              {Object.entries(calculateMealNutrition(meal.ingredients)).map(
+                                ([key, value]) => (
+                                  <div key={key} className="flex justify-between">
+                                    <span className="capitalize">{key}:</span>
+                                    <span>
+                                      {Math.round(value)}
+                                      {key === "calories" ? " kcal" : "g"}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </div>
               ))}
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={addMeal}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Meal
-              </Button>
             </div>
           </ScrollArea>
 
