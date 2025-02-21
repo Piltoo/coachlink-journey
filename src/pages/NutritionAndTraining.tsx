@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -48,7 +47,6 @@ const NutritionAndTraining = () => {
   }, []);
 
   const handleAddTrainingPlan = () => {
-    // TODO: Implement add training plan functionality
     toast({
       title: "Coming Soon",
       description: "Adding new training plans will be available soon.",
@@ -56,14 +54,13 @@ const NutritionAndTraining = () => {
   };
 
   const handleAddNutritionPlan = () => {
-    // TODO: Implement add nutrition plan functionality
     toast({
       title: "Coming Soon",
       description: "Adding new nutrition plans will be available soon.",
     });
   };
 
-  if (userRole !== 'trainer') {
+  if (userRole !== 'coach') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50 pt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

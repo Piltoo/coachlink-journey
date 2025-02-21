@@ -143,12 +143,12 @@ export default function Settings() {
     document.documentElement.style.setProperty('--accent', accentColor);
   };
 
-  if (userRole !== 'trainer') {
+  if (userRole !== 'coach') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50 flex items-center justify-center">
         <Card className="p-6 bg-white/40 backdrop-blur-lg border border-green-100">
           <h2 className="text-xl font-semibold text-primary mb-2">Access Restricted</h2>
-          <p className="text-muted-foreground">Only trainers can access the settings page.</p>
+          <p className="text-muted-foreground">Only coaches can access the settings page.</p>
         </Card>
       </div>
     );
