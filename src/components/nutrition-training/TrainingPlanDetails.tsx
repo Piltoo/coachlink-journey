@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -46,30 +45,34 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     if (!plan.exercises?.length) return;
     
     try {
+      const { data: templateData, error: templateError } = await supabase
+        .from('training_plan_templates')
+        .select('exercise_details')
+        .eq('id', plan.id)
+        .single();
+
+      if (templateError) throw templateError;
+
       const { data, error } = await supabase
         .from('exercises')
         .select('id, name, description')
         .in('id', plan.exercises);
 
-      if (error) {
-        console.error('Error fetching exercises:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch exercises",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
 
       const orderedExercises = plan.exercises.map(exerciseId => {
         const exerciseData = data.find(e => e.id === exerciseId);
+        const savedDetails = templateData?.exercise_details?.find(
+          (d: any) => d.exercise_id === exerciseId
+        );
+        
         if (exerciseData) {
           return {
             ...exerciseData,
-            sets: 3,
-            reps: 12,
-            weight: 0,
-            order_index: plan.exercises!.indexOf(exerciseId)
+            sets: savedDetails?.sets || 3,
+            reps: savedDetails?.reps || 12,
+            weight: savedDetails?.weight || 0,
+            order_index: savedDetails?.order_index || plan.exercises!.indexOf(exerciseId)
           };
         }
         return null;
@@ -153,12 +156,21 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
   const handleSaveChanges = async () => {
     try {
-      const orderedExerciseIds = exercises.sort((a, b) => a.order_index - b.order_index).map(e => e.id);
+      const exerciseDetails = exercises
+        .sort((a, b) => a.order_index - b.order_index)
+        .map(exercise => ({
+          exercise_id: exercise.id,
+          sets: exercise.sets || 3,
+          reps: exercise.reps || 12,
+          weight: exercise.weight || 0,
+          order_index: exercise.order_index
+        }));
 
       const { error } = await supabase
         .from('training_plan_templates')
         .update({
-          exercises: orderedExerciseIds,
+          exercises: exerciseDetails.map(e => e.exercise_id),
+          exercise_details: exerciseDetails,
           updated_at: new Date().toISOString()
         })
         .eq('id', plan.id);
