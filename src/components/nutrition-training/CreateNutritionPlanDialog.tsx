@@ -302,38 +302,38 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl min-h-[80vh] max-h-[90vh] w-[95vw] overflow-hidden flex flex-col p-6">
-        <DialogHeader>
-          <DialogTitle className="text-xl">Create Nutrition Plan</DialogTitle>
+      <DialogContent className="max-w-7xl min-h-[90vh] max-h-[95vh] w-[98vw] overflow-hidden flex flex-col p-8 bg-gradient-to-b from-white to-gray-50">
+        <DialogHeader className="border-b pb-6">
+          <DialogTitle className="text-2xl font-bold text-primary">Create Nutrition Plan</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col gap-4">
-          <div className="grid gap-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
+        <div className="flex-1 overflow-hidden flex flex-col gap-6 mt-6">
+          <div className="grid gap-6">
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="title" className="text-right font-semibold text-gray-700">
                 Title
               </Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="col-span-3"
+                className="col-span-3 border-gray-300 focus:border-primary"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="description" className="text-right font-semibold text-gray-700">
                 Description
               </Label>
               <Input
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="col-span-3"
+                className="col-span-3 border-gray-300 focus:border-primary"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
+          <div className="grid grid-cols-4 items-center gap-6">
             <div className="col-span-3">
               <Input
                 type="text"
@@ -343,13 +343,14 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
                   setSearchTerm(e.target.value);
                   searchIngredients(e.target.value);
                 }}
+                className="w-full border-gray-300 focus:border-primary"
               />
               {searchTerm && ingredients.length > 0 && (
-                <div className="absolute z-10 w-[calc(75%-1rem)] mt-1 bg-white border rounded-md shadow-lg">
+                <div className="absolute z-10 w-[calc(75%-1.5rem)] mt-1 bg-white border rounded-md shadow-lg">
                   {ingredients.map((ingredient) => (
                     <div
                       key={ingredient.id}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      className="px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
                       onClick={() => addIngredientToMeal(ingredient)}
                     >
                       {ingredient.name}
@@ -358,21 +359,23 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
                 </div>
               )}
             </div>
-            <Button onClick={addMeal} className="col-span-1">
+            <Button onClick={addMeal} className="col-span-1 bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" />
               Add Meal
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 px-4">
+          <ScrollArea className="flex-1 px-4 -mx-4">
             <div className="space-y-4">
               {meals.map((meal, mealIndex) => (
                 <div 
                   key={mealIndex} 
-                  className={`border rounded-lg ${selectedMealIndex === mealIndex ? 'ring-2 ring-primary' : ''}`}
+                  className={`border rounded-lg bg-white shadow-sm transition-all ${
+                    selectedMealIndex === mealIndex ? 'ring-2 ring-primary' : ''
+                  }`}
                 >
                   <div 
-                    className="flex justify-between items-center p-4 cursor-pointer"
+                    className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => {
                       toggleMealExpansion(mealIndex);
                       setSelectedMealIndex(mealIndex);
@@ -384,7 +387,7 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
                         e.stopPropagation();
                         updateMealName(mealIndex, e.target.value);
                       }}
-                      className="w-48"
+                      className="w-48 border-gray-300 focus:border-primary"
                       placeholder="Meal name"
                       onClick={(e) => e.stopPropagation()}
                     />
@@ -400,23 +403,23 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
                         <Trash2 className="w-4 h-4" />
                       </Button>
                       {expandedMealIndex === mealIndex ? (
-                        <ChevronUp className="w-4 h-4" />
+                        <ChevronUp className="w-4 h-4 text-gray-600" />
                       ) : (
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="w-4 h-4 text-gray-600" />
                       )}
                     </div>
                   </div>
 
                   {expandedMealIndex === mealIndex && (
-                    <div className="p-4 border-t">
+                    <div className="p-4 border-t bg-gray-50">
                       {meal.ingredients && meal.ingredients.length > 0 && (
                         <div className="space-y-4">
                           {meal.ingredients.map((ingredient, ingredientIndex) => (
                             <div
                               key={ingredientIndex}
-                              className="flex items-center gap-4 bg-gray-50 p-2 rounded"
+                              className="flex items-center gap-4 bg-white p-3 rounded-md shadow-sm"
                             >
-                              <span className="flex-1">{ingredient.ingredient.name}</span>
+                              <span className="flex-1 font-medium">{ingredient.ingredient.name}</span>
                               <Input
                                 type="number"
                                 value={ingredient.quantity_grams}
@@ -427,7 +430,7 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
                                     Number(e.target.value)
                                   )
                                 }
-                                className="w-24"
+                                className="w-24 border-gray-300 focus:border-primary"
                                 min="0"
                               />
                               <span className="text-sm text-gray-500">grams</span>
@@ -437,19 +440,20 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
                                 onClick={() =>
                                   removeIngredientFromMeal(mealIndex, ingredientIndex)
                                 }
+                                className="hover:bg-gray-100"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           ))}
 
-                          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                            <h4 className="font-medium mb-2">Meal Nutrition</h4>
-                            <div className="text-sm text-gray-600">
+                          <div className="mt-4 p-4 bg-white rounded-lg shadow-sm">
+                            <h4 className="font-medium mb-3 text-gray-800">Meal Nutrition</h4>
+                            <div className="text-sm text-gray-600 space-y-2">
                               {Object.entries(calculateMealNutrition(meal.ingredients)).map(
                                 ([key, value]) => (
                                   <div key={key} className="flex justify-between">
-                                    <span className="capitalize">{key}:</span>
+                                    <span className="capitalize font-medium">{key}:</span>
                                     <span>
                                       {Math.round(value)}
                                       {key === "calories" ? " kcal" : "g"}
@@ -468,37 +472,37 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
             </div>
           </ScrollArea>
 
-          <div className="border-t pt-4 mt-4">
-            <h3 className="font-medium mb-2">Total Daily Nutrition</h3>
-            <div className="grid grid-cols-5 gap-4 text-center">
-              <div>
-                <div className="font-medium">Calories</div>
-                <div>{Math.round(totalNutrition.calories)} kcal</div>
+          <div className="border-t pt-6 mt-6 bg-white rounded-lg shadow-sm p-6">
+            <h3 className="font-semibold mb-4 text-gray-800">Total Daily Nutrition</h3>
+            <div className="grid grid-cols-5 gap-6 text-center">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="font-medium text-gray-700">Calories</div>
+                <div className="text-lg font-semibold text-primary">{Math.round(totalNutrition.calories)} kcal</div>
               </div>
-              <div>
-                <div className="font-medium">Protein</div>
-                <div>{Math.round(totalNutrition.protein)}g</div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="font-medium text-gray-700">Protein</div>
+                <div className="text-lg font-semibold text-primary">{Math.round(totalNutrition.protein)}g</div>
               </div>
-              <div>
-                <div className="font-medium">Carbs</div>
-                <div>{Math.round(totalNutrition.carbs)}g</div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="font-medium text-gray-700">Carbs</div>
+                <div className="text-lg font-semibold text-primary">{Math.round(totalNutrition.carbs)}g</div>
               </div>
-              <div>
-                <div className="font-medium">Fats</div>
-                <div>{Math.round(totalNutrition.fats)}g</div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="font-medium text-gray-700">Fats</div>
+                <div className="text-lg font-semibold text-primary">{Math.round(totalNutrition.fats)}g</div>
               </div>
-              <div>
-                <div className="font-medium">Fiber</div>
-                <div>{Math.round(totalNutrition.fiber)}g</div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="font-medium text-gray-700">Fiber</div>
+                <div className="text-lg font-semibold text-primary">{Math.round(totalNutrition.fiber)}g</div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-4 mt-4">
-            <Button variant="outline" onClick={onClose}>
+          <div className="flex justify-end gap-4 pt-6 border-t mt-auto">
+            <Button variant="outline" onClick={onClose} className="border-gray-300 hover:bg-gray-50">
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={loading}>
+            <Button onClick={handleSubmit} disabled={loading} className="bg-primary hover:bg-primary/90">
               Create Plan
             </Button>
           </div>
