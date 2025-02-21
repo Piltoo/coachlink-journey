@@ -14,7 +14,9 @@ import Program from "./pages/Program";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-import NutritionAndTraining from "./pages/NutritionAndTraining";
+import NutritionPlans from "./pages/NutritionPlans";
+import TrainingPlans from "./pages/TrainingPlans";
+import Ingredients from "./pages/Ingredients";
 
 const queryClient = new QueryClient();
 
@@ -35,7 +37,9 @@ const App = () => (
             <Route path="/program" element={<Program />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/nutrition-training" element={<NutritionAndTraining />} />
+            <Route path="/nutrition-plans" element={<NutritionPlans />} />
+            <Route path="/training-plans" element={<TrainingPlans />} />
+            <Route path="/ingredients" element={<Ingredients />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
