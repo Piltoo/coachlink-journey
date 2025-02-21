@@ -654,7 +654,7 @@ export type Database = {
       message_status: "sent" | "delivered" | "read"
       session_status: "pending" | "confirmed" | "completed" | "cancelled"
       subscription_status: "active" | "pending" | "cancelled" | "expired"
-      user_role: "admin" | "trainer" | "client"
+      user_role: "admin" | "coach" | "client"
     }
     CompositeTypes: {
       [_ in never]: never

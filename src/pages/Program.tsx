@@ -43,8 +43,8 @@ const Program = () => {
     if (profile) {
       setUserRole(profile.role);
       
-      if (profile.role === 'trainer') {
-        // Fetch trainer's clients with explicit column selection
+      if (profile.role === 'coach') {
+        // Fetch coach's clients with explicit column selection
         const { data: clientsData } = await supabase
           .from('coach_clients')
           .select(`
@@ -65,7 +65,7 @@ const Program = () => {
       }
 
       // Fetch programs based on role
-      const query = profile.role === 'trainer'
+      const query = profile.role === 'coach'
         ? supabase.from('programs').select('*').eq('coach_id', user.id)
         : supabase.from('programs').select('*').eq('client_id', user.id);
 
@@ -130,9 +130,9 @@ const Program = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-primary">
-            {userRole === 'trainer' ? 'Client Programs' : 'My Program'}
+            {userRole === 'coach' ? 'Client Programs' : 'My Program'}
           </h1>
-          {userRole === 'trainer' && (
+          {userRole === 'coach' && (
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button>Create New Program</Button>
