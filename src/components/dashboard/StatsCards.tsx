@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +9,11 @@ type DashboardStat = {
   description: string;
 };
 
-type DashboardStats = Record<'activeClients' | 'pendingCheckins' | 'unreadMessages', DashboardStat>;
+type DashboardStats = {
+  activeClients: DashboardStat;
+  pendingCheckins: DashboardStat;
+  unreadMessages: DashboardStat;
+};
 
 export function StatsCards() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -98,7 +103,7 @@ export function StatsCards() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 gap-6">
         <GlassCard>
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Active Clients</h3>
           <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.activeClients.value}</p>
@@ -106,18 +111,20 @@ export function StatsCards() {
         </GlassCard>
 
         <GlassCard>
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Today's Appointments</h3>
+          <div className="h-[calc(100%-2rem)] flex flex-col justify-center">
+            <p className="text-sm text-gray-500">No appointments scheduled for today</p>
+          </div>
+        </GlassCard>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <GlassCard>
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Pending Check-ins</h3>
           <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.pendingCheckins.value}</p>
           <p className="text-sm text-gray-500">{stats.pendingCheckins.description}</p>
         </GlassCard>
 
-        <GlassCard>
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Today's Appointments</h3>
-          <p className="text-sm text-gray-500">No appointments scheduled for today</p>
-        </GlassCard>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6">
         <GlassCard>
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Unread Messages</h3>
           <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.unreadMessages.value}</p>
