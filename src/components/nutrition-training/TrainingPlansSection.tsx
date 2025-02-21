@@ -1,6 +1,5 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,27 +14,23 @@ export function TrainingPlansSection() {
   };
 
   return (
-    <Card className="bg-white/40 backdrop-blur-lg border border-green-100">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle>Training Plans</CardTitle>
+    <div className="bg-white">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">Training Plans</h2>
         <Button 
           onClick={handleAddTrainingPlan}
-          className="bg-[#95D5B2] hover:bg-[#74C69D] text-[#1B4332]"
+          className="bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium"
         >
           <Plus className="mr-2 h-4 w-4" />
           Add New Plan
         </Button>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground mb-4">
-          Create and manage workout plans for your clients here.
-        </p>
-        <div className="grid gap-4">
-          <p className="text-muted-foreground text-center py-4">
-            No training plans created yet.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <p className="text-gray-600 mb-6">
+        Create and manage workout plans for your clients here.
+      </p>
+      <div className="text-center py-12 text-gray-500">
+        No training plans created yet.
+      </div>
+    </div>
   );
 }

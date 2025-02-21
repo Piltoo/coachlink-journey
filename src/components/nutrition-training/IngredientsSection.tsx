@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,12 +78,12 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
   };
 
   return (
-    <Card className="bg-white/40 backdrop-blur-lg border border-green-100">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle>Ingredients Database</CardTitle>
+    <div className="bg-white">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">Ingredients List</h2>
         <Dialog open={showAddIngredient} onOpenChange={setShowAddIngredient}>
           <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button className="bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium">
               <Plus className="mr-2 h-4 w-4" />
               Add New Ingredient
             </Button>
@@ -145,33 +144,33 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
                   />
                 </div>
               </div>
-              <Button onClick={handleAddIngredient} className="w-full">
+              <Button onClick={handleAddIngredient} className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white">
                 Add Ingredient
               </Button>
             </div>
           </DialogContent>
         </Dialog>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4">
+      </div>
+      
+      {ingredients.length > 0 ? (
+        <div className="space-y-4">
           {ingredients.map((ingredient) => (
-            <div key={ingredient.id} className="flex justify-between items-center p-4 border rounded-lg bg-white/60">
-              <div>
-                <h4 className="font-medium">{ingredient.name}</h4>
-                <p className="text-sm text-muted-foreground">
+            <div key={ingredient.id} className="p-4 border rounded-lg">
+              <div className="flex justify-between items-center">
+                <h3 className="font-medium">{ingredient.name}</h3>
+                <p className="text-sm text-gray-500">
                   Per 100g: {ingredient.calories_per_100g} cal | P: {ingredient.protein_per_100g}g | 
                   C: {ingredient.carbs_per_100g}g | F: {ingredient.fats_per_100g}g
                 </p>
               </div>
             </div>
           ))}
-          {ingredients.length === 0 && (
-            <p className="text-muted-foreground text-center py-4">
-              No ingredients added yet. Start building your database by adding ingredients.
-            </p>
-          )}
         </div>
-      </CardContent>
-    </Card>
+      ) : (
+        <div className="text-center py-12 text-gray-500">
+          No ingredients added yet.
+        </div>
+      )}
+    </div>
   );
 }
