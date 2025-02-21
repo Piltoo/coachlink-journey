@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -265,16 +266,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="flex justify-between items-center">
-            {plan.name}
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={handleDeletePlan}
-            >
-              Delete Plan
-            </Button>
-          </DialogTitle>
+          <DialogTitle>{plan.name}</DialogTitle>
         </DialogHeader>
         
         <div className="mt-4 space-y-4">
@@ -366,10 +358,19 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
             </select>
           </div>
 
-          <Button onClick={handleSendToClient} className="w-full">
-            <Send className="w-4 h-4 mr-2" />
-            Send to Client
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="destructive" 
+              onClick={handleDeletePlan}
+              className="flex-1"
+            >
+              Delete Plan
+            </Button>
+            <Button onClick={handleSendToClient} className="flex-1">
+              <Send className="w-4 h-4 mr-2" />
+              Send to Client
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
