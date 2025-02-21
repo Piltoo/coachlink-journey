@@ -23,108 +23,123 @@ type SessionRequest = {
   };
 };
 
+type CheckIn = {
+  id: string;
+  created_at: string;
+  client: {
+    full_name: string | null;
+    email: string;
+  };
+  weight_kg: number;
+  measurements: {
+    waist_cm: number | null;
+    chest_cm: number | null;
+  }[];
+};
+
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([]);
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log("Current user:", user);
-      
-      if (!user) {
-        console.log("No user found");
-        return;
-      }
+    const fetchData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
 
-      console.log("User profile:", profile, "Error:", error);
+        if (!profile) return;
+        setUserRole(profile.role);
 
-      if (error) {
+        if (profile.role === 'coach') {
+          // Fetch session requests
+          const { data: sessions } = await supabase
+            .from('workout_sessions')
+            .select(`
+              id,
+              start_time,
+              end_time,
+              status,
+              client:profiles!workout_sessions_client_id_fkey (
+                full_name,
+                email
+              )
+            `)
+            .eq('status', 'pending')
+            .eq('coach_id', user.id);
+
+          if (sessions) setSessionRequests(sessions);
+
+          // Fetch check-ins
+          const { data: checkInsData } = await supabase
+            .from('weekly_checkins')
+            .select(`
+              id,
+              created_at,
+              weight_kg,
+              client:profiles!weekly_checkins_client_id_fkey (
+                full_name,
+                email
+              ),
+              measurements (
+                waist_cm,
+                chest_cm
+              )
+            `)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+          if (checkInsData) setCheckIns(checkInsData);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
         toast({
           title: "Error",
-          description: "Failed to load user profile",
+          description: "Failed to load dashboard data",
           variant: "destructive",
         });
-        return;
-      }
-
-      setUserRole(profile.role as UserRole);
-
-      if (profile.role === 'coach') {
-        const { data: sessions, error: sessionsError } = await supabase
-          .from('workout_sessions')
-          .select(`
-            id,
-            start_time,
-            end_time,
-            status,
-            client_id,
-            client_profile:profiles!workout_sessions_client_id_fkey (
-              full_name,
-              email
-            )
-          `)
-          .eq('coach_id', user.id)
-          .eq('status', 'pending')
-          .order('start_time', { ascending: true });
-
-        console.log("Session requests:", sessions, "Error:", sessionsError);
-
-        if (sessionsError) {
-          console.error('Sessions error:', sessionsError);
-          toast({
-            title: "Error",
-            description: "Failed to load session requests",
-            variant: "destructive",
-          });
-        } else {
-          const formattedSessions: SessionRequest[] = (sessions || []).map(session => ({
-            id: session.id,
-            start_time: session.start_time,
-            end_time: session.end_time,
-            status: session.status,
-            client: {
-              full_name: session.client_profile?.full_name,
-              email: session.client_profile?.email
-            }
-          }));
-          console.log("Formatted sessions:", formattedSessions);
-          setSessionRequests(formattedSessions);
-        }
       }
     };
 
-    fetchUserData();
+    fetchData();
   }, [toast]);
 
   const handleSessionResponse = async (sessionId: string, approved: boolean) => {
-    const { error } = await supabase
-      .from('workout_sessions')
-      .update({ status: approved ? 'confirmed' : 'cancelled' })
-      .eq('id', sessionId);
+    try {
+      const { error } = await supabase
+        .from('workout_sessions')
+        .update({ status: approved ? 'approved' : 'rejected' })
+        .eq('id', sessionId);
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update session status",
-        variant: "destructive",
-      });
-    } else {
+      if (error) throw error;
+
+      setSessionRequests(prev => prev.filter(session => session.id !== sessionId));
+      
       toast({
         title: "Success",
-        description: `Session ${approved ? 'approved' : 'declined'} successfully`,
+        description: `Session ${approved ? 'approved' : 'rejected'} successfully`,
       });
-      // Refresh session requests
-      setSessionRequests(prev => prev.filter(session => session.id !== sessionId));
+    } catch (error) {
+      console.error('Error updating session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update session",
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleReviewCheckIn = (checkInId: string) => {
+    navigate(`/check-ins/${checkInId}`);
   };
 
   return (
@@ -190,7 +205,33 @@ const Dashboard = () => {
                 </div>
               </GlassCard>
 
-              <PaymentsCard />
+              <GlassCard className="p-4">
+                <h3 className="text-sm font-medium text-gray-600 mb-2">Check-ins</h3>
+                <p className="text-4xl font-bold text-[#1B4332]">{checkIns.length}</p>
+                <div className="mt-2 max-h-[80px] overflow-y-auto">
+                  {checkIns.length > 0 ? (
+                    checkIns.map((checkIn) => (
+                      <div key={checkIn.id} className="flex items-center justify-between text-xs py-1">
+                        <div>
+                          <span className="text-gray-600">{checkIn.client.full_name || checkIn.client.email}</span>
+                          <br />
+                          <span className="text-gray-400">Weight: {checkIn.weight_kg}kg</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="h-5 px-2 text-[10px] bg-[#a7cca4] hover:bg-[#96bb93] text-white"
+                          onClick={() => handleReviewCheckIn(checkIn.id)}
+                        >
+                          Review
+                        </Button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-500">No pending check-ins</p>
+                  )}
+                </div>
+              </GlassCard>
+
               <MissedPaymentsCard />
             </div>
           )}
