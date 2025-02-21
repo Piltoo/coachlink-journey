@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -170,8 +169,7 @@ const Dashboard = () => {
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm"
-                                  variant="default"
-                                  className="h-8 px-3 text-xs"
+                                  className="h-8 px-3 text-xs bg-[#a7cca4] hover:bg-[#96bb93] text-white"
                                   onClick={() => handleSessionResponse(session.id, true)}
                                 >
                                   Approve
@@ -179,7 +177,7 @@ const Dashboard = () => {
                                 <Button 
                                   size="sm"
                                   variant="outline"
-                                  className="h-8 px-3 text-xs"
+                                  className="h-8 px-3 text-xs border-[#a7cca4] text-[#a7cca4] hover:bg-[#a7cca4]/10"
                                   onClick={() => handleSessionResponse(session.id, false)}
                                 >
                                   Decline

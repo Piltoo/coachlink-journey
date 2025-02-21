@@ -9,14 +9,14 @@ type DashboardStat = {
   description: string;
 };
 
-interface DashboardStats {
+type DashboardStatsType = {
   activeClients: DashboardStat;
   pendingCheckins: DashboardStat;
   unreadMessages: DashboardStat;
-}
+};
 
 export function StatsCards() {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState<DashboardStatsType>({
     activeClients: { value: 0, description: "0 new this week" },
     pendingCheckins: { value: 0, description: "Requires review" },
     unreadMessages: { value: 0, description: "New messages" }
