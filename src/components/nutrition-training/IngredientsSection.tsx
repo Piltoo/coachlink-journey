@@ -65,6 +65,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
   };
 
   const handleSearch = async (search: string) => {
+    console.log("Searching for:", search);
     setSearchTerm(search);
     if (!search.trim()) {
       setSearchResults([]);
@@ -75,11 +76,12 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
       const { data, error } = await supabase
         .from('ingredients_all_coaches')
         .select('*')
-        .ilike('name', `%${search}%`)
-        .limit(5);
+        .ilike('name', `%${search}%`);
+
+      console.log("Search results:", data);
+      console.log("Search error:", error);
 
       if (error) throw error;
-
       setSearchResults(data || []);
     } catch (error) {
       console.error("Error searching ingredients:", error);
@@ -95,6 +97,8 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
+
+      console.log("Adding ingredient:", ingredient);
 
       const { error } = await supabase
         .from('ingredients')
