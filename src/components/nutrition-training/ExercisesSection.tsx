@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -224,7 +225,7 @@ export function ExercisesSection({ exercises, onExerciseChange }: ExercisesSecti
                         <SelectValue placeholder="Select muscle group" />
                       </SelectTrigger>
                       <SelectContent>
-                        {muscleGroups.map((group) => (
+                        {muscleGroups.filter(group => group !== "All").map((group) => (
                           <SelectItem key={group} value={group}>{group}</SelectItem>
                         ))}
                       </SelectContent>
