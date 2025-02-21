@@ -96,6 +96,9 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
     let ingredientId = ingredient.id;
     if (ingredient.id.startsWith('template_')) {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("No user found");
+
         const { data: newIngredient, error } = await supabase
           .from('ingredients')
           .insert({
@@ -105,6 +108,7 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
             carbs_per_100g: ingredient.carbs_per_100g,
             fats_per_100g: ingredient.fats_per_100g,
             fiber_per_100g: ingredient.fiber_per_100g,
+            coach_id: user.id, // Add coach_id here
           })
           .select()
           .single();
