@@ -21,17 +21,31 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
 
   const fetchGroups = async () => {
     try {
+      console.log("Fetching groups...");
       const { data, error } = await supabase
         .from('ingredients_all_coaches')
         .select('grop')
-        .not('grop', 'is', null);
+        .not('grop', 'is', null)
+        .order('grop');
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching groups:", error);
+        throw error;
+      }
 
-      const uniqueGroups = [...new Set(data.map(item => item.grop))].filter(Boolean);
+      // Filter out null/undefined/empty values and get unique groups
+      const uniqueGroups = Array.from(new Set(
+        data
+          .map(item => item.grop)
+          .filter((group): group is string => 
+            Boolean(group) && group.trim() !== ''
+          )
+      )).sort();
+
+      console.log("Fetched groups:", uniqueGroups);
       setGroups(uniqueGroups);
     } catch (error) {
-      console.error("Error fetching groups:", error);
+      console.error("Error in fetchGroups:", error);
     }
   };
 
