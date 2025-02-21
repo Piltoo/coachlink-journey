@@ -31,18 +31,18 @@ const Clients = () => {
 
     console.log("Current coach ID:", user.id);
 
+    // First, let's get all coach-client relationships
     const { data: clientsData, error: clientsError } = await supabase
       .from('coach_clients')
       .select(`
         client_id,
         status,
-        profiles!coach_clients_client_id_fkey (
+        profiles:client_id (
           id,
           full_name,
           email
         )
-      `)
-      .eq('coach_id', user.id);
+      `);
 
     if (clientsError) {
       console.error("Error fetching clients:", clientsError);
@@ -57,12 +57,14 @@ const Clients = () => {
     console.log("Raw coach_clients data:", clientsData);
 
     if (clientsData) {
-      const formattedClients = clientsData.map(c => ({
-        id: c.profiles.id,
-        full_name: c.profiles.full_name,
-        email: c.profiles.email,
-        status: c.status
-      }));
+      const formattedClients = clientsData
+        .filter(c => c.profiles) // Filter out any null profiles
+        .map(c => ({
+          id: c.profiles.id,
+          full_name: c.profiles.full_name,
+          email: c.profiles.email,
+          status: c.status
+        }));
       console.log("Formatted clients data:", formattedClients);
       setClients(formattedClients);
     }
