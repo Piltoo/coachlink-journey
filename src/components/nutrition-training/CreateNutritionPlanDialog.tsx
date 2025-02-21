@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Ingredient, Meal, MealIngredient, PartialMealIngredient } from "./types";
+import { Ingredient, PartialMeal, MealIngredient, PartialMealIngredient } from "./types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Props = {
@@ -19,7 +18,7 @@ type Props = {
 export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [meals, setMeals] = useState<Partial<Meal>[]>([]);
+  const [meals, setMeals] = useState<PartialMeal[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -108,7 +107,7 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
             carbs_per_100g: ingredient.carbs_per_100g,
             fats_per_100g: ingredient.fats_per_100g,
             fiber_per_100g: ingredient.fiber_per_100g,
-            coach_id: user.id, // Add coach_id here
+            coach_id: user.id,
           })
           .select()
           .single();
@@ -123,16 +122,12 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
     }
 
     const updatedMeals = [...meals];
-    const mealIngredients = updatedMeals[mealIndex].ingredients || [];
     const newIngredient: PartialMealIngredient = {
       ingredient_id: ingredientId,
       ingredient,
       quantity_grams: 100
     };
-    updatedMeals[mealIndex] = {
-      ...updatedMeals[mealIndex],
-      ingredients: [...mealIngredients, newIngredient]
-    };
+    updatedMeals[mealIndex].ingredients.push(newIngredient);
     setMeals(updatedMeals);
   };
 
