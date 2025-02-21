@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TrainingPlansSection } from "@/components/nutrition-training/TrainingPlansSection";
 import { NutritionPlansSection } from "@/components/nutrition-training/NutritionPlansSection";
 import { IngredientsSection } from "@/components/nutrition-training/IngredientsSection";
+import { ExercisesSection } from "@/components/nutrition-training/ExercisesSection";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type Ingredient = {
@@ -16,9 +17,22 @@ type Ingredient = {
   fiber_per_100g: number;
 };
 
+type Exercise = {
+  id: string;
+  name: string;
+  description: string;
+  muscle_group: string;
+  start_position_image: string | null;
+  mid_position_image: string | null;
+  difficulty_level: string;
+  equipment_needed: string | null;
+  instructions: string;
+};
+
 export default function NutritionAndTraining() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -45,6 +59,7 @@ export default function NutritionAndTraining() {
 
     fetchUserRole();
     fetchIngredients();
+    fetchExercises();
   }, []);
 
   const fetchIngredients = async () => {
@@ -58,6 +73,20 @@ export default function NutritionAndTraining() {
       setIngredients(data);
     } catch (error) {
       console.error("Error fetching ingredients:", error);
+    }
+  };
+
+  const fetchExercises = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setExercises(data);
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
     }
   };
 
@@ -100,6 +129,12 @@ export default function NutritionAndTraining() {
             >
               Ingredients List
             </TabsTrigger>
+            <TabsTrigger 
+              value="exercises"
+              className="px-1 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-gray-900 rounded-none relative focus-visible:outline-none"
+            >
+              Exercise Library
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="training" className="mt-6">
@@ -114,6 +149,13 @@ export default function NutritionAndTraining() {
             <IngredientsSection 
               ingredients={ingredients} 
               onIngredientAdded={fetchIngredients}
+            />
+          </TabsContent>
+
+          <TabsContent value="exercises" className="mt-6">
+            <ExercisesSection 
+              exercises={exercises}
+              onExerciseChange={fetchExercises}
             />
           </TabsContent>
         </Tabs>

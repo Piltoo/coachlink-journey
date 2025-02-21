@@ -135,6 +135,56 @@ export type Database = {
           },
         ]
       }
+      exercises: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          description: string
+          difficulty_level: string
+          equipment_needed: string | null
+          id: string
+          instructions: string
+          mid_position_image: string | null
+          muscle_group: string
+          name: string
+          start_position_image: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          description: string
+          difficulty_level: string
+          equipment_needed?: string | null
+          id?: string
+          instructions: string
+          mid_position_image?: string | null
+          muscle_group: string
+          name: string
+          start_position_image?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          description?: string
+          difficulty_level?: string
+          equipment_needed?: string | null
+          id?: string
+          instructions?: string
+          mid_position_image?: string | null
+          muscle_group?: string
+          name?: string
+          start_position_image?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercises_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredients: {
         Row: {
           calories_per_100g: number
