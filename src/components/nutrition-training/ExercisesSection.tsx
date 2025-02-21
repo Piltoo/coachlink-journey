@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -188,6 +187,80 @@ export function ExercisesSection({ exercises, onExerciseChange }: ExercisesSecti
     selectedMuscleGroup === "All" || exercise.muscle_group === selectedMuscleGroup
   );
 
+  const renderExerciseList = () => {
+    if (selectedMuscleGroup === "All") {
+      return (
+        <div className="space-y-2">
+          {filteredExercises.map((exercise) => (
+            <div
+              key={exercise.id}
+              onClick={() => handleExerciseClick(exercise)}
+              className="p-4 bg-white/60 hover:bg-white/80 cursor-pointer border-b border-gray-200/50 transition-colors duration-200 flex justify-between items-center"
+            >
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">{exercise.name}</h3>
+                  <span className="text-sm text-gray-500">{exercise.muscle_group}</span>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">{exercise.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredExercises.map((exercise) => (
+          <div
+            key={exercise.id}
+            className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out cursor-pointer hover:bg-white/80"
+            onClick={() => handleExerciseClick(exercise)}
+          >
+            <div className="space-y-2">
+              <div className="flex justify-between items-start">
+                <h3 className="font-medium text-lg">{exercise.name}</h3>
+                <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                  {exercise.difficulty_level}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600">{exercise.description}</p>
+              <div className="flex items-center text-sm text-gray-500">
+                <span className="font-medium">Muscle Group:</span>
+                <span className="ml-2">{exercise.muscle_group}</span>
+              </div>
+              {exercise.equipment_needed && (
+                <div className="flex items-center text-sm text-gray-500">
+                  <span className="font-medium">Equipment:</span>
+                  <span className="ml-2">{exercise.equipment_needed}</span>
+                </div>
+              )}
+              {(exercise.start_position_image || exercise.mid_position_image) && (
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {exercise.start_position_image && (
+                    <img
+                      src={exercise.start_position_image}
+                      alt="Start position"
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  )}
+                  {exercise.mid_position_image && (
+                    <img
+                      src={exercise.mid_position_image}
+                      alt="Mid position"
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white/40 backdrop-blur-lg rounded-lg border border-gray-200/50 p-6 shadow-sm transition-all duration-200 ease-in-out">
       <div className="flex flex-col space-y-6">
@@ -323,53 +396,7 @@ export function ExercisesSection({ exercises, onExerciseChange }: ExercisesSecti
         </div>
 
         {filteredExercises.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredExercises.map((exercise) => (
-              <div
-                key={exercise.id}
-                className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out cursor-pointer hover:bg-white/80"
-                onClick={() => handleExerciseClick(exercise)}
-              >
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-lg">{exercise.name}</h3>
-                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                      {exercise.difficulty_level}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">{exercise.description}</p>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span className="font-medium">Muscle Group:</span>
-                    <span className="ml-2">{exercise.muscle_group}</span>
-                  </div>
-                  {exercise.equipment_needed && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <span className="font-medium">Equipment:</span>
-                      <span className="ml-2">{exercise.equipment_needed}</span>
-                    </div>
-                  )}
-                  {(exercise.start_position_image || exercise.mid_position_image) && (
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      {exercise.start_position_image && (
-                        <img
-                          src={exercise.start_position_image}
-                          alt="Start position"
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                      )}
-                      {exercise.mid_position_image && (
-                        <img
-                          src={exercise.mid_position_image}
-                          alt="Mid position"
-                          className="w-full h-32 object-cover rounded-lg"
-                        />
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          renderExerciseList()
         ) : (
           <div className="text-center py-12 text-gray-500">
             {selectedMuscleGroup === "All" 
