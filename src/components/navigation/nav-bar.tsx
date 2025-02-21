@@ -1,260 +1,217 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Menu } from "lucide-react";
+import { X } from "lucide-react";
+import { Home } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
+import { Users } from "lucide-react";
+import { Dumbbell } from "lucide-react";
+import { MessageSquare } from "lucide-react";
+import { Settings } from "lucide-react";
+import { LogOut } from "lucide-react";
 
-import * as React from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { MessageCircle, Dumbbell, Settings2, LogOut, Home, Users, Ruler, Utensils } from "lucide-react";
-
-type UserRole = 'client' | 'coach' | 'admin';
+import { useToast } from "@/hooks/use-toast";
 
 export function NavBar() {
-  const [user, setUser] = React.useState(null);
-  const [userRole, setUserRole] = React.useState<UserRole | null>(null);
-  const [companyName, setCompanyName] = React.useState("FitCoach");
-  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        fetchUserRole(session.user.id);
-        fetchCompanyName(session.user.id);
-      }
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        fetchUserRole(session.user.id);
-        fetchCompanyName(session.user.id);
-      } else {
-        setUserRole(null);
-        setCompanyName("FitCoach");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchUserRole = async (userId: string) => {
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .single();
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
 
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to load user profile",
+        description: "There was an error signing out",
         variant: "destructive",
       });
-      return;
-    }
-
-    setUserRole(profile.role as UserRole);
-  };
-
-  const fetchCompanyName = async (userId: string) => {
-    // If user is a client, fetch their coach's theme preferences
-    if (userRole === 'client') {
-      const { data: relationship } = await supabase
-        .from('coach_clients')
-        .select('coach_id')
-        .eq('client_id', userId)
-        .single();
-
-      if (relationship) {
-        const { data: themePrefs } = await supabase
-          .from('theme_preferences')
-          .select('company_name')
-          .eq('user_id', relationship.coach_id)
-          .single();
-
-        if (themePrefs?.company_name) {
-          setCompanyName(themePrefs.company_name);
-        }
-      }
     } else {
-      // For coaches, fetch their own theme preferences
-      const { data: themePrefs } = await supabase
-        .from('theme_preferences')
-        .select('company_name')
-        .eq('user_id', userId)
-        .single();
-
-      if (themePrefs?.company_name) {
-        setCompanyName(themePrefs.company_name);
-      }
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/");
       toast({
-        title: "Signed out successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error signing out",
-        description: error.message,
-        variant: "destructive",
+        title: "Success",
+        description: "Signed out successfully",
       });
     }
   };
 
   return (
-    <nav className="fixed top-0 w-full bg-white/60 backdrop-blur-xl border-b border-green-100 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link
-              to="/"
-              className="text-xl font-bold text-primary hover:text-accent transition-colors"
+    <>
+      <div className="fixed w-full h-16 bg-secondary border-b border-secondary-foreground z-50">
+        <div className="container max-w-7xl mx-auto flex items-center justify-between h-full px-4">
+          <Link to="/" className="text-2xl font-bold text-primary">
+            Fitness App
+          </Link>
+          <div className="hidden md:flex items-center space-x-4">
+            <Button
+              asChild
+              variant="ghost"
+              className="text-primary hover:text-accent hover:bg-secondary"
             >
-              {companyName}
-            </Link>
+              <Link to="/">
+                <Home className="mr-2 h-4 w-4" />
+                Home
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              className="text-primary hover:text-accent hover:bg-secondary"
+            >
+              <Link to="/dashboard">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              className="text-primary hover:text-accent hover:bg-secondary"
+            >
+              <Link to="/clients">
+                <Users className="mr-2 h-4 w-4" />
+                Clients
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              className="text-primary hover:text-accent hover:bg-secondary"
+              title="Nutrition & Training"
+            >
+              <Link to="/nutrition-training">
+                <Dumbbell className="mr-2 h-4 w-4" />
+                Nutrition & Training
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              className="text-primary hover:text-accent hover:bg-secondary"
+            >
+              <Link to="/messages">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Messages
+              </Link>
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              className="text-primary hover:text-accent hover:bg-secondary"
+            >
+              <Link to="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-primary hover:text-accent hover:bg-secondary"
+              onClick={handleSignOut}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
           </div>
-          <div className="flex items-center space-x-1">
-            {user ? (
-              <>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                className="md:hidden text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
+                size="icon"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80">
+              <SheetHeader className="text-left">
+                <SheetTitle>Menu</SheetTitle>
+              </SheetHeader>
+              <div className="py-4">
                 <Button
                   asChild
                   variant="ghost"
-                  className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                  size="icon"
-                  title="Dashboard"
+                  className="justify-start text-primary hover:text-accent hover:bg-secondary w-full"
+                >
+                  <Link to="/">
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="justify-start text-primary hover:text-accent hover:bg-secondary w-full"
                 >
                   <Link to="/dashboard">
-                    <Home className="h-4 w-4" />
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
                   </Link>
                 </Button>
-                {userRole === 'coach' && (
-                  <>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                      size="icon"
-                      title="Clients"
-                    >
-                      <Link to="/clients">
-                        <Users className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                      size="icon"
-                      title="Training Plans"
-                    >
-                      <Link to="/training-plans">
-                        <Dumbbell className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                      size="icon"
-                      title="Nutrition Plans"
-                    >
-                      <Link to="/nutrition-plans">
-                        <Utensils className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                      size="icon"
-                      title="Settings"
-                    >
-                      <Link to="/settings">
-                        <Settings2 className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </>
-                )}
-                {userRole === 'client' && (
-                  <>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                      size="icon"
-                      title="Workout Plan"
-                    >
-                      <Link to="/program">
-                        <Dumbbell className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                      size="icon"
-                      title="My Nutrition Plan"
-                    >
-                      <Link to="/my-nutrition-plan">
-                        <Utensils className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                      size="icon"
-                      title="Measurements"
-                    >
-                      <Link to="/measurements">
-                        <Ruler className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </>
-                )}
                 <Button
                   asChild
                   variant="ghost"
-                  className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                  size="icon"
-                  title="Messages"
+                  className="justify-start text-primary hover:text-accent hover:bg-secondary w-full"
                 >
-                  <Link to="/messages">
-                    <MessageCircle className="h-4 w-4" />
+                  <Link to="/clients">
+                    <Users className="mr-2 h-4 w-4" />
+                    Clients
                   </Link>
                 </Button>
                 <Button
+                  asChild
                   variant="ghost"
-                  onClick={handleSignOut}
-                  className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
-                  size="icon"
-                  title="Sign Out"
+                  className="justify-start text-primary hover:text-accent hover:bg-secondary w-full"
                 >
-                  <LogOut className="h-4 w-4" />
+                  <Link to="/nutrition-training">
+                    <Dumbbell className="mr-2 h-4 w-4" />
+                    Nutrition & Training
+                  </Link>
                 </Button>
-              </>
-            ) : (
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="justify-start text-primary hover:text-accent hover:bg-secondary w-full"
+                >
+                  <Link to="/messages">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Messages
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="justify-start text-primary hover:text-accent hover:bg-secondary w-full"
+                >
+                  <Link to="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </Button>
+              </div>
+              <Separator />
               <Button
-                asChild
                 variant="ghost"
-                className="text-primary hover:text-accent hover:bg-secondary"
+                className="justify-start text-primary hover:text-accent hover:bg-secondary w-full"
+                onClick={handleSignOut}
               >
-                <Link to="/auth">Sign In</Link>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
               </Button>
-            )}
-          </div>
+              <Button
+                variant="ghost"
+                className="md:hidden text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10 absolute top-2 right-2"
+                size="icon"
+                onClick={() => setOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
-    </nav>
+    </>
   );
 }
