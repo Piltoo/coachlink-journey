@@ -46,9 +46,10 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     if (!plan.exercises?.length) return;
     
     try {
+      // Select all columns to get the raw data
       const { data: templateData, error: templateError } = await supabase
         .from('training_plan_templates')
-        .select('*')  // Select all columns to avoid the specific column error
+        .select('*')
         .eq('id', plan.id)
         .single();
 
@@ -61,10 +62,19 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
       if (error) throw error;
 
+      // Access exercise_details safely through the raw data
+      const exerciseDetails = templateData?.exercise_details as Array<{
+        exercise_id: string;
+        sets: number;
+        reps: number;
+        weight: number;
+        order_index: number;
+      }> | null;
+
       const orderedExercises = plan.exercises.map(exerciseId => {
         const exerciseData = data.find(e => e.id === exerciseId);
-        const savedDetails = templateData?.exercise_details?.find(
-          (d: any) => d.exercise_id === exerciseId
+        const savedDetails = exerciseDetails?.find(
+          d => d.exercise_id === exerciseId
         );
         
         if (exerciseData) {
