@@ -323,11 +323,11 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     }
   };
 
-  const handleReplaceSelection = (index: number, newExercise: Exercise) => {
-    if (selectedReplacement.exercise?.id === newExercise.id) {
-      setSelectedReplacement({ index: -1, exercise: null });
-    } else {
+  const handleReplaceSelection = (index: number, newExercise: Exercise, checked: boolean) => {
+    if (checked) {
       setSelectedReplacement({ index, exercise: newExercise });
+    } else {
+      setSelectedReplacement({ index: -1, exercise: null });
     }
   };
 
@@ -424,9 +424,9 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                                     className="flex items-center justify-between p-2 hover:bg-accent/5 rounded-md"
                                   >
                                     <span className="font-medium">{e.name}</span>
-                                    <Checkbox
+                                    <Checkbox 
                                       checked={selectedReplacement.exercise?.id === e.id}
-                                      onCheckedChange={() => handleReplaceSelection(index, e)}
+                                      onCheckedChange={(checked) => handleReplaceSelection(index, e, checked as boolean)}
                                     />
                                   </div>
                                 ))}
