@@ -13,25 +13,35 @@ const NutritionAndTraining = () => {
 
   useEffect(() => {
     const fetchUserRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
 
-      if (error) {
+        if (error) {
+          console.error("Error fetching profile:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load user profile",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setUserRole(profile?.role);
+      } catch (error) {
+        console.error("Error in fetchUserRole:", error);
         toast({
           title: "Error",
-          description: "Failed to load user profile",
+          description: "Failed to check user permissions",
           variant: "destructive",
         });
-        return;
       }
-
-      setUserRole(profile.role);
     };
 
     fetchUserRole();
