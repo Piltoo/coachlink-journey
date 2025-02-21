@@ -35,6 +35,8 @@ export type MealIngredient = {
   quantity_grams: number;
 };
 
+export type PartialMealIngredient = Omit<MealIngredient, 'id' | 'meal_id'>;
+
 export type MealNutrition = {
   calories: number;
   protein: number;
@@ -42,4 +44,3 @@ export type MealNutrition = {
   fats: number;
   fiber: number;
 };
-

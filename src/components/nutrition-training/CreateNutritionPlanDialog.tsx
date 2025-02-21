@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Ingredient, Meal, MealIngredient } from "./types";
+import { Ingredient, Meal, MealIngredient, PartialMealIngredient } from "./types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Props = {
@@ -26,22 +26,59 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
   const { toast } = useToast();
 
   const searchIngredients = async (search: string) => {
+    if (!search.trim()) {
+      setIngredients([]);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
+      // First search in coach's ingredients
+      const { data: coachIngredients, error: coachError } = await supabase
         .from("ingredients")
         .select("*")
         .ilike("name", `%${search}%`)
         .limit(5);
 
-      if (error) throw error;
-      setIngredients(data || []);
+      if (coachError) throw coachError;
+
+      // Then search in all coaches ingredients
+      const { data: allCoachesIngredients, error: allCoachesError } = await supabase
+        .from("ingredients_all_coaches")
+        .select("*")
+        .ilike("name", `%${search}%`)
+        .limit(5);
+
+      if (allCoachesError) throw allCoachesError;
+
+      // Convert all_coaches ingredients to match Ingredient type
+      const convertedAllCoachesIngredients: Ingredient[] = (allCoachesIngredients || [])
+        .filter(item => item.name && item.calories_per_100g) // Filter out invalid entries
+        .map(item => ({
+          id: `template_${item.name}`, // Temporary ID for template ingredients
+          name: item.name || "",
+          calories_per_100g: Number(item.calories_per_100g) || 0,
+          protein_per_100g: Number(item.protein_per_100g) || 0,
+          carbs_per_100g: Number(item.carbs_per_100g) || 0,
+          fats_per_100g: Number(item.fats_per_100g) || 0,
+          fiber_per_100g: Number(item.fibers_per_100g) || 0
+        }));
+
+      // Combine and deduplicate results based on name
+      const combined = [...(coachIngredients || []), ...convertedAllCoachesIngredients];
+      const uniqueIngredients = combined.filter((item, index, self) =>
+        index === self.findIndex(t => t.name === item.name)
+      );
+
+      setIngredients(uniqueIngredients);
     } catch (error) {
       console.error("Error searching ingredients:", error);
     }
   };
 
   const addMeal = () => {
-    setMeals([...meals, { name: `Meal ${meals.length + 1}`, ingredients: [] }]);
+    const defaultMealNames = ["Frukost", "Mellanmål", "Lunch", "Mellanmål", "Middag", "Mellanmål"];
+    const newMealName = defaultMealNames[meals.length] || `Meal ${meals.length + 1}`;
+    setMeals([...meals, { name: newMealName, ingredients: [] }]);
   };
 
   const removeMeal = (index: number) => {
@@ -54,19 +91,43 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
     setMeals(updatedMeals);
   };
 
-  const addIngredientToMeal = (mealIndex: number, ingredient: Ingredient) => {
+  const addIngredientToMeal = async (mealIndex: number, ingredient: Ingredient) => {
+    // If this is a template ingredient, create it first
+    let ingredientId = ingredient.id;
+    if (ingredient.id.startsWith('template_')) {
+      try {
+        const { data: newIngredient, error } = await supabase
+          .from('ingredients')
+          .insert({
+            name: ingredient.name,
+            calories_per_100g: ingredient.calories_per_100g,
+            protein_per_100g: ingredient.protein_per_100g,
+            carbs_per_100g: ingredient.carbs_per_100g,
+            fats_per_100g: ingredient.fats_per_100g,
+            fiber_per_100g: ingredient.fiber_per_100g,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        ingredientId = newIngredient.id;
+        ingredient = newIngredient;
+      } catch (error) {
+        console.error("Error creating ingredient:", error);
+        return;
+      }
+    }
+
     const updatedMeals = [...meals];
     const mealIngredients = updatedMeals[mealIndex].ingredients || [];
+    const newIngredient: PartialMealIngredient = {
+      ingredient_id: ingredientId,
+      ingredient,
+      quantity_grams: 100
+    };
     updatedMeals[mealIndex] = {
       ...updatedMeals[mealIndex],
-      ingredients: [
-        ...mealIngredients,
-        {
-          ingredient_id: ingredient.id,
-          ingredient,
-          quantity_grams: 100
-        }
-      ]
+      ingredients: [...mealIngredients, newIngredient]
     };
     setMeals(updatedMeals);
   };
