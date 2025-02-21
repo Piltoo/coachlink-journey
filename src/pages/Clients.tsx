@@ -29,7 +29,7 @@ const Clients = () => {
       return;
     }
 
-    console.log("Fetching clients for coach:", user.id);
+    console.log("Current coach ID:", user.id);
 
     const { data: clientsData, error: clientsError } = await supabase
       .from('coach_clients')
@@ -45,7 +45,7 @@ const Clients = () => {
       .eq('coach_id', user.id);
 
     if (clientsError) {
-      console.error("Clients fetch error:", clientsError);
+      console.error("Error fetching clients:", clientsError);
       toast({
         title: "Error",
         description: "Failed to load clients: " + clientsError.message,
@@ -54,7 +54,7 @@ const Clients = () => {
       return;
     }
 
-    console.log("Raw clients data:", clientsData);
+    console.log("Raw coach_clients data:", clientsData);
 
     if (clientsData) {
       const formattedClients = clientsData.map(c => ({
@@ -63,7 +63,7 @@ const Clients = () => {
         email: c.profiles.email,
         status: c.status
       }));
-      console.log("Formatted clients:", formattedClients);
+      console.log("Formatted clients data:", formattedClients);
       setClients(formattedClients);
     }
   };
