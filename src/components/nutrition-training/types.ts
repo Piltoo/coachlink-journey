@@ -18,3 +18,28 @@ export type IngredientFormData = {
   fiber_per_100g: string;
   group: string;
 };
+
+export type Meal = {
+  id: string;
+  nutrition_plan_id: string;
+  name: string;
+  order_index: number;
+  ingredients: MealIngredient[];
+};
+
+export type MealIngredient = {
+  id: string;
+  meal_id: string;
+  ingredient_id: string;
+  ingredient: Ingredient;
+  quantity_grams: number;
+};
+
+export type MealNutrition = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
+};
+

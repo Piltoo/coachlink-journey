@@ -259,6 +259,77 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_ingredients: {
+        Row: {
+          created_at: string | null
+          id: string
+          ingredient_id: string
+          meal_id: string
+          quantity_grams: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ingredient_id: string
+          meal_id: string
+          quantity_grams: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ingredient_id?: string
+          meal_id?: string
+          quantity_grams?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_ingredients_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meals: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          nutrition_plan_id: string
+          order_index: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          nutrition_plan_id: string
+          order_index: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          nutrition_plan_id?: string
+          order_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meals_nutrition_plan_id_fkey"
+            columns: ["nutrition_plan_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       measurements: {
         Row: {
           arm_cm: number | null
