@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Send, GripVertical, Save, X, Replace } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 interface Exercise {
   id: string;
@@ -69,7 +70,13 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
         .select('id, name, description, muscle_group');
 
       if (error) throw error;
-      setAvailableExercises(data);
+      
+      const exercisesWithOrder = data.map(exercise => ({
+        ...exercise,
+        order_index: 0
+      }));
+      
+      setAvailableExercises(exercisesWithOrder);
     } catch (error) {
       console.error('Error fetching all exercises:', error);
     }
@@ -311,10 +318,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     }
   };
 
-  const handleReplaceExercise = async (index: number, newExerciseId: string) => {
-    const newExercise = availableExercises.find(e => e.id === newExerciseId);
-    if (!newExercise) return;
-
+  const handleReplaceExercise = async (index: number, newExercise: Exercise) => {
     const updatedExercises = [...exercises];
     const oldExercise = updatedExercises[index];
     
@@ -365,40 +369,44 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                   >
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h5 className="font-medium">{exercise.name}</h5>
-                          <p className="text-sm text-muted-foreground">{exercise.description}</p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveExercise(index)}
-                          className="h-8 w-8"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={exercise.id}
-                          onValueChange={(value) => handleReplaceExercise(index, value)}
-                        >
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Replace exercise" />
-                          </SelectTrigger>
-                          <SelectContent>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
+                            <div className="text-left">
+                              <h5 className="font-medium">{exercise.name}</h5>
+                              <p className="text-sm text-muted-foreground">{exercise.description}</p>
+                            </div>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-0">
+                          <ScrollArea className="h-[300px]">
                             {availableExercises
                               .filter(e => e.muscle_group === exercise.muscle_group && e.id !== exercise.id)
                               .map(e => (
-                                <SelectItem key={e.id} value={e.id}>
-                                  {e.name}
-                                </SelectItem>
+                                <Button
+                                  key={e.id}
+                                  variant="ghost"
+                                  className="w-full justify-start p-2 hover:bg-accent/5"
+                                  onClick={() => handleReplaceExercise(index, e)}
+                                >
+                                  <div className="text-left">
+                                    <div className="font-medium">{e.name}</div>
+                                    <div className="text-sm text-muted-foreground">{e.description}</div>
+                                  </div>
+                                </Button>
                               ))
                             }
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          </ScrollArea>
+                        </PopoverContent>
+                      </Popover>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveExercise(index)}
+                        className="h-8 w-8"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex flex-col items-center">
