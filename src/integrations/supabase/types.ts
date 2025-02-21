@@ -619,6 +619,92 @@ export type Database = {
         }
         Relationships: []
       }
+      training_plan_exercises: {
+        Row: {
+          created_at: string | null
+          exercise_id: string
+          id: string
+          notes: string | null
+          order_index: number
+          plan_id: string
+          reps: number
+          sets: number
+          weight: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          exercise_id: string
+          id?: string
+          notes?: string | null
+          order_index: number
+          plan_id: string
+          reps: number
+          sets: number
+          weight?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          exercise_id?: string
+          id?: string
+          notes?: string | null
+          order_index?: number
+          plan_id?: string
+          reps?: number
+          sets?: number
+          weight?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_plan_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_plan_exercises_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "training_plan_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_plan_templates: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_plan_templates_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_checkin_questions: {
         Row: {
           created_at: string | null
