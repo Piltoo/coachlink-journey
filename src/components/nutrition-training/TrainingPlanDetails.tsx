@@ -40,30 +40,51 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
       fetchClients();
       fetchExercises();
     }
-  }, [isOpen, plan.exercises]);
+  }, [isOpen, plan.id, plan.exercises]);
 
   const fetchExercises = async () => {
     if (!plan.exercises?.length) return;
     
-    const { data, error } = await supabase
-      .from('exercises')
-      .select('id, name, description')
-      .in('id', plan.exercises);
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('id, name, description')
+        .in('id', plan.exercises);
 
-    if (error) {
-      console.error('Error fetching exercises:', error);
-      return;
+      if (error) {
+        console.error('Error fetching exercises:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch exercises",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Map the exercises to match the order in plan.exercises
+      const orderedExercises = plan.exercises.map(exerciseId => {
+        const exerciseData = data.find(e => e.id === exerciseId);
+        if (exerciseData) {
+          return {
+            ...exerciseData,
+            sets: 3, // Default values
+            reps: 12,
+            weight: 0,
+            order_index: plan.exercises!.indexOf(exerciseId)
+          };
+        }
+        return null;
+      }).filter(e => e !== null) as Exercise[];
+
+      setExercises(orderedExercises);
+    } catch (error) {
+      console.error('Error in fetchExercises:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch exercises",
+        variant: "destructive",
+      });
     }
-
-    const orderedExercises = data.map((exercise, index) => ({
-      ...exercise,
-      order_index: index,
-      sets: 3, // Default values
-      reps: 12,
-      weight: 0
-    }));
-
-    setExercises(orderedExercises);
   };
 
   const fetchClients = async () => {
@@ -109,6 +130,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     newExercises.splice(draggedIndex, 1);
     newExercises.splice(index, 0, draggedExercise);
     
+    // Update order_index for all exercises
     newExercises.forEach((exercise, idx) => {
       exercise.order_index = idx;
     });
@@ -121,28 +143,27 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     setDraggedIndex(null);
   };
 
-  const handleExerciseChange = (index: number, field: 'sets' | 'reps' | 'weight', value: number) => {
+  const handleExerciseChange = (index: number, field: 'sets' | 'reps' | 'weight', value: string) => {
+    const numValue = parseInt(value) || 0;
     const newExercises = [...exercises];
     newExercises[index] = {
       ...newExercises[index],
-      [field]: value
+      [field]: numValue
     };
     setExercises(newExercises);
   };
 
   const handleSaveChanges = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
-      const updates = {
-        exercises: exercises.map(e => e.id) as string[],
-        updated_at: new Date().toISOString()
-      };
+      // Get the ordered exercise IDs
+      const orderedExerciseIds = exercises.sort((a, b) => a.order_index - b.order_index).map(e => e.id);
 
       const { error } = await supabase
         .from('training_plan_templates')
-        .update(updates)
+        .update({
+          exercises: orderedExerciseIds,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', plan.id);
 
       if (error) throw error;
@@ -176,13 +197,15 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
       if (!user) throw new Error('No user found');
 
       // First save all exercise details
-      const exerciseDetails = exercises.map(exercise => ({
-        exercise_id: exercise.id,
-        sets: exercise.sets,
-        reps: exercise.reps,
-        weight: exercise.weight,
-        order_index: exercise.order_index
-      }));
+      const exerciseDetails = exercises
+        .sort((a, b) => a.order_index - b.order_index)
+        .map(exercise => ({
+          exercise_id: exercise.id,
+          sets: exercise.sets || 3,
+          reps: exercise.reps || 12,
+          weight: exercise.weight || 0,
+          order_index: exercise.order_index
+        }));
 
       const { error: planError } = await supabase
         .from('workout_plans')
@@ -232,47 +255,62 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
           <div>
             <h4 className="font-medium mb-2">Exercises</h4>
-            <ScrollArea className="h-[300px] border rounded-md p-4">
-              {exercises.map((exercise, index) => (
-                <div
-                  key={exercise.id}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragEnd={handleDragEnd}
-                  className="flex items-center gap-4 p-2 border-b last:border-b-0 cursor-move"
-                >
-                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex-1">
-                    <h5 className="font-medium">{exercise.name}</h5>
-                    <p className="text-sm text-muted-foreground">{exercise.description}</p>
+            {exercises.length > 0 ? (
+              <ScrollArea className="h-[300px] border rounded-md p-4">
+                {exercises.map((exercise, index) => (
+                  <div
+                    key={exercise.id}
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className="flex items-center gap-4 p-2 border-b last:border-b-0 cursor-move hover:bg-accent/5"
+                  >
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex-1">
+                      <h5 className="font-medium">{exercise.name}</h5>
+                      <p className="text-sm text-muted-foreground">{exercise.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-center">
+                        <label className="text-xs text-muted-foreground">Sets</label>
+                        <input
+                          type="number"
+                          value={exercise.sets}
+                          onChange={(e) => handleExerciseChange(index, 'sets', e.target.value)}
+                          className="w-16 p-1 border rounded text-center"
+                          min="0"
+                        />
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <label className="text-xs text-muted-foreground">Reps</label>
+                        <input
+                          type="number"
+                          value={exercise.reps}
+                          onChange={(e) => handleExerciseChange(index, 'reps', e.target.value)}
+                          className="w-16 p-1 border rounded text-center"
+                          min="0"
+                        />
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <label className="text-xs text-muted-foreground">Weight</label>
+                        <input
+                          type="number"
+                          value={exercise.weight}
+                          onChange={(e) => handleExerciseChange(index, 'weight', e.target.value)}
+                          className="w-16 p-1 border rounded text-center"
+                          min="0"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={exercise.sets}
-                      onChange={(e) => handleExerciseChange(index, 'sets', parseInt(e.target.value))}
-                      className="w-16 p-1 border rounded"
-                      placeholder="Sets"
-                    />
-                    <input
-                      type="number"
-                      value={exercise.reps}
-                      onChange={(e) => handleExerciseChange(index, 'reps', parseInt(e.target.value))}
-                      className="w-16 p-1 border rounded"
-                      placeholder="Reps"
-                    />
-                    <input
-                      type="number"
-                      value={exercise.weight}
-                      onChange={(e) => handleExerciseChange(index, 'weight', parseInt(e.target.value))}
-                      className="w-16 p-1 border rounded"
-                      placeholder="Weight"
-                    />
-                  </div>
-                </div>
-              ))}
-            </ScrollArea>
+                ))}
+              </ScrollArea>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No exercises added to this plan yet.
+              </p>
+            )}
           </div>
 
           <div className="flex gap-2">
