@@ -3,8 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { ClientProgress } from "@/components/dashboard/ClientProgress";
-import { GlassCard } from "@/components/ui/glass-card";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 type UserRole = 'client' | 'coach' | 'admin';
@@ -159,42 +157,6 @@ const Dashboard = () => {
           
           {userRole === 'client' && (
             <ClientProgress />
-          )}
-          
-          {userRole === 'coach' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <GlassCard className="p-4">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Session Requests</h3>
-                <div className="mt-2 max-h-[150px] overflow-y-auto">
-                  {sessionRequests.length > 0 ? (
-                    sessionRequests.map((session) => (
-                      <div key={session.id} className="flex items-center justify-between text-xs py-1">
-                        <span className="text-gray-600">{session.client.full_name || session.client.email}</span>
-                        <div className="flex gap-1">
-                          <Button 
-                            size="sm"
-                            className="h-5 px-2 text-[10px] bg-[#a7cca4] hover:bg-[#96bb93] text-white"
-                            onClick={() => handleSessionResponse(session.id, true)}
-                          >
-                            ✓
-                          </Button>
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="h-5 px-2 text-[10px] border-[#a7cca4] text-[#a7cca4] hover:bg-[#a7cca4]/10"
-                            onClick={() => handleSessionResponse(session.id, false)}
-                          >
-                            ✕
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-gray-500">No pending sessions</p>
-                  )}
-                </div>
-              </GlassCard>
-            </div>
           )}
         </div>
       </div>
