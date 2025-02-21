@@ -28,6 +28,23 @@ interface TrainingPlanDetailsProps {
   onClose: () => void;
 }
 
+interface TrainingPlanTemplate {
+  id: string;
+  name: string;
+  description: string;
+  exercises: string[];
+  exercise_details?: Array<{
+    exercise_id: string;
+    sets: number;
+    reps: number;
+    weight: number;
+    order_index: number;
+  }>;
+  coach_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetailsProps) {
   const [clients, setClients] = useState<{ id: string; full_name: string }[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
@@ -46,7 +63,6 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     if (!plan.exercises?.length) return;
     
     try {
-      // Select all columns to get the raw data
       const { data: templateData, error: templateError } = await supabase
         .from('training_plan_templates')
         .select('*')
@@ -55,6 +71,8 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
       if (templateError) throw templateError;
 
+      const template = templateData as TrainingPlanTemplate;
+
       const { data, error } = await supabase
         .from('exercises')
         .select('id, name, description')
@@ -62,18 +80,9 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
       if (error) throw error;
 
-      // Access exercise_details safely through the raw data
-      const exerciseDetails = templateData?.exercise_details as Array<{
-        exercise_id: string;
-        sets: number;
-        reps: number;
-        weight: number;
-        order_index: number;
-      }> | null;
-
       const orderedExercises = plan.exercises.map(exerciseId => {
         const exerciseData = data.find(e => e.id === exerciseId);
-        const savedDetails = exerciseDetails?.find(
+        const savedDetails = template.exercise_details?.find(
           d => d.exercise_id === exerciseId
         );
         
