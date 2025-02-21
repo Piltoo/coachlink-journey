@@ -112,15 +112,15 @@ export function StatsCards() {
       </GlassCard>
 
       <GlassCard className="p-4">
-        <h3 className="text-sm font-medium text-gray-600 mb-2">Upcoming Payments</h3>
-        <p className="text-4xl font-bold text-[#1B4332]">{stats.upcomingPayments.value} kr</p>
-        <p className="text-xs text-gray-500 mt-1">{stats.upcomingPayments.description}</p>
-      </GlassCard>
-
-      <GlassCard className="p-4">
         <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Check-ins</h3>
         <p className="text-4xl font-bold text-[#1B4332]">{stats.pendingCheckins.value}</p>
         <p className="text-xs text-gray-500 mt-1">{stats.pendingCheckins.description}</p>
+      </GlassCard>
+
+      <GlassCard className="p-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">Upcoming Payments</h3>
+        <p className="text-4xl font-bold text-[#1B4332]">{stats.upcomingPayments.value} kr</p>
+        <p className="text-xs text-gray-500 mt-1">{stats.upcomingPayments.description}</p>
       </GlassCard>
 
       <GlassCard className="p-4">
