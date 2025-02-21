@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, GripVertical, Save, X, Replace } from "lucide-react";
+import { Send, GripVertical, Save, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 interface Exercise {
@@ -98,7 +97,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
       const { data, error } = await supabase
         .from('exercises')
-        .select('id, name, description')
+        .select('id, name, description, muscle_group')
         .in('id', plan.exercises);
 
       if (error) throw error;
