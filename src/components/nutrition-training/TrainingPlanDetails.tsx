@@ -22,7 +22,7 @@ interface TrainingPlanDetailsProps {
     id: string;
     name: string;
     description: string;
-    exercises: string[];
+    exercises?: string[];
   };
   isOpen: boolean;
   onClose: () => void;
@@ -135,11 +135,14 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
+      const updates = {
+        exercises: exercises.map(e => e.id) as string[],
+        updated_at: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('training_plan_templates')
-        .update({
-          exercises: exercises.map(e => e.id)
-        })
+        .update(updates)
         .eq('id', plan.id);
 
       if (error) throw error;
