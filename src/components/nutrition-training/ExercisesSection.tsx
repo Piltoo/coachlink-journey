@@ -311,8 +311,8 @@ export function ExercisesSection({ exercises, onExerciseChange }: ExercisesSecti
               variant="ghost"
               className={`whitespace-nowrap px-4 py-2 rounded-full transition-colors ${
                 selectedMuscleGroup === group
-                  ? "bg-[#9b87f5] text-white hover:bg-[#8b77e5]"
-                  : "text-gray-600 hover:bg-[#9b87f5]/10"
+                  ? "bg-[#a7cca4] text-white hover:bg-[#96bb93]"
+                  : "text-gray-600 hover:bg-[#a7cca4]/10"
               }`}
             >
               {group}
