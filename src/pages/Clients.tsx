@@ -31,22 +31,30 @@ const Clients = () => {
   useEffect(() => {
     const fetchClientData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      console.log("Current user:", user);
+      
+      if (!user) {
+        console.log("No user found");
+        return;
+      }
 
-      // Fetch coach's clients
+      // Fetch coach's clients with better error handling
       const { data: clientsData, error: clientsError } = await supabase
-        .from('profiles')
+        .from('coach_clients')
         .select(`
-          id,
-          full_name,
-          email,
-          coach_clients!inner (
-            status
-          )
+          client:client_id (
+            id,
+            full_name,
+            email
+          ),
+          status
         `)
-        .eq('coach_clients.coach_id', user.id);
+        .eq('coach_id', user.id);
+
+      console.log("Clients data:", clientsData, "Error:", clientsError);
 
       if (clientsError) {
+        console.error("Clients fetch error:", clientsError);
         toast({
           title: "Error",
           description: "Failed to load clients",
@@ -55,12 +63,16 @@ const Clients = () => {
         return;
       }
 
-      setClients(clientsData.map(c => ({
-        id: c.id,
-        full_name: c.full_name,
-        email: c.email,
-        status: c.coach_clients[0].status
-      })));
+      if (clientsData) {
+        const formattedClients = clientsData.map(c => ({
+          id: c.client.id,
+          full_name: c.client.full_name,
+          email: c.client.email,
+          status: c.status
+        }));
+        console.log("Formatted clients:", formattedClients);
+        setClients(formattedClients);
+      }
 
       // Fetch recent check-ins
       const { data: checkIns, error: checkInsError } = await supabase
@@ -90,7 +102,7 @@ const Clients = () => {
     };
 
     fetchClientData();
-  }, []);
+  }, [toast]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
