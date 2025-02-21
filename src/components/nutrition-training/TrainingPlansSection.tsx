@@ -20,7 +20,7 @@ export function TrainingPlansSection() {
         <CardTitle>Training Plans</CardTitle>
         <Button 
           onClick={handleAddTrainingPlan}
-          className="bg-green-600 hover:bg-green-700"
+          className="bg-[#95D5B2] hover:bg-[#74C69D] text-[#1B4332]"
         >
           <Plus className="mr-2 h-4 w-4" />
           Add New Plan
