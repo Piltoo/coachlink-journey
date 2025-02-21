@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -59,8 +58,7 @@ const Dashboard = () => {
 
       setUserRole(profile.role as UserRole);
 
-      // Fetch session requests for trainers
-      if (profile.role === 'trainer') {
+      if (profile.role === 'coach') {
         const { data: sessions, error: sessionsError } = await supabase
           .from('workout_sessions')
           .select(`

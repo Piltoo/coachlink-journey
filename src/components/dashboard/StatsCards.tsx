@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +21,7 @@ type MeasurementsData = {
   created_at: string;
 };
 
-export const StatsCards = () => {
+export function StatsCards() {
   const [unreadCheckIns, setUnreadCheckIns] = useState(0);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -42,84 +41,78 @@ export const StatsCards = () => {
         .eq('id', user.id)
         .single();
 
-      if (profile) {
-        setUserRole(profile.role);
+      if (profile?.role === 'coach') {
+        const { data: coachClients, error: clientsError } = await supabase
+          .from('coach_clients')
+          .select('client_id')
+          .eq('coach_id', user.id);
 
-        if (profile.role === 'client') {
-          const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
-
-          // Fetch most recent weight
-          const { data: weightData } = await supabase
-            .from('weekly_checkins')
-            .select('weight_kg, created_at')
-            .eq('client_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-
-          if (weightData) {
-            setRecentWeight(weightData);
-          }
-
-          // Fetch measurements history
-          const { data: measurementsData } = await supabase
-            .from('measurements')
-            .select(`
-              waist_cm,
-              chest_cm,
-              hips_cm,
-              thigh_cm,
-              arm_cm,
-              created_at
-            `)
-            .gte('created_at', thirtyDaysAgo)
-            .order('created_at', { ascending: true });
-
-          if (measurementsData) {
-            setMeasurementsHistory(measurementsData);
-          }
+        if (clientsError) {
+          toast({
+            title: "Error",
+            description: "Failed to load clients",
+            variant: "destructive",
+          });
+          return;
         }
 
-        if (profile.role === 'trainer') {
-          const { data: coachClients, error: clientsError } = await supabase
-            .from('coach_clients')
-            .select('client_id')
-            .eq('coach_id', user.id);
+        const clientIds = coachClients?.map(client => client.client_id) || [];
 
-          if (clientsError) {
-            toast({
-              title: "Error",
-              description: "Failed to load clients",
-              variant: "destructive",
-            });
-            return;
-          }
+        const { data: checkIns, error } = await supabase
+          .from('weekly_checkins')
+          .select('id, client_id')
+          .eq('status', 'pending')
+          .in('client_id', clientIds);
 
-          const clientIds = coachClients?.map(client => client.client_id) || [];
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Failed to load check-ins count",
+            variant: "destructive",
+          });
+          return;
+        }
 
-          const { data: checkIns, error } = await supabase
-            .from('weekly_checkins')
-            .select('id, client_id')
-            .eq('status', 'pending')
-            .in('client_id', clientIds);
+        setUnreadCheckIns(checkIns?.length || 0);
+        setUnreadMessages(3); // Temporary mock data
+      } else if (profile?.role === 'client') {
+        const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
 
-          if (error) {
-            toast({
-              title: "Error",
-              description: "Failed to load check-ins count",
-              variant: "destructive",
-            });
-            return;
-          }
+        // Fetch most recent weight
+        const { data: weightData } = await supabase
+          .from('weekly_checkins')
+          .select('weight_kg, created_at')
+          .eq('client_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-          setUnreadCheckIns(checkIns?.length || 0);
-          setUnreadMessages(3); // Temporary mock data
+        if (weightData) {
+          setRecentWeight(weightData);
+        }
+
+        // Fetch measurements history
+        const { data: measurementsData } = await supabase
+          .from('measurements')
+          .select(`
+            waist_cm,
+            chest_cm,
+            hips_cm,
+            thigh_cm,
+            arm_cm,
+            created_at
+          `)
+          .gte('created_at', thirtyDaysAgo)
+          .order('created_at', { ascending: true });
+
+        if (measurementsData) {
+          setMeasurementsHistory(measurementsData);
         }
       }
     };
 
     fetchData();
-  }, [toast]);
+  }, []);
 
   const getMeasurementData = (key: keyof MeasurementsData) => {
     return measurementsHistory

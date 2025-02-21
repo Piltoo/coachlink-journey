@@ -1,13 +1,10 @@
 
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CreateProgramDialog } from "@/components/programs/CreateProgramDialog";
+import { ProgramCard } from "@/components/programs/ProgramCard";
 
 type Program = {
   id: string;
@@ -21,14 +18,9 @@ type Program = {
 const Program = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [newProgram, setNewProgram] = useState({ title: "", description: "", client_id: "" });
   const [clients, setClients] = useState<{ id: string; full_name: string }[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchUserRoleAndData();
-  }, []);
 
   const fetchUserRoleAndData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -44,7 +36,6 @@ const Program = () => {
       setUserRole(profile.role);
       
       if (profile.role === 'coach') {
-        // Fetch coach's clients with explicit column selection
         const { data: clientsData } = await supabase
           .from('coach_clients')
           .select(`
@@ -64,7 +55,6 @@ const Program = () => {
         }
       }
 
-      // Fetch programs based on role
       const query = profile.role === 'coach'
         ? supabase.from('programs').select('*').eq('coach_id', user.id)
         : supabase.from('programs').select('*').eq('client_id', user.id);
@@ -84,46 +74,9 @@ const Program = () => {
     }
   };
 
-  const handleCreateProgram = async () => {
-    if (!newProgram.title || !newProgram.description || !newProgram.client_id) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase
-      .from('programs')
-      .insert({
-        title: newProgram.title,
-        description: newProgram.description,
-        client_id: newProgram.client_id,
-        coach_id: user.id
-      });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create program",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Success",
-      description: "Program created successfully",
-    });
-
-    setIsDialogOpen(false);
-    setNewProgram({ title: "", description: "", client_id: "" });
+  useEffect(() => {
     fetchUserRoleAndData();
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
@@ -133,70 +86,19 @@ const Program = () => {
             {userRole === 'coach' ? 'Client Programs' : 'My Program'}
           </h1>
           {userRole === 'coach' && (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>Create New Program</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Program</DialogTitle>
-                  <DialogDescription>
-                    Create a personalized program for your client
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Client</label>
-                    <select
-                      className="w-full p-2 border rounded-md"
-                      value={newProgram.client_id}
-                      onChange={(e) => setNewProgram(prev => ({ ...prev, client_id: e.target.value }))}
-                    >
-                      <option value="">Select a client</option>
-                      {clients.map(client => (
-                        <option key={client.id} value={client.id}>
-                          {client.full_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Title</label>
-                    <Input
-                      value={newProgram.title}
-                      onChange={(e) => setNewProgram(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Program title"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Description</label>
-                    <Textarea
-                      value={newProgram.description}
-                      onChange={(e) => setNewProgram(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Program description and details"
-                    />
-                  </div>
-                  <Button onClick={handleCreateProgram}>Create Program</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <CreateProgramDialog
+              isOpen={isDialogOpen}
+              onOpenChange={setIsDialogOpen}
+              clients={clients}
+              onProgramCreated={fetchUserRoleAndData}
+            />
           )}
         </div>
 
         <ScrollArea className="h-[calc(100vh-12rem)]">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {programs.map((program) => (
-              <Card key={program.id}>
-                <CardHeader>
-                  <CardTitle>{program.title}</CardTitle>
-                  <CardDescription>
-                    {new Date(program.created_at).toLocaleDateString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="whitespace-pre-wrap">{program.description}</p>
-                </CardContent>
-              </Card>
+              <ProgramCard key={program.id} program={program} />
             ))}
           </div>
         </ScrollArea>
