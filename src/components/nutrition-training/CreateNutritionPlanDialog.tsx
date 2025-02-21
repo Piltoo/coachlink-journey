@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -301,9 +302,9 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl min-h-[80vh] max-h-[90vh] w-[95vw] overflow-hidden flex flex-col p-6">
         <DialogHeader>
-          <DialogTitle>Create Nutrition Plan</DialogTitle>
+          <DialogTitle className="text-xl">Create Nutrition Plan</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden flex flex-col gap-4">
