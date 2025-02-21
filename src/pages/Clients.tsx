@@ -22,52 +22,62 @@ const Clients = () => {
   const { toast } = useToast();
 
   const fetchClients = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      console.log("No user found");
-      return;
-    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log("No user found");
+        return;
+      }
 
-    console.log("Current coach ID:", user.id);
+      console.log("Current coach ID:", user.id);
 
-    // Fetch coach-client relationships with explicit foreign key reference
-    const { data: clientsData, error: clientsError } = await supabase
-      .from('coach_clients')
-      .select(`
-        client_id,
-        status,
-        profiles!coach_clients_client_id_fkey (
-          id,
-          full_name,
-          email
-        )
-      `)
-      .eq('coach_id', user.id);
+      // Fetch coach-client relationships for the current coach
+      const { data: relationshipsData, error: relationshipsError } = await supabase
+        .from('coach_clients')
+        .select(`
+          client_id,
+          status,
+          profiles:client_id (
+            id,
+            full_name,
+            email
+          )
+        `)
+        .eq('coach_id', user.id);
 
-    if (clientsError) {
-      console.error("Error fetching clients:", clientsError);
+      if (relationshipsError) {
+        console.error("Error fetching clients:", relationshipsError);
+        toast({
+          title: "Error",
+          description: "Failed to load clients: " + relationshipsError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log("Raw coach_clients data:", relationshipsData);
+
+      if (relationshipsData) {
+        const formattedClients = relationshipsData
+          .filter(relation => relation.profiles) // Filter out any null profiles
+          .map(relation => ({
+            id: relation.profiles.id,
+            full_name: relation.profiles.full_name,
+            email: relation.profiles.email,
+            status: relation.status
+          }));
+
+        console.log("Formatted clients data:", formattedClients);
+        setClients(formattedClients);
+      }
+    } catch (error: any) {
+      console.error("Error in fetchClients:", error);
       toast({
         title: "Error",
-        description: "Failed to load clients: " + clientsError.message,
+        description: "Failed to load clients: " + error.message,
         variant: "destructive",
       });
-      return;
-    }
-
-    console.log("Raw coach_clients data:", clientsData);
-
-    if (clientsData) {
-      const formattedClients = clientsData
-        .filter(c => c.profiles) // Filter out any null profiles
-        .map(c => ({
-          id: c.profiles.id,
-          full_name: c.profiles.full_name,
-          email: c.profiles.email,
-          status: c.status
-        }));
-      console.log("Formatted clients data:", formattedClients);
-      setClients(formattedClients);
     }
   };
 
