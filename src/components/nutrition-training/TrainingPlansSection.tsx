@@ -96,12 +96,27 @@ export function TrainingPlansSection() {
     }
 
     try {
+      // First get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to create a training plan",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create the training plan with coach_id
       const { data: plan, error: planError } = await supabase
         .from('training_plan_templates')
         .insert([
           {
             name: planName,
             description: planDescription,
+            coach_id: user.id // Add the coach_id field
           }
         ])
         .select()
