@@ -42,11 +42,24 @@ export function NavBar() {
       }
     };
 
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      if (!isPublicRoute) {
+        fetchBranding();
+      } else {
+        setBrandingName("FitTracker");
+      }
+    });
+
+    // Initial fetch
     if (!isPublicRoute) {
       fetchBranding();
-    } else {
-      setBrandingName("FitTracker");
     }
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [isPublicRoute]);
 
   const handleSignOut = async () => {
