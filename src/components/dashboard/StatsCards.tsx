@@ -6,26 +6,29 @@ import { PaymentsCard } from "./PaymentsCard";
 import { MissedPaymentsCard } from "./MissedPaymentsCard";
 import { GlassCard } from "@/components/ui/glass-card";
 
-// Define simple, non-recursive types
-type DashboardData = {
-  activeClients: number;
-  newClientsThisWeek: number;
-  pendingCheckins: number;
-  unreadMessages: number;
+// Define simple, non-recursive types for our state
+type BasicStats = {
+  count: number;
+  description?: string;
+};
+
+type DashboardStats = {
+  activeClients: BasicStats;
+  pendingCheckins: BasicStats;
+  unreadMessages: BasicStats;
 };
 
 export function StatsCards() {
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    activeClients: 0,
-    newClientsThisWeek: 0,
-    pendingCheckins: 0,
-    unreadMessages: 0
+  const [stats, setStats] = useState<DashboardStats>({
+    activeClients: { count: 0, description: "0 new this week" },
+    pendingCheckins: { count: 0, description: "Requires review" },
+    unreadMessages: { count: 0, description: "New messages" }
   });
   const [userRole, setUserRole] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchStats = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -41,45 +44,53 @@ export function StatsCards() {
         setUserRole(profile.role);
 
         if (profile.role === 'coach') {
-          // Fetch active clients
+          // Get active clients
           const { data: activeClients } = await supabase
             .from('coach_clients')
-            .select('*')
+            .select('id')
             .eq('coach_id', user.id)
             .eq('status', 'active');
 
-          // Fetch new clients this week
+          // Get new clients this week
           const oneWeekAgo = new Date();
           oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
           const { data: newClients } = await supabase
             .from('coach_clients')
-            .select('*')
+            .select('id')
             .eq('coach_id', user.id)
             .eq('status', 'active')
             .gte('created_at', oneWeekAgo.toISOString());
 
-          // Fetch pending check-ins
+          // Get pending check-ins
           const { data: checkins } = await supabase
             .from('weekly_checkins')
-            .select('*')
+            .select('id')
             .eq('reviewed', false);
 
-          // Fetch unread messages
+          // Get unread messages
           const { data: messages } = await supabase
             .from('messages')
-            .select('*')
+            .select('id')
             .eq('receiver_id', user.id)
             .eq('status', 'sent');
 
-          setDashboardData({
-            activeClients: activeClients?.length || 0,
-            newClientsThisWeek: newClients?.length || 0,
-            pendingCheckins: checkins?.length || 0,
-            unreadMessages: messages?.length || 0
+          setStats({
+            activeClients: {
+              count: activeClients?.length || 0,
+              description: `+${newClients?.length || 0} new this week`
+            },
+            pendingCheckins: {
+              count: checkins?.length || 0,
+              description: "Requires review"
+            },
+            unreadMessages: {
+              count: messages?.length || 0,
+              description: "New messages"
+            }
           });
         }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Error fetching stats:', error);
         toast({
           title: "Error",
           description: "Failed to load dashboard data",
@@ -88,7 +99,7 @@ export function StatsCards() {
       }
     };
 
-    fetchDashboardData();
+    fetchStats();
   }, [toast]);
 
   if (userRole !== 'coach') return null;
@@ -98,14 +109,14 @@ export function StatsCards() {
       <div className="grid grid-cols-3 gap-6">
         <GlassCard className="p-6 bg-white/95 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Active Clients</h3>
-          <p className="text-5xl font-bold text-[#1B4332] mb-2">{dashboardData.activeClients}</p>
-          <p className="text-sm text-green-600">+{dashboardData.newClientsThisWeek} new this week</p>
+          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.activeClients.count}</p>
+          <p className="text-sm text-green-600">{stats.activeClients.description}</p>
         </GlassCard>
 
         <GlassCard className="p-6 bg-white/95 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Pending Check-ins</h3>
-          <p className="text-5xl font-bold text-[#1B4332] mb-2">{dashboardData.pendingCheckins}</p>
-          <p className="text-sm text-gray-500">Requires review</p>
+          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.pendingCheckins.count}</p>
+          <p className="text-sm text-gray-500">{stats.pendingCheckins.description}</p>
         </GlassCard>
 
         <GlassCard className="p-6 bg-white/95 shadow-sm">
@@ -122,8 +133,8 @@ export function StatsCards() {
 
         <GlassCard className="p-6 bg-white/95 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Unread Messages</h3>
-          <p className="text-5xl font-bold text-[#1B4332] mb-2">{dashboardData.unreadMessages}</p>
-          <p className="text-sm text-gray-500">New messages</p>
+          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.unreadMessages.count}</p>
+          <p className="text-sm text-gray-500">{stats.unreadMessages.description}</p>
         </GlassCard>
       </div>
 
