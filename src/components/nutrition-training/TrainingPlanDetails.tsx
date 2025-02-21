@@ -318,17 +318,21 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
   };
 
   const handleReplaceExercise = async (index: number, newExercise: Exercise) => {
+    console.log('Replacing exercise at index:', index);
+    console.log('New exercise:', newExercise);
+    
     const updatedExercises = [...exercises];
     const oldExercise = updatedExercises[index];
     
     updatedExercises[index] = {
       ...newExercise,
-      sets: oldExercise.sets,
-      reps: oldExercise.reps,
-      weight: oldExercise.weight,
+      sets: oldExercise.sets || 3,
+      reps: oldExercise.reps || 12,
+      weight: oldExercise.weight || 0,
       order_index: oldExercise.order_index
     };
 
+    console.log('Updated exercise:', updatedExercises[index]);
     setExercises(updatedExercises);
   };
 
@@ -373,7 +377,9 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                           <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
                             <div className="text-left">
                               <h5 className="font-medium">{exercise.name}</h5>
-                              <p className="text-sm text-muted-foreground">{exercise.description}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {exercise.description} ({exercise.muscle_group})
+                              </p>
                             </div>
                           </Button>
                         </PopoverTrigger>
@@ -386,15 +392,19 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                                   key={e.id}
                                   variant="ghost"
                                   className="w-full justify-start p-2 hover:bg-accent/5"
-                                  onClick={() => handleReplaceExercise(index, e)}
+                                  onClick={() => {
+                                    console.log('Clicked replacement exercise:', e);
+                                    handleReplaceExercise(index, e);
+                                  }}
                                 >
                                   <div className="text-left">
                                     <div className="font-medium">{e.name}</div>
-                                    <div className="text-sm text-muted-foreground">{e.description}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {e.description} ({e.muscle_group})
+                                    </div>
                                   </div>
                                 </Button>
-                              ))
-                            }
+                              ))}
                           </ScrollArea>
                         </PopoverContent>
                       </Popover>
