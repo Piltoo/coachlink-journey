@@ -1,16 +1,17 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, GripVertical, Save } from "lucide-react";
+import { Send, GripVertical, Save, X, Replace } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Exercise {
   id: string;
   name: string;
   description: string;
+  muscle_group: string;
   sets?: number;
   reps?: number;
   weight?: number;
@@ -49,6 +50,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
   const [clients, setClients] = useState<{ id: string; full_name: string }[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
@@ -56,8 +58,22 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     if (isOpen) {
       fetchClients();
       fetchExercises();
+      fetchAllExercises();
     }
   }, [isOpen, plan.id, plan.exercises]);
+
+  const fetchAllExercises = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('id, name, description, muscle_group');
+
+      if (error) throw error;
+      setAvailableExercises(data);
+    } catch (error) {
+      console.error('Error fetching all exercises:', error);
+    }
+  };
 
   const fetchExercises = async () => {
     if (!plan.exercises?.length) return;
@@ -98,7 +114,6 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
         return null;
       }).filter(e => e !== null) as Exercise[];
 
-      // Sort exercises by order_index
       orderedExercises.sort((a, b) => a.order_index - b.order_index);
       setExercises(orderedExercises);
     } catch (error) {
@@ -154,7 +169,6 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     newExercises.splice(draggedIndex, 1);
     newExercises.splice(index, 0, draggedExercise);
     
-    // Update order_index for all exercises
     newExercises.forEach((exercise, idx) => {
       exercise.order_index = idx;
     });
@@ -297,6 +311,32 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     }
   };
 
+  const handleReplaceExercise = async (index: number, newExerciseId: string) => {
+    const newExercise = availableExercises.find(e => e.id === newExerciseId);
+    if (!newExercise) return;
+
+    const updatedExercises = [...exercises];
+    const oldExercise = updatedExercises[index];
+    
+    updatedExercises[index] = {
+      ...newExercise,
+      sets: oldExercise.sets,
+      reps: oldExercise.reps,
+      weight: oldExercise.weight,
+      order_index: oldExercise.order_index
+    };
+
+    setExercises(updatedExercises);
+  };
+
+  const handleRemoveExercise = (index: number) => {
+    const updatedExercises = exercises.filter((_, i) => i !== index);
+    updatedExercises.forEach((exercise, idx) => {
+      exercise.order_index = idx;
+    });
+    setExercises(updatedExercises);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
@@ -324,9 +364,41 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                     className="flex items-center gap-4 p-2 border-b last:border-b-0 cursor-move hover:bg-accent/5"
                   >
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex-1">
-                      <h5 className="font-medium">{exercise.name}</h5>
-                      <p className="text-sm text-muted-foreground">{exercise.description}</p>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h5 className="font-medium">{exercise.name}</h5>
+                          <p className="text-sm text-muted-foreground">{exercise.description}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveExercise(index)}
+                          className="h-8 w-8"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={exercise.id}
+                          onValueChange={(value) => handleReplaceExercise(index, value)}
+                        >
+                          <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Replace exercise" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableExercises
+                              .filter(e => e.muscle_group === exercise.muscle_group && e.id !== exercise.id)
+                              .map(e => (
+                                <SelectItem key={e.id} value={e.id}>
+                                  {e.name}
+                                </SelectItem>
+                              ))
+                            }
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex flex-col items-center">
