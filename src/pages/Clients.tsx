@@ -95,7 +95,7 @@ const Clients = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
@@ -106,7 +106,7 @@ const Clients = () => {
           </div>
 
           <ScrollArea className="h-[calc(100vh-12rem)]">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {clients.length === 0 ? (
                 <div className="col-span-full text-center text-muted-foreground py-8">
                   No clients found. Invite your first client using the button above.
@@ -115,7 +115,7 @@ const Clients = () => {
                 clients.map((client) => (
                   <Card
                     key={client.id}
-                    className="cursor-pointer hover:bg-accent/5 transition-colors"
+                    className="bg-white/40 backdrop-blur-lg border border-gray-200/50 cursor-pointer hover:bg-accent/5 transition-all duration-200 ease-in-out"
                     onClick={() => handleClientClick(client.id)}
                   >
                     <CardContent className="p-6">
