@@ -3,89 +3,95 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { WorkoutCard } from "./stats/WorkoutCard";
-import { WeightProgressCard } from "./stats/WeightProgressCard";
-import { MeasurementCard } from "./stats/MeasurementCard";
 import { PaymentsCard } from "./PaymentsCard";
 import { MissedPaymentsCard } from "./MissedPaymentsCard";
 import { GlassCard } from "@/components/ui/glass-card";
 
-type UserRole = 'client' | 'coach' | null;
+type UserRole = 'client' | 'coach';
 
-interface Stats {
+type DashboardStats = {
   activeClients: number;
   newClientsThisWeek: number;
   pendingCheckins: number;
   unreadMessages: number;
-}
+};
 
 export function StatsCards() {
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState<DashboardStats>({
     activeClients: 0,
     newClientsThisWeek: 0,
     pendingCheckins: 0,
     unreadMessages: 0
   });
-  const [userRole, setUserRole] = useState<UserRole>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
 
-      if (profile?.role) {
+        if (!profile) return;
+        
         setUserRole(profile.role as UserRole);
-      }
 
-      if (profile?.role === 'coach') {
-        // Fetch active clients count
-        const { data: activeClientsData } = await supabase
-          .from('coach_clients')
-          .select('created_at', { count: 'exact' })
-          .eq('coach_id', user.id)
-          .eq('status', 'active');
+        if (profile.role === 'coach') {
+          // Fetch active clients
+          const { data: activeClients } = await supabase
+            .from('coach_clients')
+            .select('*', { count: 'exact' })
+            .eq('coach_id', user.id)
+            .eq('status', 'active');
 
-        // Fetch new clients this week
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const { data: newClients } = await supabase
-          .from('coach_clients')
-          .select('created_at', { count: 'exact' })
-          .eq('coach_id', user.id)
-          .eq('status', 'active')
-          .gte('created_at', oneWeekAgo.toISOString());
+          // Fetch new clients this week
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          const { data: newClients } = await supabase
+            .from('coach_clients')
+            .select('*', { count: 'exact' })
+            .eq('coach_id', user.id)
+            .eq('status', 'active')
+            .gte('created_at', oneWeekAgo.toISOString());
 
-        // Fetch pending check-ins
-        const { data: checkins } = await supabase
-          .from('weekly_checkins')
-          .select('id', { count: 'exact' })
-          .eq('reviewed', false);
+          // Fetch pending check-ins
+          const { data: checkins } = await supabase
+            .from('weekly_checkins')
+            .select('*', { count: 'exact' })
+            .eq('reviewed', false);
 
-        // Fetch unread messages
-        const { data: messages } = await supabase
-          .from('messages')
-          .select('id', { count: 'exact' })
-          .eq('receiver_id', user.id)
-          .eq('status', 'sent');
+          // Fetch unread messages
+          const { data: messages } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact' })
+            .eq('receiver_id', user.id)
+            .eq('status', 'sent');
 
-        setStats({
-          activeClients: activeClientsData?.length || 0,
-          newClientsThisWeek: newClients?.length || 0,
-          pendingCheckins: checkins?.length || 0,
-          unreadMessages: messages?.length || 0
+          setStats({
+            activeClients: activeClients?.length || 0,
+            newClientsThisWeek: newClients?.length || 0,
+            pendingCheckins: checkins?.length || 0,
+            unreadMessages: messages?.length || 0
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data",
+          variant: "destructive",
         });
       }
     };
 
     fetchData();
-  }, []);
+  }, [toast]);
 
   if (userRole !== 'coach') return null;
 
