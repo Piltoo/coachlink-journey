@@ -32,13 +32,13 @@ const Clients = () => {
 
       console.log("Current coach ID:", user.id);
 
-      // Fetch coach-client relationships for the current coach
-      const { data: relationshipsData, error: relationshipsError } = await supabase
+      // Fetch coach-client relationships with explicit foreign key reference
+      const { data: clientsData, error: clientsError } = await supabase
         .from('coach_clients')
         .select(`
           client_id,
           status,
-          profiles:client_id (
+          profiles!coach_clients_client_id_fkey (
             id,
             full_name,
             email
@@ -46,28 +46,27 @@ const Clients = () => {
         `)
         .eq('coach_id', user.id);
 
-      if (relationshipsError) {
-        console.error("Error fetching clients:", relationshipsError);
+      if (clientsError) {
+        console.error("Error fetching clients:", clientsError);
         toast({
           title: "Error",
-          description: "Failed to load clients: " + relationshipsError.message,
+          description: "Failed to load clients: " + clientsError.message,
           variant: "destructive",
         });
         return;
       }
 
-      console.log("Raw coach_clients data:", relationshipsData);
+      console.log("Raw coach_clients data:", clientsData);
 
-      if (relationshipsData) {
-        const formattedClients = relationshipsData
-          .filter(relation => relation.profiles) // Filter out any null profiles
-          .map(relation => ({
-            id: relation.profiles.id,
-            full_name: relation.profiles.full_name,
-            email: relation.profiles.email,
-            status: relation.status
+      if (clientsData) {
+        const formattedClients = clientsData
+          .filter(c => c.profiles) // Filter out any null profiles
+          .map(c => ({
+            id: c.profiles.id,
+            full_name: c.profiles.full_name,
+            email: c.profiles.email,
+            status: c.status
           }));
-
         console.log("Formatted clients data:", formattedClients);
         setClients(formattedClients);
       }
