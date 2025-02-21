@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -5,8 +6,8 @@ import { subDays } from "date-fns";
 import { WorkoutCard } from "./stats/WorkoutCard";
 import { WeightProgressCard } from "./stats/WeightProgressCard";
 import { MeasurementCard } from "./stats/MeasurementCard";
-import { AppointmentsCard } from "./stats/AppointmentsCard";
-import { ClientRequestsCard } from "./stats/ClientRequestsCard";
+import { PaymentsCard } from "./PaymentsCard";
+import { MissedPaymentsCard } from "./MissedPaymentsCard";
 import { GlassCard } from "@/components/ui/glass-card";
 
 type WeightData = {
@@ -25,6 +26,9 @@ type MeasurementsData = {
 
 export function StatsCards() {
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [activeClients, setActiveClients] = useState(0);
+  const [newClientsThisWeek, setNewClientsThisWeek] = useState(0);
+  const [pendingCheckins, setPendingCheckins] = useState(0);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [recentWeight, setRecentWeight] = useState<WeightData | null>(null);
   const [targetWeight, setTargetWeight] = useState<number>(75);
@@ -47,21 +51,43 @@ export function StatsCards() {
       }
 
       if (profile?.role === 'coach') {
-        const { data: messages, error: messagesError } = await supabase
+        // Fetch active clients count
+        const { data: activeClientsData } = await supabase
+          .from('coach_clients')
+          .select('created_at', { count: 'exact' })
+          .eq('coach_id', user.id)
+          .eq('status', 'active');
+
+        setActiveClients(activeClientsData?.length || 0);
+
+        // Fetch new clients this week
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const { data: newClients } = await supabase
+          .from('coach_clients')
+          .select('created_at', { count: 'exact' })
+          .eq('coach_id', user.id)
+          .eq('status', 'active')
+          .gte('created_at', oneWeekAgo.toISOString());
+
+        setNewClientsThisWeek(newClients?.length || 0);
+
+        // Fetch pending check-ins
+        const { data: checkins } = await supabase
+          .from('weekly_checkins')
+          .select('id', { count: 'exact' })
+          .eq('reviewed', false);
+
+        setPendingCheckins(checkins?.length || 0);
+
+        // Fetch unread messages
+        const { data: messages } = await supabase
           .from('messages')
-          .select('id')
+          .select('id', { count: 'exact' })
           .eq('receiver_id', user.id)
           .eq('status', 'sent');
 
-        if (messagesError) {
-          toast({
-            title: "Error",
-            description: "Failed to load messages",
-            variant: "destructive",
-          });
-        } else {
-          setUnreadMessages(messages?.length || 0);
-        }
+        setUnreadMessages(messages?.length || 0);
       } else if (profile?.role === 'client') {
         const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
 
@@ -111,18 +137,50 @@ export function StatsCards() {
   };
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="space-y-4">
       {userRole === 'coach' && (
         <>
-          <ClientRequestsCard />
-          <GlassCard className="col-span-2 bg-white/40 backdrop-blur-lg border border-green-100">
-            <div className="flex flex-col">
+          <div className="grid grid-cols-3 gap-4">
+            <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Active Clients</h2>
+              <p className="text-2xl font-bold text-primary">{activeClients}</p>
+              <span className="text-xs text-accent">+{newClientsThisWeek} new this week</span>
+            </GlassCard>
+
+            <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Pending Check-ins</h2>
+              <p className="text-2xl font-bold text-primary">{pendingCheckins}</p>
+              <span className="text-xs text-accent">Requires review</span>
+            </GlassCard>
+
+            <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Today's Appointments</h2>
+              <div className="space-y-2">
+                {/* We'll add appointment list here */}
+                <p className="text-sm text-muted-foreground">No appointments scheduled for today</p>
+              </div>
+            </GlassCard>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Pending Session Requests</h2>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">No pending session requests</p>
+              </div>
+            </GlassCard>
+
+            <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
               <h2 className="text-sm font-medium text-primary/80 mb-1">Unread Messages</h2>
               <p className="text-2xl font-bold text-primary">{unreadMessages}</p>
-              <span className="text-xs text-accent mt-1">New messages</span>
-            </div>
-          </GlassCard>
-          <AppointmentsCard />
+              <span className="text-xs text-accent">New messages</span>
+            </GlassCard>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <PaymentsCard />
+            <MissedPaymentsCard />
+          </div>
         </>
       )}
       {userRole === 'client' && (
@@ -132,10 +190,12 @@ export function StatsCards() {
             recentWeight={recentWeight}
             targetWeight={targetWeight}
           />
-          <MeasurementCard title="Waist" data={getMeasurementData("waist_cm")} />
-          <MeasurementCard title="Hips" data={getMeasurementData("hips_cm")} />
-          <MeasurementCard title="Thigh" data={getMeasurementData("thigh_cm")} />
-          <MeasurementCard title="Arm" data={getMeasurementData("arm_cm")} />
+          <div className="grid grid-cols-2 gap-4">
+            <MeasurementCard title="Waist" data={getMeasurementData("waist_cm")} />
+            <MeasurementCard title="Hips" data={getMeasurementData("hips_cm")} />
+            <MeasurementCard title="Thigh" data={getMeasurementData("thigh_cm")} />
+            <MeasurementCard title="Arm" data={getMeasurementData("arm_cm")} />
+          </div>
         </>
       )}
     </div>
