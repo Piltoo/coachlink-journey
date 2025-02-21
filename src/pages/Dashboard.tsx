@@ -1,9 +1,7 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { PaymentsCard } from "@/components/dashboard/PaymentsCard";
 import { MissedPaymentsCard } from "@/components/dashboard/MissedPaymentsCard";
 import { ClientProgress } from "@/components/dashboard/ClientProgress";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -165,13 +163,7 @@ const Dashboard = () => {
           )}
           
           {userRole === 'coach' && (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-              <GlassCard className="p-4">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
-                <p className="text-4xl font-bold text-[#1B4332]">0</p>
-                <p className="text-xs text-gray-500 mt-1">No assignments today</p>
-              </GlassCard>
-
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <GlassCard className="p-4">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Sessions</h3>
                 <p className="text-4xl font-bold text-[#1B4332]">{sessionRequests.length}</p>
