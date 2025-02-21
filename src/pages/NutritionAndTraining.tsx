@@ -62,7 +62,7 @@ export default function NutritionAndTraining() {
 
   if (userRole !== 'coach') {
     return (
-      <div className="min-h-screen bg-white pt-8">
+      <div className="min-h-screen bg-background pt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-lg p-6 shadow-sm border border-red-100">
             <p className="text-center text-red-600">
@@ -75,7 +75,7 @@ export default function NutritionAndTraining() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-8">Nutrition & Training Plans</h1>
         
