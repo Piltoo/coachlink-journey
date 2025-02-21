@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -165,7 +166,7 @@ const Dashboard = () => {
           
           {userRole === 'coach' && (
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-              <GlassCard className="p-4 lg:col-span-2">
+              <GlassCard className="p-4">
                 <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
                 <p className="text-4xl font-bold text-[#1B4332]">0</p>
                 <p className="text-xs text-gray-500 mt-1">No assignments today</p>
@@ -204,7 +205,6 @@ const Dashboard = () => {
                 </div>
               </GlassCard>
 
-              <PaymentsCard />
               <MissedPaymentsCard />
             </div>
           )}
