@@ -80,7 +80,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
       if (error) throw error;
 
-      const orderedExercises = plan.exercises.map(exerciseId => {
+      const orderedExercises = plan.exercises.map((exerciseId, index) => {
         const exerciseData = data.find(e => e.id === exerciseId);
         const savedDetails = template.exercise_details?.find(
           d => d.exercise_id === exerciseId
@@ -92,12 +92,14 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
             sets: savedDetails?.sets || 3,
             reps: savedDetails?.reps || 12,
             weight: savedDetails?.weight || 0,
-            order_index: savedDetails?.order_index || plan.exercises!.indexOf(exerciseId)
+            order_index: savedDetails?.order_index ?? index
           };
         }
         return null;
       }).filter(e => e !== null) as Exercise[];
 
+      // Sort exercises by order_index
+      orderedExercises.sort((a, b) => a.order_index - b.order_index);
       setExercises(orderedExercises);
     } catch (error) {
       console.error('Error in fetchExercises:', error);
@@ -152,6 +154,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     newExercises.splice(draggedIndex, 1);
     newExercises.splice(index, 0, draggedExercise);
     
+    // Update order_index for all exercises
     newExercises.forEach((exercise, idx) => {
       exercise.order_index = idx;
     });
@@ -176,20 +179,20 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
   const handleSaveChanges = async () => {
     try {
-      const exerciseDetails = exercises
-        .sort((a, b) => a.order_index - b.order_index)
-        .map(exercise => ({
-          exercise_id: exercise.id,
-          sets: exercise.sets || 3,
-          reps: exercise.reps || 12,
-          weight: exercise.weight || 0,
-          order_index: exercise.order_index
-        }));
+      const exerciseDetails = exercises.map(exercise => ({
+        exercise_id: exercise.id,
+        sets: exercise.sets || 3,
+        reps: exercise.reps || 12,
+        weight: exercise.weight || 0,
+        order_index: exercise.order_index
+      }));
+
+      const exerciseIds = exercises.map(e => e.id);
 
       const { error } = await supabase
         .from('training_plan_templates')
         .update({
-          exercises: exerciseDetails.map(e => e.exercise_id),
+          exercises: exerciseIds,
           exercise_details: exerciseDetails,
           updated_at: new Date().toISOString()
         })
