@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TrainingPlansSection } from "@/components/nutrition-training/TrainingPlansSection";
 import { NutritionPlansSection } from "@/components/nutrition-training/NutritionPlansSection";
 import { IngredientsSection } from "@/components/nutrition-training/IngredientsSection";
@@ -79,16 +80,45 @@ export default function NutritionAndTraining() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          <h1 className="text-3xl font-bold text-primary">Nutrition & Training Plans</h1>
-          
-          <TrainingPlansSection />
-          <NutritionPlansSection />
-          <IngredientsSection 
-            ingredients={ingredients} 
-            onIngredientAdded={fetchIngredients}
-          />
-        </div>
+        <h1 className="text-3xl font-bold text-primary mb-8">Nutrition & Training Plans</h1>
+        
+        <Tabs defaultValue="training" className="space-y-8">
+          <TabsList className="bg-white/60 border border-green-100 p-1">
+            <TabsTrigger 
+              value="training"
+              className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+            >
+              Training Plans
+            </TabsTrigger>
+            <TabsTrigger 
+              value="nutrition"
+              className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+            >
+              Nutrition Plans
+            </TabsTrigger>
+            <TabsTrigger 
+              value="ingredients"
+              className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+            >
+              Ingredients List
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="training" className="mt-6">
+            <TrainingPlansSection />
+          </TabsContent>
+
+          <TabsContent value="nutrition" className="mt-6">
+            <NutritionPlansSection />
+          </TabsContent>
+
+          <TabsContent value="ingredients" className="mt-6">
+            <IngredientsSection 
+              ingredients={ingredients} 
+              onIngredientAdded={fetchIngredients}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
