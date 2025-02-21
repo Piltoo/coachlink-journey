@@ -40,7 +40,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
       fetchClients();
       fetchExercises();
     }
-  }, [isOpen]);
+  }, [isOpen, plan.exercises]);
 
   const fetchExercises = async () => {
     if (!plan.exercises?.length) return;
