@@ -13,6 +13,7 @@ type Ingredient = {
   protein_per_100g: number;
   carbs_per_100g: number;
   fats_per_100g: number;
+  fiber_per_100g: number;
 };
 
 export default function NutritionAndTraining() {

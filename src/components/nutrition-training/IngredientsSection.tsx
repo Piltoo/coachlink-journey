@@ -1,10 +1,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,6 +25,16 @@ type IngredientsSectionProps = {
 
 export function IngredientsSection({ ingredients, onIngredientAdded }: IngredientsSectionProps) {
   const [showAddIngredient, setShowAddIngredient] = useState(false);
+  const [showEditIngredient, setShowEditIngredient] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
+  const [editingIngredient, setEditingIngredient] = useState({
+    name: "",
+    calories_per_100g: "",
+    protein_per_100g: "",
+    carbs_per_100g: "",
+    fats_per_100g: "",
+    fiber_per_100g: "",
+  });
   const [newIngredient, setNewIngredient] = useState({
     name: "",
     calories_per_100g: "",
@@ -76,6 +86,82 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
       toast({
         title: "Error",
         description: "Failed to add ingredient",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleIngredientClick = (ingredient: Ingredient) => {
+    setSelectedIngredient(ingredient);
+    setEditingIngredient({
+      name: ingredient.name,
+      calories_per_100g: ingredient.calories_per_100g.toString(),
+      protein_per_100g: ingredient.protein_per_100g.toString(),
+      carbs_per_100g: ingredient.carbs_per_100g.toString(),
+      fats_per_100g: ingredient.fats_per_100g.toString(),
+      fiber_per_100g: ingredient.fiber_per_100g.toString(),
+    });
+    setShowEditIngredient(true);
+  };
+
+  const handleDeleteIngredient = async () => {
+    if (!selectedIngredient) return;
+
+    try {
+      const { error } = await supabase
+        .from('ingredients')
+        .delete()
+        .eq('id', selectedIngredient.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Ingredient deleted successfully",
+      });
+
+      setShowEditIngredient(false);
+      onIngredientAdded();
+    } catch (error) {
+      console.error("Error deleting ingredient:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete ingredient",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateIngredient = async () => {
+    if (!selectedIngredient) return;
+
+    try {
+      const { error } = await supabase
+        .from('ingredients')
+        .update({
+          name: editingIngredient.name,
+          calories_per_100g: parseFloat(editingIngredient.calories_per_100g),
+          protein_per_100g: parseFloat(editingIngredient.protein_per_100g),
+          carbs_per_100g: parseFloat(editingIngredient.carbs_per_100g),
+          fats_per_100g: parseFloat(editingIngredient.fats_per_100g),
+          fiber_per_100g: parseFloat(editingIngredient.fiber_per_100g),
+        })
+        .eq('id', selectedIngredient.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Ingredient updated successfully",
+      });
+
+      setShowEditIngredient(false);
+      onIngredientAdded();
+    } catch (error) {
+      console.error("Error updating ingredient:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update ingredient",
         variant: "destructive",
       });
     }
@@ -169,7 +255,11 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
       {ingredients.length > 0 ? (
         <div className="space-y-4">
           {ingredients.map((ingredient) => (
-            <div key={ingredient.id} className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out">
+            <div 
+              key={ingredient.id} 
+              className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out cursor-pointer hover:bg-white/80"
+              onClick={() => handleIngredientClick(ingredient)}
+            >
               <div className="flex justify-between items-center">
                 <h3 className="font-medium">{ingredient.name}</h3>
                 <p className="text-sm text-gray-500">
@@ -185,6 +275,87 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
           No ingredients added yet.
         </div>
       )}
+
+      <Dialog open={showEditIngredient} onOpenChange={setShowEditIngredient}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit or Delete Ingredient</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editingIngredient.name}
+                onChange={(e) => setEditingIngredient({ ...editingIngredient, name: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-calories">Calories per 100g</Label>
+                <Input
+                  id="edit-calories"
+                  type="number"
+                  value={editingIngredient.calories_per_100g}
+                  onChange={(e) => setEditingIngredient({ ...editingIngredient, calories_per_100g: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-protein">Protein (g)</Label>
+                <Input
+                  id="edit-protein"
+                  type="number"
+                  value={editingIngredient.protein_per_100g}
+                  onChange={(e) => setEditingIngredient({ ...editingIngredient, protein_per_100g: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-carbs">Carbs (g)</Label>
+                <Input
+                  id="edit-carbs"
+                  type="number"
+                  value={editingIngredient.carbs_per_100g}
+                  onChange={(e) => setEditingIngredient({ ...editingIngredient, carbs_per_100g: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-fats">Fats (g)</Label>
+                <Input
+                  id="edit-fats"
+                  type="number"
+                  value={editingIngredient.fats_per_100g}
+                  onChange={(e) => setEditingIngredient({ ...editingIngredient, fats_per_100g: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-fiber">Fiber (g)</Label>
+                <Input
+                  id="edit-fiber"
+                  type="number"
+                  value={editingIngredient.fiber_per_100g}
+                  onChange={(e) => setEditingIngredient({ ...editingIngredient, fiber_per_100g: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter className="flex justify-between gap-4 sm:justify-between">
+              <Button
+                variant="destructive"
+                onClick={handleDeleteIngredient}
+                className="flex-1"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+              <Button
+                onClick={handleUpdateIngredient}
+                className="flex-1 bg-[#a7cca4] hover:bg-[#96bb93] text-white"
+              >
+                Update Values
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
