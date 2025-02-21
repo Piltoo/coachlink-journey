@@ -28,14 +28,14 @@ type ExercisesSectionProps = {
 
 const muscleGroups = [
   "All",
-  "Quadriceps",
-  "Chest",
-  "Back",
   "Shoulders",
+  "Chest",
   "Biceps",
   "Triceps",
-  "Gluts",
+  "Abdominal",
+  "Quadriceps",
   "Hamstrings",
+  "Gluts"
 ];
 
 const difficultyLevels = [
