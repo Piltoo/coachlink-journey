@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +41,10 @@ export function StatsCards() {
         .select('role')
         .eq('id', user.id)
         .single();
+
+      if (profile?.role) {
+        setUserRole(profile.role);
+      }
 
       if (profile?.role === 'coach') {
         const { data: coachClients, error: clientsError } = await supabase
@@ -125,7 +130,7 @@ export function StatsCards() {
 
   return (
     <div className="grid grid-cols-4 gap-4">
-      {userRole === 'trainer' && (
+      {userRole === 'coach' && (
         <TrainerStats 
           unreadCheckIns={unreadCheckIns}
           unreadMessages={unreadMessages}
@@ -146,4 +151,4 @@ export function StatsCards() {
       )}
     </div>
   );
-};
+}

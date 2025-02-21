@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useNavigate } from "react-router-dom";
 
-type UserRole = 'client' | 'trainer' | 'admin';
+type UserRole = 'client' | 'coach' | 'admin';
 
 type SessionRequest = {
   id: string;
@@ -149,7 +149,7 @@ const Dashboard = () => {
             <ClientProgress />
           )}
           
-          {userRole === 'trainer' && (
+          {userRole === 'coach' && (
             <>
               <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-4">
                 <h2 className="text-lg font-semibold text-primary mb-2">Pending Session Requests</h2>
