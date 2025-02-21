@@ -155,10 +155,21 @@ export function NavBar() {
                       variant="ghost"
                       className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
                       size="icon"
-                      title="Nutrition & Training"
+                      title="Training Plans"
                     >
-                      <Link to="/nutrition-training">
+                      <Link to="/training-plans">
                         <Dumbbell className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      variant="ghost"
+                      className="text-primary hover:text-accent hover:bg-secondary p-2 h-10 w-10"
+                      size="icon"
+                      title="Nutrition Plans"
+                    >
+                      <Link to="/nutrition-plans">
+                        <Utensils className="h-4 w-4" />
                       </Link>
                     </Button>
                     <Button
