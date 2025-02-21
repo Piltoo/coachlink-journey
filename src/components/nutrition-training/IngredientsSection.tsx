@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AddIngredientDialog } from "./AddIngredientDialog";
 import { EditIngredientDialog } from "./EditIngredientDialog";
-import { IngredientSearch } from "./IngredientSearch";
+import { Input } from "@/components/ui/input";
 import { Ingredient } from "./types";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type IngredientsSectionProps = {
   ingredients: Ingredient[];
@@ -14,45 +15,29 @@ type IngredientsSectionProps = {
 export function IngredientsSection({ ingredients, onIngredientAdded }: IngredientsSectionProps) {
   const [showEditIngredient, setShowEditIngredient] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState<string>("all");
   const [groups, setGroups] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchGroups();
-  }, []);
-
-  const fetchGroups = async () => {
-    try {
-      console.log("Fetching groups...");
-      const { data, error } = await supabase
-        .from('ingredients_all_coaches')
-        .select('grop')
-        .not('grop', 'is', null)
-        .order('grop');
-
-      if (error) {
-        console.error("Error fetching groups:", error);
-        throw error;
-      }
-
-      const uniqueGroups = Array.from(new Set(
-        data
-          .map(item => item.grop)
-          .filter((group): group is string => 
-            Boolean(group) && group.trim() !== ''
-          )
-      )).sort();
-
-      console.log("Fetched groups:", uniqueGroups);
-      setGroups(uniqueGroups);
-    } catch (error) {
-      console.error("Error in fetchGroups:", error);
-    }
-  };
+    const uniqueGroups = Array.from(new Set(
+      ingredients
+        .map(item => item.group_name)
+        .filter((group): group is string => Boolean(group))
+    )).sort();
+    setGroups(uniqueGroups);
+  }, [ingredients]);
 
   const handleIngredientClick = (ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);
     setShowEditIngredient(true);
   };
+
+  const filteredIngredients = ingredients.filter(ingredient => {
+    const matchesSearch = ingredient.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGroup = selectedGroup === "all" || ingredient.group_name === selectedGroup;
+    return matchesSearch && matchesGroup;
+  });
 
   return (
     <div className="bg-white/40 backdrop-blur-lg rounded-lg border border-gray-200/50 p-6 shadow-sm transition-all duration-200 ease-in-out">
@@ -61,11 +46,32 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         <AddIngredientDialog groups={groups} onIngredientAdded={onIngredientAdded} />
       </div>
 
-      <IngredientSearch onIngredientAdded={onIngredientAdded} />
+      <div className="space-y-4">
+        <Input
+          type="text"
+          placeholder="Search ingredients..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full"
+        />
+
+        <Tabs defaultValue="all" value={selectedGroup} onValueChange={setSelectedGroup}>
+          <TabsList className="w-full flex flex-wrap">
+            <TabsTrigger value="all" className="flex-1">
+              All
+            </TabsTrigger>
+            {groups.map((group) => (
+              <TabsTrigger key={group} value={group} className="flex-1">
+                {group}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </div>
       
-      {ingredients.length > 0 ? (
-        <div className="space-y-4">
-          {ingredients.map((ingredient) => (
+      {filteredIngredients.length > 0 ? (
+        <div className="space-y-4 mt-6">
+          {filteredIngredients.map((ingredient) => (
             <div 
               key={ingredient.id} 
               className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out cursor-pointer hover:bg-white/80"
@@ -86,7 +92,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         </div>
       ) : (
         <div className="text-center py-12 text-gray-500">
-          No ingredients added yet.
+          No ingredients found.
         </div>
       )}
 

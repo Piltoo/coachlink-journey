@@ -7,6 +7,7 @@ export type Ingredient = {
   carbs_per_100g: number;
   fats_per_100g: number;
   fiber_per_100g: number;
+  group_name?: string;
 };
 
 export type IngredientFormData = {
