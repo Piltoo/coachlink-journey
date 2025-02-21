@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -149,49 +150,49 @@ const Dashboard = () => {
           )}
           
           {userRole === 'coach' && (
-            <>
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                <GlassCard className="p-4 lg:col-span-2">
-                  <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Session Requests</h3>
-                  <div className="mt-2 space-y-2">
-                    {sessionRequests.length > 0 ? (
-                      sessionRequests.map((session) => (
-                        <div key={session.id} className="flex items-center justify-between bg-gray-50/80 rounded p-2">
-                          <div>
-                            <p className="text-xs font-medium">{session.client.full_name || session.client.email}</p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(session.start_time).toLocaleString()}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm"
-                              className="h-6 px-2 text-xs bg-[#a7cca4] hover:bg-[#96bb93] text-white"
-                              onClick={() => handleSessionResponse(session.id, true)}
-                            >
-                              Approve
-                            </Button>
-                            <Button 
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs border-[#a7cca4] text-[#a7cca4] hover:bg-[#a7cca4]/10"
-                              onClick={() => handleSessionResponse(session.id, false)}
-                            >
-                              Decline
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-gray-500">No pending session requests</p>
-                    )}
-                  </div>
-                </GlassCard>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <GlassCard className="p-4">
+                <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
+                <p className="text-4xl font-bold text-[#1B4332]">0</p>
+                <p className="text-xs text-gray-500 mt-1">No assignments today</p>
+              </GlassCard>
 
-                <PaymentsCard />
-                <MissedPaymentsCard />
-              </div>
-            </>
+              <GlassCard className="p-4">
+                <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Sessions</h3>
+                <p className="text-4xl font-bold text-[#1B4332]">{sessionRequests.length}</p>
+                <div className="mt-2 max-h-[80px] overflow-y-auto">
+                  {sessionRequests.length > 0 ? (
+                    sessionRequests.slice(0, 2).map((session) => (
+                      <div key={session.id} className="flex items-center justify-between text-xs py-1">
+                        <span className="text-gray-600">{session.client.full_name || session.client.email}</span>
+                        <div className="flex gap-1">
+                          <Button 
+                            size="sm"
+                            className="h-5 px-2 text-[10px] bg-[#a7cca4] hover:bg-[#96bb93] text-white"
+                            onClick={() => handleSessionResponse(session.id, true)}
+                          >
+                            ✓
+                          </Button>
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            className="h-5 px-2 text-[10px] border-[#a7cca4] text-[#a7cca4] hover:bg-[#a7cca4]/10"
+                            onClick={() => handleSessionResponse(session.id, false)}
+                          >
+                            ✕
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-500">No pending sessions</p>
+                  )}
+                </div>
+              </GlassCard>
+
+              <PaymentsCard />
+              <MissedPaymentsCard />
+            </div>
           )}
         </div>
       </div>
