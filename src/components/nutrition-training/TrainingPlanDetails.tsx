@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, GripVertical, Save, X, ArrowRight, Check } from "lucide-react";
+import { Send, GripVertical, Save, X, ArrowRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -323,7 +323,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     }
   };
 
-  const handleReplaceExercise = (index: number, newExercise: Exercise) => {
+  const handleReplaceSelection = (index: number, newExercise: Exercise) => {
     if (selectedReplacement.exercise?.id === newExercise.id) {
       setSelectedReplacement({ index: -1, exercise: null });
     } else {
@@ -424,19 +424,22 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                                 .map(e => (
                                   <div
                                     key={e.id}
-                                    className="flex items-center space-x-2 p-2 hover:bg-accent/5 rounded-md cursor-pointer"
-                                    onClick={() => handleReplaceExercise(index, e)}
+                                    className="flex items-center space-x-2 p-2 hover:bg-accent/5 rounded-md"
                                   >
                                     <Checkbox
+                                      id={`exercise-${e.id}`}
                                       checked={selectedReplacement.exercise?.id === e.id}
-                                      onCheckedChange={() => handleReplaceExercise(index, e)}
+                                      onCheckedChange={() => handleReplaceSelection(index, e)}
                                     />
-                                    <div className="flex-1">
+                                    <label
+                                      htmlFor={`exercise-${e.id}`}
+                                      className="flex-1 cursor-pointer"
+                                    >
                                       <div className="font-medium">{e.name}</div>
                                       <div className="text-sm text-muted-foreground">
                                         {e.description} ({e.muscle_group})
                                       </div>
-                                    </div>
+                                    </label>
                                   </div>
                                 ))}
                             </div>
