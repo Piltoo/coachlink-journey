@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -406,7 +407,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                             <div className="text-left">
                               <h5 className="font-medium">{exercise.name}</h5>
                               <p className="text-sm text-muted-foreground">
-                                Equipment: {exercise.equipment_needed || 'No equipment needed'}
+                                {exercise.equipment_needed || 'No equipment needed'}
                               </p>
                             </div>
                           </Button>
