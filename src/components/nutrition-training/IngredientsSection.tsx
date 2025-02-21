@@ -78,7 +78,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
   };
 
   return (
-    <div className="bg-white">
+    <div className="bg-white/40 backdrop-blur-lg rounded-lg border border-gray-200/50 p-6 shadow-sm transition-all duration-200 ease-in-out">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900">Ingredients List</h2>
         <Dialog open={showAddIngredient} onOpenChange={setShowAddIngredient}>
@@ -155,7 +155,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
       {ingredients.length > 0 ? (
         <div className="space-y-4">
           {ingredients.map((ingredient) => (
-            <div key={ingredient.id} className="p-4 border rounded-lg">
+            <div key={ingredient.id} className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out">
               <div className="flex justify-between items-center">
                 <h3 className="font-medium">{ingredient.name}</h3>
                 <p className="text-sm text-gray-500">

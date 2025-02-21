@@ -14,7 +14,7 @@ export function TrainingPlansSection() {
   };
 
   return (
-    <div className="bg-white">
+    <div className="bg-white/40 backdrop-blur-lg rounded-lg border border-gray-200/50 p-6 shadow-sm transition-all duration-200 ease-in-out">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900">Training Plans</h2>
         <Button 
