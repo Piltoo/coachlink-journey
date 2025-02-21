@@ -413,9 +413,6 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                         <PopoverContent className="w-80 p-0">
                           <div className="p-4 border-b">
                             <h4 className="font-medium text-sm">Select a replacement exercise</h4>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              Select the exercise you want to replace with and click confirm
-                            </p>
                           </div>
                           <ScrollArea className="h-[300px]">
                             <div className="p-2">
@@ -424,22 +421,13 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                                 .map(e => (
                                   <div
                                     key={e.id}
-                                    className="flex items-center space-x-2 p-2 hover:bg-accent/5 rounded-md"
+                                    className="flex items-center justify-between p-2 hover:bg-accent/5 rounded-md"
                                   >
+                                    <span className="font-medium">{e.name}</span>
                                     <Checkbox
-                                      id={`exercise-${e.id}`}
                                       checked={selectedReplacement.exercise?.id === e.id}
                                       onCheckedChange={() => handleReplaceSelection(index, e)}
                                     />
-                                    <label
-                                      htmlFor={`exercise-${e.id}`}
-                                      className="flex-1 cursor-pointer"
-                                    >
-                                      <div className="font-medium">{e.name}</div>
-                                      <div className="text-sm text-muted-foreground">
-                                        {e.description} ({e.muscle_group})
-                                      </div>
-                                    </label>
                                   </div>
                                 ))}
                             </div>
