@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -129,11 +130,11 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-primary">Welcome Back</h1>
-            <div className="text-sm text-muted-foreground">
+            <h1 className="text-2xl font-semibold text-[#1B4332]">Welcome Back</h1>
+            <div className="text-sm text-gray-600">
               {new Date().toLocaleDateString('en-US', { 
                 weekday: 'long', 
                 year: 'numeric', 
@@ -151,25 +152,32 @@ const Dashboard = () => {
           
           {userRole === 'coach' && (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <GlassCard>
-                  <h2 className="text-lg font-semibold text-primary mb-4">Pending Check-ins</h2>
-                  <div className="min-h-[200px]">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <GlassCard className="p-4">
+                  <h2 className="text-lg font-semibold text-[#1B4332] mb-4">Today's Schedule</h2>
+                  <div className="min-h-[300px] flex items-center justify-center">
+                    <p className="text-sm text-gray-500">No appointments scheduled for today</p>
+                  </div>
+                </GlassCard>
+
+                <GlassCard className="p-4">
+                  <h2 className="text-lg font-semibold text-[#1B4332] mb-4">Pending Session Requests</h2>
+                  <div className="min-h-[300px]">
                     {sessionRequests.length > 0 ? (
                       <div className="space-y-3">
                         {sessionRequests.map((session) => (
-                          <div key={session.id} className="p-3 bg-gray-50 rounded-lg space-y-2">
+                          <div key={session.id} className="p-3 bg-gray-50/80 rounded-lg">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium text-sm">{session.client.full_name || session.client.email}</p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="font-medium text-sm text-gray-700">{session.client.full_name || session.client.email}</p>
+                                <p className="text-xs text-gray-500 mt-1">
                                   {new Date(session.start_time).toLocaleString()}
                                 </p>
                               </div>
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm"
-                                  className="h-8 px-3 text-xs bg-[#a7cca4] hover:bg-[#96bb93] text-white"
+                                  className="h-7 px-3 text-xs bg-[#a7cca4] hover:bg-[#96bb93] text-white"
                                   onClick={() => handleSessionResponse(session.id, true)}
                                 >
                                   Approve
@@ -177,7 +185,7 @@ const Dashboard = () => {
                                 <Button 
                                   size="sm"
                                   variant="outline"
-                                  className="h-8 px-3 text-xs border-[#a7cca4] text-[#a7cca4] hover:bg-[#a7cca4]/10"
+                                  className="h-7 px-3 text-xs border-[#a7cca4] text-[#a7cca4] hover:bg-[#a7cca4]/10"
                                   onClick={() => handleSessionResponse(session.id, false)}
                                 >
                                   Decline
@@ -188,20 +196,15 @@ const Dashboard = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-center text-muted-foreground text-sm py-2">No pending session requests</p>
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-sm text-gray-500">No pending session requests</p>
+                      </div>
                     )}
-                  </div>
-                </GlassCard>
-
-                <GlassCard>
-                  <h2 className="text-lg font-semibold text-primary mb-4">Today's Schedule</h2>
-                  <div className="min-h-[200px] flex items-center justify-center">
-                    <p className="text-center text-muted-foreground text-sm">No appointments scheduled for today</p>
                   </div>
                 </GlassCard>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <PaymentsCard />
                 <MissedPaymentsCard />
               </div>

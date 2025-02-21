@@ -4,20 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GlassCard } from "@/components/ui/glass-card";
 
-type DashboardStat = {
-  value: number;
-  description: string;
-};
-
-type DashboardStatsType = {
-  activeClients: DashboardStat;
-  pendingCheckins: DashboardStat;
-  unreadMessages: DashboardStat;
-};
+interface DashboardStats {
+  activeClients: {
+    value: number;
+    description: string;
+  };
+  pendingCheckins: {
+    value: number;
+    description: string;
+  };
+  unreadMessages: {
+    value: number;
+    description: string;
+  };
+}
 
 export function StatsCards() {
-  const [stats, setStats] = useState<DashboardStatsType>({
-    activeClients: { value: 0, description: "0 new this week" },
+  const [stats, setStats] = useState<DashboardStats>({
+    activeClients: { value: 0, description: "+0 new this week" },
     pendingCheckins: { value: 0, description: "Requires review" },
     unreadMessages: { value: 0, description: "New messages" }
   });
@@ -102,35 +106,30 @@ export function StatsCards() {
   if (userRole !== 'coach') return null;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-6">
-        <GlassCard>
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Active Clients</h3>
-          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.activeClients.value}</p>
-          <p className="text-sm text-green-600">{stats.activeClients.description}</p>
-        </GlassCard>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <GlassCard className="p-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">Active Clients</h3>
+        <p className="text-4xl font-bold text-[#1B4332]">{stats.activeClients.value}</p>
+        <p className="text-xs text-green-600 mt-1">{stats.activeClients.description}</p>
+      </GlassCard>
 
-        <GlassCard>
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Today's Appointments</h3>
-          <div className="h-[calc(100%-2rem)] flex flex-col justify-center">
-            <p className="text-sm text-gray-500">No appointments scheduled for today</p>
-          </div>
-        </GlassCard>
-      </div>
+      <GlassCard className="p-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Appointments</h3>
+        <p className="text-4xl font-bold text-[#1B4332]">0</p>
+        <p className="text-xs text-gray-500 mt-1">No appointments for today</p>
+      </GlassCard>
 
-      <div className="grid grid-cols-2 gap-6">
-        <GlassCard>
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Pending Check-ins</h3>
-          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.pendingCheckins.value}</p>
-          <p className="text-sm text-gray-500">{stats.pendingCheckins.description}</p>
-        </GlassCard>
+      <GlassCard className="p-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Check-ins</h3>
+        <p className="text-4xl font-bold text-[#1B4332]">{stats.pendingCheckins.value}</p>
+        <p className="text-xs text-gray-500 mt-1">{stats.pendingCheckins.description}</p>
+      </GlassCard>
 
-        <GlassCard>
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Unread Messages</h3>
-          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.unreadMessages.value}</p>
-          <p className="text-sm text-gray-500">{stats.unreadMessages.description}</p>
-        </GlassCard>
-      </div>
+      <GlassCard className="p-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">Unread Messages</h3>
+        <p className="text-4xl font-bold text-[#1B4332]">{stats.unreadMessages.value}</p>
+        <p className="text-xs text-gray-500 mt-1">{stats.unreadMessages.description}</p>
+      </GlassCard>
     </div>
   );
 }
