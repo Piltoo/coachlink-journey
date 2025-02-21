@@ -52,6 +52,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -317,10 +318,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     }
   };
 
-  const handleReplaceExercise = async (index: number, newExercise: Exercise) => {
-    console.log('Replacing exercise at index:', index);
-    console.log('New exercise:', newExercise);
-    
+  const handleReplaceExercise = (index: number, newExercise: Exercise) => {
     const updatedExercises = [...exercises];
     const oldExercise = updatedExercises[index];
     
@@ -332,8 +330,8 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
       order_index: oldExercise.order_index
     };
 
-    console.log('Updated exercise:', updatedExercises[index]);
     setExercises(updatedExercises);
+    setOpenPopoverIndex(null);
   };
 
   const handleRemoveExercise = (index: number) => {
@@ -372,7 +370,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                   >
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1 space-y-2">
-                      <Popover>
+                      <Popover open={openPopoverIndex === index} onOpenChange={(open) => setOpenPopoverIndex(open ? index : null)}>
                         <PopoverTrigger asChild>
                           <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
                             <div className="text-left">
@@ -383,7 +381,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                             </div>
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-80 p-0">
+                        <PopoverContent className="w-80 p-0" onInteractOutside={() => setOpenPopoverIndex(null)}>
                           <ScrollArea className="h-[300px]">
                             {availableExercises
                               .filter(e => e.muscle_group === exercise.muscle_group && e.id !== exercise.id)
@@ -392,10 +390,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                                   key={e.id}
                                   variant="ghost"
                                   className="w-full justify-start p-2 hover:bg-accent/5"
-                                  onClick={() => {
-                                    console.log('Clicked replacement exercise:', e);
-                                    handleReplaceExercise(index, e);
-                                  }}
+                                  onClick={() => handleReplaceExercise(index, e)}
                                 >
                                   <div className="text-left">
                                     <div className="font-medium">{e.name}</div>
