@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Ingredient = {
   id: string;
@@ -27,6 +28,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
   const [showAddIngredient, setShowAddIngredient] = useState(false);
   const [showEditIngredient, setShowEditIngredient] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
+  const [groups, setGroups] = useState<string[]>([]);
   const [editingIngredient, setEditingIngredient] = useState({
     name: "",
     calories_per_100g: "",
@@ -42,10 +44,41 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
     carbs_per_100g: "",
     fats_per_100g: "",
     fiber_per_100g: "",
+    group: "",
   });
   const { toast } = useToast();
 
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ingredients_all_coaches')
+        .select('grop')
+        .not('grop', 'is', null);
+
+      if (error) throw error;
+
+      // Get unique groups and remove any nulls or empty strings
+      const uniqueGroups = [...new Set(data.map(item => item.grop))].filter(Boolean);
+      setGroups(uniqueGroups);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+    }
+  };
+
   const handleAddIngredient = async () => {
+    if (!newIngredient.group) {
+      toast({
+        title: "Error",
+        description: "Please select a group for the ingredient",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
@@ -58,6 +91,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         fats_per_100g: parseFloat(newIngredient.fats_per_100g),
         fiber_per_100g: parseFloat(newIngredient.fiber_per_100g),
         coach_id: user.id,
+        group: newIngredient.group,
       };
 
       const { error } = await supabase
@@ -79,6 +113,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         carbs_per_100g: "",
         fats_per_100g: "",
         fiber_per_100g: "",
+        group: "",
       });
       onIngredientAdded();
     } catch (error) {
@@ -191,6 +226,24 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
                   onChange={(e) => setNewIngredient({ ...newIngredient, name: e.target.value })}
                   placeholder="Enter ingredient name"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="group">Group</Label>
+                <Select
+                  value={newIngredient.group}
+                  onValueChange={(value) => setNewIngredient({ ...newIngredient, group: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groups.map((group) => (
+                      <SelectItem key={group} value={group}>
+                        {group}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

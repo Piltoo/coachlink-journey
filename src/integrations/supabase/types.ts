@@ -229,6 +229,36 @@ export type Database = {
           },
         ]
       }
+      ingredients_all_coaches: {
+        Row: {
+          calories_per_100g: number | null
+          carbs_per_100g: string | null
+          fats_per_100g: string | null
+          fibers_per_100g: string | null
+          grop: string | null
+          name: string | null
+          protein_per_100g: string | null
+        }
+        Insert: {
+          calories_per_100g?: number | null
+          carbs_per_100g?: string | null
+          fats_per_100g?: string | null
+          fibers_per_100g?: string | null
+          grop?: string | null
+          name?: string | null
+          protein_per_100g?: string | null
+        }
+        Update: {
+          calories_per_100g?: number | null
+          carbs_per_100g?: string | null
+          fats_per_100g?: string | null
+          fibers_per_100g?: string | null
+          grop?: string | null
+          name?: string | null
+          protein_per_100g?: string | null
+        }
+        Relationships: []
+      }
       measurements: {
         Row: {
           arm_cm: number | null
