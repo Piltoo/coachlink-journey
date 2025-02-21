@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +5,9 @@ import { subDays } from "date-fns";
 import { WorkoutCard } from "./stats/WorkoutCard";
 import { WeightProgressCard } from "./stats/WeightProgressCard";
 import { MeasurementCard } from "./stats/MeasurementCard";
-import { TrainerStats } from "./stats/TrainerStats";
+import { AppointmentsCard } from "./stats/AppointmentsCard";
+import { ClientRequestsCard } from "./stats/ClientRequestsCard";
+import { GlassCard } from "@/components/ui/glass-card";
 
 type WeightData = {
   weight_kg: number;
@@ -23,9 +24,8 @@ type MeasurementsData = {
 };
 
 export function StatsCards() {
-  const [unreadCheckIns, setUnreadCheckIns] = useState(0);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [recentWeight, setRecentWeight] = useState<WeightData | null>(null);
   const [targetWeight, setTargetWeight] = useState<number>(75);
   const [measurementsHistory, setMeasurementsHistory] = useState<MeasurementsData[]>([]);
@@ -47,39 +47,21 @@ export function StatsCards() {
       }
 
       if (profile?.role === 'coach') {
-        const { data: coachClients, error: clientsError } = await supabase
-          .from('coach_clients')
-          .select('client_id')
-          .eq('coach_id', user.id);
+        const { data: messages, error: messagesError } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('receiver_id', user.id)
+          .eq('status', 'sent');
 
-        if (clientsError) {
+        if (messagesError) {
           toast({
             title: "Error",
-            description: "Failed to load clients",
+            description: "Failed to load messages",
             variant: "destructive",
           });
-          return;
+        } else {
+          setUnreadMessages(messages?.length || 0);
         }
-
-        const clientIds = coachClients?.map(client => client.client_id) || [];
-
-        const { data: checkIns, error } = await supabase
-          .from('weekly_checkins')
-          .select('id, client_id')
-          .eq('status', 'pending')
-          .in('client_id', clientIds);
-
-        if (error) {
-          toast({
-            title: "Error",
-            description: "Failed to load check-ins count",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        setUnreadCheckIns(checkIns?.length || 0);
-        setUnreadMessages(3); // Temporary mock data
       } else if (profile?.role === 'client') {
         const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
 
@@ -131,10 +113,17 @@ export function StatsCards() {
   return (
     <div className="grid grid-cols-4 gap-4">
       {userRole === 'coach' && (
-        <TrainerStats 
-          unreadCheckIns={unreadCheckIns}
-          unreadMessages={unreadMessages}
-        />
+        <>
+          <ClientRequestsCard />
+          <GlassCard className="col-span-2 bg-white/40 backdrop-blur-lg border border-green-100">
+            <div className="flex flex-col">
+              <h2 className="text-sm font-medium text-primary/80 mb-1">Unread Messages</h2>
+              <p className="text-2xl font-bold text-primary">{unreadMessages}</p>
+              <span className="text-xs text-accent mt-1">New messages</span>
+            </div>
+          </GlassCard>
+          <AppointmentsCard />
+        </>
       )}
       {userRole === 'client' && (
         <>
