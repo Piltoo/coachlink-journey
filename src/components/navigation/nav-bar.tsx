@@ -48,14 +48,18 @@ export function NavBar() {
         )}
         
         {!isPublicRoute && (
-          <>
-            <DesktopNav onSignOut={handleSignOut} />
-            <MobileNav 
-              open={open} 
-              onOpenChange={setOpen} 
-              onSignOut={handleSignOut} 
-            />
-          </>
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex">
+              <DesktopNav onSignOut={handleSignOut} />
+            </div>
+            <div className="md:hidden">
+              <MobileNav 
+                open={open} 
+                onOpenChange={setOpen} 
+                onSignOut={handleSignOut} 
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>

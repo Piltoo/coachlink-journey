@@ -12,7 +12,7 @@ export function DesktopNav({ onSignOut }: DesktopNavProps) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="hidden md:flex items-center space-x-2 flex-1 justify-center">
+    <div className="flex items-center space-x-2">
       <Button
         asChild
         variant="ghost"
