@@ -17,15 +17,15 @@ export function ExerciseListView({ exercises, onExerciseClick }: ExerciseListVie
         >
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium">{exercise.name}</h3>
-              <div className="flex items-center gap-4">
+              <div>
+                <h3 className="font-medium">{exercise.name}</h3>
                 {exercise.equipment_needed && (
-                  <span className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 mt-0.5">
                     Equipment: {exercise.equipment_needed}
-                  </span>
+                  </p>
                 )}
-                <span className="text-sm text-gray-500">{exercise.muscle_group}</span>
               </div>
+              <span className="text-sm text-gray-500">{exercise.muscle_group}</span>
             </div>
           </div>
         </div>
