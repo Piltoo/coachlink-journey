@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { MissedPaymentsCard } from "@/components/dashboard/MissedPaymentsCard";
 import { ClientProgress } from "@/components/dashboard/ClientProgress";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
@@ -165,11 +164,10 @@ const Dashboard = () => {
           {userRole === 'coach' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <GlassCard className="p-4">
-                <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Sessions</h3>
-                <p className="text-4xl font-bold text-[#1B4332]">{sessionRequests.length}</p>
-                <div className="mt-2 max-h-[80px] overflow-y-auto">
+                <h3 className="text-sm font-medium text-gray-600 mb-2">Session Requests</h3>
+                <div className="mt-2 max-h-[150px] overflow-y-auto">
                   {sessionRequests.length > 0 ? (
-                    sessionRequests.slice(0, 2).map((session) => (
+                    sessionRequests.map((session) => (
                       <div key={session.id} className="flex items-center justify-between text-xs py-1">
                         <span className="text-gray-600">{session.client.full_name || session.client.email}</span>
                         <div className="flex gap-1">
@@ -196,8 +194,6 @@ const Dashboard = () => {
                   )}
                 </div>
               </GlassCard>
-
-              <MissedPaymentsCard />
             </div>
           )}
         </div>

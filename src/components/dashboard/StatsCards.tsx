@@ -92,7 +92,7 @@ export function StatsCards() {
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <GlassCard className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Active Clients</h3>
           <p className="text-4xl font-bold text-[#1B4332]">{stats.activeClients.value}</p>
@@ -104,19 +104,37 @@ export function StatsCards() {
           <p className="text-4xl font-bold text-[#1B4332]">{stats.pendingCheckins.value}</p>
           <p className="text-xs text-gray-500 mt-1">{stats.pendingCheckins.description}</p>
         </GlassCard>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
         <GlassCard className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Pending Sessions</h3>
           <p className="text-4xl font-bold text-[#1B4332]">0</p>
-          <p className="text-xs text-gray-500 mt-1">No assignments today</p>
+          <p className="text-xs text-gray-500 mt-1">No pending sessions</p>
         </GlassCard>
 
         <GlassCard className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Unread Messages</h3>
           <p className="text-4xl font-bold text-[#1B4332]">{stats.unreadMessages.value}</p>
           <p className="text-xs text-gray-500 mt-1">{stats.unreadMessages.description}</p>
+        </GlassCard>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4">
+        <GlassCard className="p-4">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Upcoming Payments</h3>
+          <p className="text-4xl font-bold text-[#1B4332]">0</p>
+          <p className="text-xs text-gray-500 mt-1">0 kr due this week</p>
+        </GlassCard>
+
+        <GlassCard className="p-4">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Missed Payments</h3>
+          <p className="text-4xl font-bold text-red-600">0</p>
+          <p className="text-xs text-red-500 mt-1">0 kr overdue</p>
+        </GlassCard>
+
+        <GlassCard className="col-span-2 p-4">
+          <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
+          <p className="text-4xl font-bold text-[#1B4332]">0</p>
+          <p className="text-xs text-gray-500 mt-1">No assignments today</p>
         </GlassCard>
       </div>
     </div>
