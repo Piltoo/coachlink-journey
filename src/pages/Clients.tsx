@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -89,7 +90,7 @@ const Clients = () => {
               <Users className="w-8 h-8 text-primary" />
               <h1 className="text-3xl font-bold text-primary">My Clients</h1>
             </div>
-            <InviteClientDialog />
+            <InviteClientDialog onClientAdded={fetchClients} />
           </div>
 
           <ScrollArea className="h-[calc(100vh-12rem)]">

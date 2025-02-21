@@ -6,7 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export const InviteClientDialog = () => {
+interface InviteClientDialogProps {
+  onClientAdded?: () => void;
+}
+
+export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) => {
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newClientName, setNewClientName] = useState("");
   const [newClientPassword, setNewClientPassword] = useState("");
@@ -71,6 +75,9 @@ export const InviteClientDialog = () => {
         setNewClientName("");
         setNewClientPassword("");
         setIsOpen(false);
+        
+        // Call the callback to refresh the client list
+        onClientAdded?.();
       }
     } catch (error: any) {
       toast({
