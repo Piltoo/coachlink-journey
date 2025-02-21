@@ -11,7 +11,7 @@ export function NavBar() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const location = useLocation();
-  const isIndexPage = location.pathname === "/";
+  const isPublicRoute = location.pathname === "/" || location.pathname === "/auth";
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -37,7 +37,7 @@ export function NavBar() {
           FitTracker
         </Link>
         
-        {isIndexPage ? (
+        {location.pathname === "/" && (
           <Button 
             asChild
             variant="ghost" 
@@ -45,7 +45,9 @@ export function NavBar() {
           >
             <Link to="/auth">Sign In</Link>
           </Button>
-        ) : (
+        )}
+        
+        {!isPublicRoute && (
           <>
             <DesktopNav onSignOut={handleSignOut} />
             <MobileNav 
