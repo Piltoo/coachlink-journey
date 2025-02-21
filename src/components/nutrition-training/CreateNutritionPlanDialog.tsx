@@ -31,23 +31,35 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
     }
 
     try {
-      // First search in coach's ingredients
+      console.log("Searching for:", search.trim());
+
+      // Search in coach's ingredients with improved query
       const { data: coachIngredients, error: coachError } = await supabase
         .from("ingredients")
-        .select("*")
-        .ilike("name", `%${search}%`)
+        .select()
+        .or(`name.ilike.%${search.trim()}%,name.ilike.${search.trim()}%`)
         .limit(5);
 
-      if (coachError) throw coachError;
+      if (coachError) {
+        console.error("Coach ingredients search error:", coachError);
+        throw coachError;
+      }
 
-      // Then search in all coaches ingredients
+      console.log("Coach ingredients found:", coachIngredients);
+
+      // Search in all coaches ingredients with improved query
       const { data: allCoachesIngredients, error: allCoachesError } = await supabase
         .from("ingredients_all_coaches")
-        .select("*")
-        .ilike("name", `%${search}%`)
+        .select()
+        .or(`name.ilike.%${search.trim()}%,name.ilike.${search.trim()}%`)
         .limit(5);
 
-      if (allCoachesError) throw allCoachesError;
+      if (allCoachesError) {
+        console.error("All coaches ingredients search error:", allCoachesError);
+        throw allCoachesError;
+      }
+
+      console.log("All coaches ingredients found:", allCoachesIngredients);
 
       // Convert all_coaches ingredients to match Ingredient type
       const convertedAllCoachesIngredients: Ingredient[] = (allCoachesIngredients || [])
@@ -65,12 +77,18 @@ export function CreateNutritionPlanDialog({ isOpen, onClose, onPlanCreated }: Pr
       // Combine and deduplicate results based on name
       const combined = [...(coachIngredients || []), ...convertedAllCoachesIngredients];
       const uniqueIngredients = combined.filter((item, index, self) =>
-        index === self.findIndex(t => t.name === item.name)
+        index === self.findIndex(t => t.name.toLowerCase() === item.name.toLowerCase())
       );
 
+      console.log("Final unique ingredients:", uniqueIngredients);
       setIngredients(uniqueIngredients);
     } catch (error) {
       console.error("Error searching ingredients:", error);
+      toast({
+        title: "Error",
+        description: "Failed to search ingredients",
+        variant: "destructive",
+      });
     }
   };
 
