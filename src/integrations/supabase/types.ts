@@ -135,6 +135,47 @@ export type Database = {
           },
         ]
       }
+      ingredients: {
+        Row: {
+          calories_per_100g: number
+          carbs_per_100g: number
+          coach_id: string
+          created_at: string | null
+          fats_per_100g: number
+          id: string
+          name: string
+          protein_per_100g: number
+        }
+        Insert: {
+          calories_per_100g: number
+          carbs_per_100g: number
+          coach_id: string
+          created_at?: string | null
+          fats_per_100g: number
+          id?: string
+          name: string
+          protein_per_100g: number
+        }
+        Update: {
+          calories_per_100g?: number
+          carbs_per_100g?: number
+          coach_id?: string
+          created_at?: string | null
+          fats_per_100g?: number
+          id?: string
+          name?: string
+          protein_per_100g?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredients_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       measurements: {
         Row: {
           arm_cm: number | null
