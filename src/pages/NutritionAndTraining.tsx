@@ -83,22 +83,22 @@ export default function NutritionAndTraining() {
         <h1 className="text-3xl font-bold text-primary mb-8">Nutrition & Training Plans</h1>
         
         <Tabs defaultValue="training" className="space-y-8">
-          <TabsList className="bg-white/60 border border-green-100 p-1">
+          <TabsList className="w-full flex justify-start gap-8 bg-transparent border-b border-gray-200">
             <TabsTrigger 
               value="training"
-              className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+              className="pb-4 text-base font-medium border-b-2 border-transparent data-[state=active]:border-green-600 data-[state=active]:text-green-600 rounded-none transition-colors hover:text-green-600"
             >
               Training Plans
             </TabsTrigger>
             <TabsTrigger 
               value="nutrition"
-              className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+              className="pb-4 text-base font-medium border-b-2 border-transparent data-[state=active]:border-green-600 data-[state=active]:text-green-600 rounded-none transition-colors hover:text-green-600"
             >
               Nutrition Plans
             </TabsTrigger>
             <TabsTrigger 
               value="ingredients"
-              className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+              className="pb-4 text-base font-medium border-b-2 border-transparent data-[state=active]:border-green-600 data-[state=active]:text-green-600 rounded-none transition-colors hover:text-green-600"
             >
               Ingredients List
             </TabsTrigger>
