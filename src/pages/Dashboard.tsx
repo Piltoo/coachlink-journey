@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -151,12 +152,12 @@ const Dashboard = () => {
           
           {userRole === 'coach' && (
             <>
-              <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100 p-4">
-                <h2 className="text-lg font-semibold text-primary mb-2">Pending Session Requests</h2>
+              <GlassCard>
+                <h2 className="text-lg font-semibold text-primary mb-4">Pending Session Requests</h2>
                 {sessionRequests.length > 0 ? (
                   <div className="space-y-3">
                     {sessionRequests.map((session) => (
-                      <div key={session.id} className="p-3 bg-white/60 rounded-lg space-y-2">
+                      <div key={session.id} className="p-3 bg-gray-50 rounded-lg space-y-2">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium text-sm">{session.client.full_name || session.client.email}</p>
