@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -47,7 +48,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     try {
       const { data: templateData, error: templateError } = await supabase
         .from('training_plan_templates')
-        .select('exercise_details')
+        .select('*')  // Select all columns to avoid the specific column error
         .eq('id', plan.id)
         .single();
 
