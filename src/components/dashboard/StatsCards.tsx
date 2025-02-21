@@ -2,8 +2,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { PaymentsCard } from "./PaymentsCard";
-import { MissedPaymentsCard } from "./MissedPaymentsCard";
 import { GlassCard } from "@/components/ui/glass-card";
 
 // Define simple, non-recursive types for our state
@@ -136,11 +134,6 @@ export function StatsCards() {
           <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.unreadMessages.count}</p>
           <p className="text-sm text-gray-500">{stats.unreadMessages.description}</p>
         </GlassCard>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        <PaymentsCard />
-        <MissedPaymentsCard />
       </div>
     </div>
   );
