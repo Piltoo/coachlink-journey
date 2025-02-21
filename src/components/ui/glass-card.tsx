@@ -12,7 +12,7 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
     return (
       <div
         className={cn(
-          "rounded-lg bg-white/10 p-6 backdrop-blur-lg border border-white/20 shadow-xl animate-fade-in",
+          "rounded-lg bg-white p-6 shadow-sm border border-gray-100",
           className
         )}
         ref={ref}
@@ -26,3 +26,4 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
 GlassCard.displayName = "GlassCard";
 
 export { GlassCard };
+

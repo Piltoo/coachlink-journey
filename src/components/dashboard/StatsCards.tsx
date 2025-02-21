@@ -4,23 +4,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GlassCard } from "@/components/ui/glass-card";
 
-// Define simple, non-recursive types for our state
-type BasicStats = {
-  count: number;
-  description?: string;
+// Define simple, non-recursive types for stats
+type Stat = {
+  value: number;
+  description: string;
 };
 
-type DashboardStats = {
-  activeClients: BasicStats;
-  pendingCheckins: BasicStats;
-  unreadMessages: BasicStats;
+type Stats = {
+  activeClients: Stat;
+  pendingCheckins: Stat;
+  unreadMessages: Stat;
 };
 
 export function StatsCards() {
-  const [stats, setStats] = useState<DashboardStats>({
-    activeClients: { count: 0, description: "0 new this week" },
-    pendingCheckins: { count: 0, description: "Requires review" },
-    unreadMessages: { count: 0, description: "New messages" }
+  const [stats, setStats] = useState<Stats>({
+    activeClients: { value: 0, description: "0 new this week" },
+    pendingCheckins: { value: 0, description: "Requires review" },
+    unreadMessages: { value: 0, description: "New messages" }
   });
   const [userRole, setUserRole] = useState<string | null>(null);
   const { toast } = useToast();
@@ -74,15 +74,15 @@ export function StatsCards() {
 
           setStats({
             activeClients: {
-              count: activeClients?.length || 0,
+              value: activeClients?.length || 0,
               description: `+${newClients?.length || 0} new this week`
             },
             pendingCheckins: {
-              count: checkins?.length || 0,
+              value: checkins?.length || 0,
               description: "Requires review"
             },
             unreadMessages: {
-              count: messages?.length || 0,
+              value: messages?.length || 0,
               description: "New messages"
             }
           });
@@ -105,33 +105,33 @@ export function StatsCards() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-6">
-        <GlassCard className="p-6 bg-white/95 shadow-sm">
+        <GlassCard>
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Active Clients</h3>
-          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.activeClients.count}</p>
+          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.activeClients.value}</p>
           <p className="text-sm text-green-600">{stats.activeClients.description}</p>
         </GlassCard>
 
-        <GlassCard className="p-6 bg-white/95 shadow-sm">
+        <GlassCard>
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Pending Check-ins</h3>
-          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.pendingCheckins.count}</p>
+          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.pendingCheckins.value}</p>
           <p className="text-sm text-gray-500">{stats.pendingCheckins.description}</p>
         </GlassCard>
 
-        <GlassCard className="p-6 bg-white/95 shadow-sm">
+        <GlassCard>
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Today's Appointments</h3>
           <p className="text-sm text-gray-500">No appointments scheduled for today</p>
         </GlassCard>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <GlassCard className="p-6 bg-white/95 shadow-sm">
+        <GlassCard>
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Pending Session Requests</h3>
           <p className="text-sm text-gray-500">No pending session requests</p>
         </GlassCard>
 
-        <GlassCard className="p-6 bg-white/95 shadow-sm">
+        <GlassCard>
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Unread Messages</h3>
-          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.unreadMessages.count}</p>
+          <p className="text-5xl font-bold text-[#1B4332] mb-2">{stats.unreadMessages.value}</p>
           <p className="text-sm text-gray-500">{stats.unreadMessages.description}</p>
         </GlassCard>
       </div>
