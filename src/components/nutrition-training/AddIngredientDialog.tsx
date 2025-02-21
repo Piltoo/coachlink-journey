@@ -50,7 +50,7 @@ export function AddIngredientDialog({ groups, onIngredientAdded }: AddIngredient
         fats_per_100g: parseFloat(formData.fats_per_100g),
         fiber_per_100g: parseFloat(formData.fiber_per_100g),
         coach_id: user.id,
-        group: formData.group,
+        group_name: formData.group,
       };
 
       const { error } = await supabase

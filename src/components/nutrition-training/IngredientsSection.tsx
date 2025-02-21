@@ -72,7 +72,10 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
               onClick={() => handleIngredientClick(ingredient)}
             >
               <div className="flex justify-between items-center">
-                <h3 className="font-medium">{ingredient.name}</h3>
+                <div>
+                  <h3 className="font-medium">{ingredient.name}</h3>
+                  <p className="text-sm text-gray-500">{ingredient.group_name}</p>
+                </div>
                 <p className="text-sm text-gray-500">
                   Per 100g: {ingredient.calories_per_100g} cal | P: {ingredient.protein_per_100g}g | 
                   C: {ingredient.carbs_per_100g}g | F: {ingredient.fats_per_100g}g | Fiber: {ingredient.fiber_per_100g}g
@@ -92,6 +95,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         onClose={() => setShowEditIngredient(false)}
         ingredient={selectedIngredient}
         onIngredientUpdated={onIngredientAdded}
+        groups={groups}
       />
     </div>
   );

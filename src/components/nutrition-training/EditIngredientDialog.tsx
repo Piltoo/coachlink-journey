@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +15,7 @@ type EditIngredientDialogProps = {
   onClose: () => void;
   ingredient: Ingredient | null;
   onIngredientUpdated: () => void;
+  groups: string[];
 };
 
 export function EditIngredientDialog({
@@ -20,6 +23,7 @@ export function EditIngredientDialog({
   onClose,
   ingredient,
   onIngredientUpdated,
+  groups,
 }: EditIngredientDialogProps) {
   const { toast } = useToast();
   const [editingIngredient, setEditingIngredient] = useState(ingredient ? {
@@ -29,6 +33,7 @@ export function EditIngredientDialog({
     carbs_per_100g: ingredient.carbs_per_100g.toString(),
     fats_per_100g: ingredient.fats_per_100g.toString(),
     fiber_per_100g: ingredient.fiber_per_100g.toString(),
+    group: ingredient.group_name || "",
   } : null);
 
   const handleDeleteIngredient = async () => {
@@ -72,6 +77,7 @@ export function EditIngredientDialog({
           carbs_per_100g: parseFloat(editingIngredient.carbs_per_100g),
           fats_per_100g: parseFloat(editingIngredient.fats_per_100g),
           fiber_per_100g: parseFloat(editingIngredient.fiber_per_100g),
+          group_name: editingIngredient.group,
         })
         .eq('id', ingredient.id);
 
@@ -110,6 +116,24 @@ export function EditIngredientDialog({
               value={editingIngredient.name}
               onChange={(e) => setEditingIngredient({ ...editingIngredient, name: e.target.value })}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-group">Group</Label>
+            <Select
+              value={editingIngredient.group}
+              onValueChange={(value) => setEditingIngredient({ ...editingIngredient, group: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a group" />
+              </SelectTrigger>
+              <SelectContent>
+                {groups.map((group) => (
+                  <SelectItem key={group} value={group}>
+                    {group}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
