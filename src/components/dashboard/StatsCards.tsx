@@ -10,19 +10,26 @@ import { PaymentsCard } from "./PaymentsCard";
 import { MissedPaymentsCard } from "./MissedPaymentsCard";
 import { GlassCard } from "@/components/ui/glass-card";
 
-type WeightData = {
+interface WeightData {
   weight_kg: number;
   created_at: string;
-};
+}
 
-type MeasurementsData = {
+interface MeasurementValue {
+  value: number;
+  date: string;
+}
+
+interface MeasurementsData {
   waist_cm: number | null;
   chest_cm: number | null;
   hips_cm: number | null;
   thigh_cm: number | null;
   arm_cm: number | null;
   created_at: string;
-};
+}
+
+type MeasurementKey = keyof Omit<MeasurementsData, 'created_at'>;
 
 export function StatsCards() {
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -127,13 +134,13 @@ export function StatsCards() {
     fetchData();
   }, []);
 
-  const getMeasurementData = (key: keyof MeasurementsData) => {
+  const getMeasurementData = (key: MeasurementKey): MeasurementValue[] => {
     return measurementsHistory
       .map(m => ({
         value: m[key] as number | null,
         date: new Date(m.created_at).toLocaleDateString()
       }))
-      .filter((d): d is { value: number; date: string } => d.value !== null);
+      .filter((d): d is MeasurementValue => d.value !== null);
   };
 
   return (
@@ -156,7 +163,6 @@ export function StatsCards() {
             <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
               <h2 className="text-sm font-medium text-primary/80 mb-1">Today's Appointments</h2>
               <div className="space-y-2">
-                {/* We'll add appointment list here */}
                 <p className="text-sm text-muted-foreground">No appointments scheduled for today</p>
               </div>
             </GlassCard>
