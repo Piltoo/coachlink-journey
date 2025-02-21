@@ -26,13 +26,25 @@ const Clients = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        console.log("No user found");
+        console.log("No user found - user is not authenticated");
         return;
       }
 
       console.log("Current coach ID:", user.id);
 
-      // Fetch coach-client relationships with explicit foreign key reference
+      // First, let's check the coach_clients table directly
+      const { data: relationshipsData, error: relationshipsError } = await supabase
+        .from('coach_clients')
+        .select('*')
+        .eq('coach_id', user.id);
+
+      console.log("Raw coach_clients relationships:", relationshipsData);
+
+      if (relationshipsError) {
+        console.error("Error fetching coach_clients relationships:", relationshipsError);
+      }
+
+      // Now fetch the full client data with profiles
       const { data: clientsData, error: clientsError } = await supabase
         .from('coach_clients')
         .select(`
@@ -56,7 +68,7 @@ const Clients = () => {
         return;
       }
 
-      console.log("Raw coach_clients data:", clientsData);
+      console.log("Full clients data:", clientsData);
 
       if (clientsData) {
         const formattedClients = clientsData
