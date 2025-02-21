@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, GripVertical, Save, X } from "lucide-react";
+import { Send, GripVertical, Save, X, ArrowRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
@@ -53,6 +53,10 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
+  const [selectedReplacement, setSelectedReplacement] = useState<{ index: number; exercise: Exercise | null }>({
+    index: -1,
+    exercise: null
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -319,19 +323,31 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
   };
 
   const handleReplaceExercise = (index: number, newExercise: Exercise) => {
-    const updatedExercises = [...exercises];
-    const oldExercise = updatedExercises[index];
-    
-    updatedExercises[index] = {
-      ...newExercise,
-      sets: oldExercise.sets || 3,
-      reps: oldExercise.reps || 12,
-      weight: oldExercise.weight || 0,
-      order_index: oldExercise.order_index
-    };
+    setSelectedReplacement({ index, exercise: newExercise });
+  };
 
-    setExercises(updatedExercises);
-    setOpenPopoverIndex(null);
+  const confirmReplacement = () => {
+    if (selectedReplacement.exercise && selectedReplacement.index !== -1) {
+      const updatedExercises = [...exercises];
+      const oldExercise = updatedExercises[selectedReplacement.index];
+      
+      updatedExercises[selectedReplacement.index] = {
+        ...selectedReplacement.exercise,
+        sets: oldExercise.sets || 3,
+        reps: oldExercise.reps || 12,
+        weight: oldExercise.weight || 0,
+        order_index: oldExercise.order_index
+      };
+
+      setExercises(updatedExercises);
+      setOpenPopoverIndex(null);
+      setSelectedReplacement({ index: -1, exercise: null });
+      
+      toast({
+        title: "Exercise replaced",
+        description: "The exercise has been successfully replaced.",
+      });
+    }
   };
 
   const handleRemoveExercise = (index: number) => {
@@ -370,7 +386,12 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                   >
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1 space-y-2">
-                      <Popover open={openPopoverIndex === index} onOpenChange={(open) => setOpenPopoverIndex(open ? index : null)}>
+                      <Popover open={openPopoverIndex === index} onOpenChange={(open) => {
+                        if (!open) {
+                          setSelectedReplacement({ index: -1, exercise: null });
+                        }
+                        setOpenPopoverIndex(open ? index : null);
+                      }}>
                         <PopoverTrigger asChild>
                           <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
                             <div className="text-left">
@@ -381,26 +402,44 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                             </div>
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-80 p-0" onInteractOutside={() => setOpenPopoverIndex(null)}>
+                        <PopoverContent className="w-80 p-0" onInteractOutside={() => {
+                          setOpenPopoverIndex(null);
+                          setSelectedReplacement({ index: -1, exercise: null });
+                        }}>
+                          <div className="p-4 border-b">
+                            <h4 className="font-medium text-sm">Select a replacement exercise</h4>
+                          </div>
                           <ScrollArea className="h-[300px]">
-                            {availableExercises
-                              .filter(e => e.muscle_group === exercise.muscle_group && e.id !== exercise.id)
-                              .map(e => (
-                                <Button
-                                  key={e.id}
-                                  variant="ghost"
-                                  className="w-full justify-start p-2 hover:bg-accent/5"
-                                  onClick={() => handleReplaceExercise(index, e)}
-                                >
-                                  <div className="text-left">
-                                    <div className="font-medium">{e.name}</div>
-                                    <div className="text-sm text-muted-foreground">
-                                      {e.description} ({e.muscle_group})
+                            <div className="p-2">
+                              {availableExercises
+                                .filter(e => e.muscle_group === exercise.muscle_group && e.id !== exercise.id)
+                                .map(e => (
+                                  <Button
+                                    key={e.id}
+                                    variant={selectedReplacement.exercise?.id === e.id ? "default" : "ghost"}
+                                    className="w-full justify-start p-2 mb-1"
+                                    onClick={() => handleReplaceExercise(index, e)}
+                                  >
+                                    <div className="text-left">
+                                      <div className="font-medium">{e.name}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {e.description} ({e.muscle_group})
+                                      </div>
                                     </div>
-                                  </div>
-                                </Button>
-                              ))}
+                                  </Button>
+                                ))}
+                            </div>
                           </ScrollArea>
+                          {selectedReplacement.exercise && (
+                            <div className="p-2 border-t">
+                              <Button 
+                                className="w-full" 
+                                onClick={confirmReplacement}
+                              >
+                                Confirm Replacement <ArrowRight className="ml-2 h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                         </PopoverContent>
                       </Popover>
                       <Button
