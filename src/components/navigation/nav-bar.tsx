@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ export function NavBar() {
   const [brandingName, setBrandingName] = useState("FitTracker");
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const isPublicRoute = location.pathname === "/" || location.pathname === "/auth";
 
   useEffect(() => {
@@ -62,6 +63,7 @@ export function NavBar() {
         title: "Success",
         description: "Signed out successfully",
       });
+      navigate('/');
     }
   };
 
