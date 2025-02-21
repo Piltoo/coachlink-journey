@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,30 +56,22 @@ export const PaymentsCard = () => {
   }, []);
 
   return (
-    <GlassCard>
-      <CardHeader>
-        <CardTitle className="text-lg font-medium text-primary/80">Upcoming Payments</CardTitle>
-      </CardHeader>
-      <div className="p-6 pt-0">
-        <div className="space-y-4">
-          <div className="text-2xl font-bold text-primary">
-            {totalDue.toFixed(2)} kr
-            <span className="text-sm font-normal text-muted-foreground ml-2">incoming funds</span>
+    <GlassCard className="p-4">
+      <h3 className="text-sm font-medium text-gray-600 mb-2">Upcoming Payments</h3>
+      <p className="text-4xl font-bold text-[#1B4332]">{totalDue.toFixed(2)} kr</p>
+      <div className="mt-4 space-y-2 max-h-[150px] overflow-y-auto">
+        {upcomingPayments.map((payment) => (
+          <div key={payment.id} className="flex justify-between items-center text-sm">
+            <div>
+              <span className="text-xs text-gray-600">{payment.subscription.client.full_name}</span>
+              <br />
+              <span className="text-xs text-gray-500">
+                Due {format(new Date(payment.due_date), 'MMM d')}
+              </span>
+            </div>
+            <span className="text-xs font-medium">{Number(payment.amount).toFixed(2)} kr</span>
           </div>
-          <div className="space-y-2">
-            {upcomingPayments.map((payment) => (
-              <div key={payment.id} className="flex justify-between items-center text-sm">
-                <div className="flex flex-col">
-                  <span className="font-medium">{payment.subscription.client.full_name}</span>
-                  <span className="text-muted-foreground">
-                    Due {format(new Date(payment.due_date), 'MMM d, yyyy')}
-                  </span>
-                </div>
-                <span className="font-medium">{Number(payment.amount).toFixed(2)} kr</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
     </GlassCard>
   );

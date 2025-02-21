@@ -1,26 +1,16 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GlassCard } from "@/components/ui/glass-card";
 
-interface DashboardStats {
-  activeClients: {
-    value: number;
-    description: string;
-  };
-  pendingCheckins: {
-    value: number;
-    description: string;
-  };
-  unreadMessages: {
-    value: number;
-    description: string;
-  };
-}
+type StatsType = {
+  activeClients: { value: number; description: string };
+  pendingCheckins: { value: number; description: string };
+  unreadMessages: { value: number; description: string };
+};
 
 export function StatsCards() {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState<StatsType>({
     activeClients: { value: 0, description: "+0 new this week" },
     pendingCheckins: { value: 0, description: "Requires review" },
     unreadMessages: { value: 0, description: "New messages" }
