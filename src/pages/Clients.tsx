@@ -2,9 +2,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { ClientList } from "@/components/dashboard/ClientList";
 import { InviteClientDialog } from "@/components/dashboard/InviteClientDialog";
-import { RecentCheckIns } from "@/components/dashboard/RecentCheckIns";
+import { ClientProfileCard } from "@/components/dashboard/ClientProfileCard";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Users, UserCircle } from "lucide-react";
 
 type Client = {
   id: string;
@@ -13,108 +16,119 @@ type Client = {
   status: string;
 };
 
-type CheckIn = {
-  id: string;
-  created_at: string;
-  weight_kg: number;
-  profiles: {
-    full_name: string | null;
-    email: string;
-  };
-};
-
 const Clients = () => {
-  const [recentCheckIns, setRecentCheckIns] = useState<CheckIn[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchClientData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log("Current user:", user);
-      
-      if (!user) {
-        console.log("No user found");
-        return;
-      }
+  const fetchClients = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log("No user found");
+      return;
+    }
 
-      // Fetch coach's clients with better error handling
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('coach_clients')
-        .select(`
-          client:client_id (
-            id,
-            full_name,
-            email
-          ),
-          status
-        `)
-        .eq('coach_id', user.id);
-
-      console.log("Clients data:", clientsData, "Error:", clientsError);
-
-      if (clientsError) {
-        console.error("Clients fetch error:", clientsError);
-        toast({
-          title: "Error",
-          description: "Failed to load clients",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (clientsData) {
-        const formattedClients = clientsData.map(c => ({
-          id: c.client.id,
-          full_name: c.client.full_name,
-          email: c.client.email,
-          status: c.status
-        }));
-        console.log("Formatted clients:", formattedClients);
-        setClients(formattedClients);
-      }
-
-      // Fetch recent check-ins
-      const { data: checkIns, error: checkInsError } = await supabase
-        .from('weekly_checkins')
-        .select(`
+    const { data: clientsData, error: clientsError } = await supabase
+      .from('coach_clients')
+      .select(`
+        client:client_id (
           id,
-          created_at,
-          weight_kg,
-          profiles:client_id (
-            full_name,
-            email
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
+          full_name,
+          email
+        ),
+        status
+      `)
+      .eq('coach_id', user.id)
+      .eq('status', 'active');
 
-      if (checkInsError) {
-        toast({
-          title: "Error",
-          description: "Failed to load recent check-ins",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (clientsError) {
+      console.error("Clients fetch error:", clientsError);
+      toast({
+        title: "Error",
+        description: "Failed to load clients",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      setRecentCheckIns(checkIns || []);
-    };
+    if (clientsData) {
+      const formattedClients = clientsData.map(c => ({
+        id: c.client.id,
+        full_name: c.client.full_name,
+        email: c.client.email,
+        status: c.status
+      }));
+      setClients(formattedClients);
+    }
+  };
 
-    fetchClientData();
+  useEffect(() => {
+    fetchClients();
   }, [toast]);
+
+  const handleClientClick = (clientId: string) => {
+    setSelectedClientId(clientId);
+  };
+
+  const handleUnsubscribe = () => {
+    setSelectedClientId(null);
+    fetchClients();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-primary">My Clients</h1>
+            <div className="flex items-center gap-2">
+              <Users className="w-8 h-8 text-primary" />
+              <h1 className="text-3xl font-bold text-primary">My Clients</h1>
+            </div>
             <InviteClientDialog />
           </div>
 
-          <ClientList clients={clients} />
-          <RecentCheckIns checkIns={recentCheckIns} />
+          <ScrollArea className="h-[calc(100vh-12rem)]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {clients.map((client) => (
+                <Card
+                  key={client.id}
+                  className="cursor-pointer hover:bg-accent/5 transition-colors"
+                  onClick={() => handleClientClick(client.id)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <UserCircle className="w-12 h-12 text-primary" />
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {client.full_name || "Unnamed Client"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">{client.email}</p>
+                        <span className={`mt-2 inline-block text-sm px-2 py-1 rounded-full ${
+                          client.status === 'active' 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {client.status}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
+
+          <Dialog open={!!selectedClientId} onOpenChange={() => setSelectedClientId(null)}>
+            <DialogContent className="max-w-4xl h-[90vh]">
+              {selectedClientId && (
+                <ClientProfileCard
+                  clientId={selectedClientId}
+                  onUnsubscribe={handleUnsubscribe}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

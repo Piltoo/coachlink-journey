@@ -48,6 +48,54 @@ export type Database = {
           },
         ]
       }
+      client_health_assessments: {
+        Row: {
+          client_id: string | null
+          coach_id: string | null
+          created_at: string | null
+          current_activity_level: string | null
+          dietary_restrictions: string | null
+          health_goals: string | null
+          id: string
+          medical_conditions: string | null
+          previous_exercise_experience: string | null
+          sleep_patterns: string | null
+          starting_weight: number | null
+          stress_levels: string | null
+          target_weight: number | null
+        }
+        Insert: {
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          current_activity_level?: string | null
+          dietary_restrictions?: string | null
+          health_goals?: string | null
+          id?: string
+          medical_conditions?: string | null
+          previous_exercise_experience?: string | null
+          sleep_patterns?: string | null
+          starting_weight?: number | null
+          stress_levels?: string | null
+          target_weight?: number | null
+        }
+        Update: {
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          current_activity_level?: string | null
+          dietary_restrictions?: string | null
+          health_goals?: string | null
+          id?: string
+          medical_conditions?: string | null
+          previous_exercise_experience?: string | null
+          sleep_patterns?: string | null
+          starting_weight?: number | null
+          stress_levels?: string | null
+          target_weight?: number | null
+        }
+        Relationships: []
+      }
       coach_clients: {
         Row: {
           client_id: string
@@ -184,6 +232,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nutrition_plans: {
+        Row: {
+          calories_target: number | null
+          carbs_target: number | null
+          client_id: string | null
+          coach_id: string | null
+          created_at: string | null
+          description: string | null
+          fats_target: number | null
+          id: string
+          meal_plan: Json | null
+          protein_target: number | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          calories_target?: number | null
+          carbs_target?: number | null
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          fats_target?: number | null
+          id?: string
+          meal_plan?: Json | null
+          protein_target?: number | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          calories_target?: number | null
+          carbs_target?: number | null
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          fats_target?: number | null
+          id?: string
+          meal_plan?: Json | null
+          protein_target?: number | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
       }
       payments: {
         Row: {
@@ -440,6 +533,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workout_plans: {
+        Row: {
+          client_id: string | null
+          coach_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          program_details: Json | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          program_details?: Json | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          program_details?: Json | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
       }
       workout_sessions: {
         Row: {
