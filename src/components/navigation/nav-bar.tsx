@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { MessageCircle, Dumbbell, Settings2, LogOut, Home, Users, Ruler, Utensils } from "lucide-react";
 
-type UserRole = 'client' | 'trainer' | 'admin';
+type UserRole = 'client' | 'coach' | 'admin';
 
 export function NavBar() {
   const [user, setUser] = React.useState(null);
@@ -82,7 +82,7 @@ export function NavBar() {
         }
       }
     } else {
-      // For trainers, fetch their own theme preferences
+      // For coaches, fetch their own theme preferences
       const { data: themePrefs } = await supabase
         .from('theme_preferences')
         .select('company_name')
@@ -137,7 +137,7 @@ export function NavBar() {
                     <Home className="h-4 w-4" />
                   </Link>
                 </Button>
-                {userRole === 'trainer' && (
+                {userRole === 'coach' && (
                   <>
                     <Button
                       asChild
