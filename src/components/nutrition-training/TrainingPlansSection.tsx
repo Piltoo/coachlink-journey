@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -67,13 +66,23 @@ export function TrainingPlansSection() {
 
   const searchExercises = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('exercises')
         .select('id, name, description, muscle_group')
-        .ilike('name', `%${searchTerm}%`)
         .order('name');
 
-      if (error) throw error;
+      if (searchTerm) {
+        query = query.ilike('name', `%${searchTerm}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error searching exercises:', error);
+        throw error;
+      }
+
+      console.log('Found exercises:', data);
       setExercises(data || []);
     } catch (error) {
       console.error('Error searching exercises:', error);
@@ -84,6 +93,12 @@ export function TrainingPlansSection() {
       });
     }
   };
+
+  useEffect(() => {
+    if (showAddExercise) {
+      searchExercises();
+    }
+  }, [showAddExercise]);
 
   const handleCreatePlan = async () => {
     if (!planName.trim()) {
@@ -96,7 +111,6 @@ export function TrainingPlansSection() {
     }
 
     try {
-      // First get the current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError) throw userError;
@@ -109,14 +123,13 @@ export function TrainingPlansSection() {
         return;
       }
 
-      // Create the training plan with coach_id
       const { data: plan, error: planError } = await supabase
         .from('training_plan_templates')
         .insert([
           {
             name: planName,
             description: planDescription,
-            coach_id: user.id // Add the coach_id field
+            coach_id: user.id
           }
         ])
         .select()
