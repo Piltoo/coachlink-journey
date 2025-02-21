@@ -12,31 +12,35 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings2, Palette, Building2 } from "lucide-react";
+import { Settings2, Building2, CreditCard } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
-type ThemePreferences = {
+type SubscriptionPlan = {
   id: string;
-  user_id: string;
-  primary_color: string;
-  secondary_color: string;
-  accent_color: string;
-  company_name: string | null;
-  created_at: string;
-  updated_at: string;
+  name: string;
+  description: string | null;
+  amount: number;
+  currency: string;
+  interval: string;
+  active: boolean;
 };
 
 export default function Settings() {
-  const [primaryColor, setPrimaryColor] = useState("#1B4332");
-  const [secondaryColor, setSecondaryColor] = useState("#95D5B2");
-  const [accentColor, setAccentColor] = useState("#2D6A4F");
   const [companyName, setCompanyName] = useState("FitCoach");
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [newPlan, setNewPlan] = useState({
+    name: "",
+    description: "",
+    amount: 0,
+    interval: "month",
+  });
 
   useEffect(() => {
-    const fetchUserAndPreferences = async () => {
-      console.log("Fetching user and preferences...");
+    const fetchUserAndSettings = async () => {
+      console.log("Fetching user and settings...");
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log("No user found");
@@ -62,36 +66,26 @@ export default function Settings() {
         setUserRole(profile.role);
       }
 
-      // Fetch theme preferences
-      const { data: preferences, error: preferencesError } = await supabase
-        .from('theme_preferences')
+      // Fetch subscription plans
+      const { data: subscriptionPlans, error: plansError } = await supabase
+        .from('subscription_plans')
         .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .eq('coach_id', user.id)
+        .eq('active', true);
 
-      if (preferencesError) {
-        console.error("Error fetching preferences:", preferencesError);
+      if (plansError) {
+        console.error("Error fetching subscription plans:", plansError);
         return;
       }
 
-      if (preferences) {
-        console.log("Loaded preferences:", preferences);
-        const themePrefs = preferences as ThemePreferences;
-        setPrimaryColor(themePrefs.primary_color);
-        setSecondaryColor(themePrefs.secondary_color);
-        setAccentColor(themePrefs.accent_color);
-        setCompanyName(themePrefs.company_name || "FitCoach");
-      } else {
-        console.log("No existing preferences found");
-      }
+      setPlans(subscriptionPlans || []);
     };
 
-    fetchUserAndPreferences();
+    fetchUserAndSettings();
   }, []);
 
-  const handleSaveTheme = async () => {
+  const handleSaveCompanyName = async () => {
     if (!userId) {
-      console.error("No user ID found");
       toast({
         title: "Error",
         description: "User not found. Please try logging in again.",
@@ -100,47 +94,37 @@ export default function Settings() {
       return;
     }
 
-    console.log("Saving theme preferences...");
-    console.log("Theme data:", {
-      user_id: userId,
-      primary_color: primaryColor,
-      secondary_color: secondaryColor,
-      accent_color: accentColor,
-      company_name: companyName
-    });
-
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('theme_preferences')
       .upsert({
         user_id: userId,
-        primary_color: primaryColor,
-        secondary_color: secondaryColor,
-        accent_color: accentColor,
         company_name: companyName
       }, {
         onConflict: 'user_id'
       });
 
     if (error) {
-      console.error('Error saving theme preferences:', error);
+      console.error('Error saving company name:', error);
       toast({
         title: "Error",
-        description: "Failed to save theme preferences: " + error.message,
+        description: "Failed to save company name",
         variant: "destructive",
       });
       return;
     }
 
-    console.log("Save successful:", data);
     toast({
       title: "Success",
-      description: "Theme preferences saved successfully",
+      description: "Company name saved successfully",
     });
+  };
 
-    // Apply theme changes
-    document.documentElement.style.setProperty('--primary', primaryColor);
-    document.documentElement.style.setProperty('--secondary', secondaryColor);
-    document.documentElement.style.setProperty('--accent', accentColor);
+  const handleCreatePlan = async () => {
+    // This is a placeholder - we'll implement Stripe integration in the next step
+    toast({
+      title: "Coming Soon",
+      description: "Subscription plan creation will be available once Stripe is integrated.",
+    });
   };
 
   if (userRole !== 'coach') {
@@ -164,72 +148,17 @@ export default function Settings() {
           </div>
 
           <Card className="p-6 bg-white/40 backdrop-blur-lg border border-green-100">
-            <Tabs defaultValue="theme">
+            <Tabs defaultValue="branding">
               <TabsList className="mb-4">
-                <TabsTrigger value="theme" className="flex items-center gap-2">
-                  <Palette className="h-4 w-4" />
-                  Theme
-                </TabsTrigger>
                 <TabsTrigger value="branding" className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   Branding
                 </TabsTrigger>
+                <TabsTrigger value="subscriptions" className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Subscription Plans
+                </TabsTrigger>
               </TabsList>
-
-              <TabsContent value="theme" className="space-y-6">
-                <div className="grid gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="primary-color">Primary Color</Label>
-                    <div className="flex gap-4 items-center">
-                      <Input
-                        id="primary-color"
-                        type="color"
-                        value={primaryColor}
-                        onChange={(e) => setPrimaryColor(e.target.value)}
-                        className="w-20 h-10"
-                      />
-                      <div 
-                        className="w-20 h-10 rounded"
-                        style={{ backgroundColor: primaryColor }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="secondary-color">Secondary Color</Label>
-                    <div className="flex gap-4 items-center">
-                      <Input
-                        id="secondary-color"
-                        type="color"
-                        value={secondaryColor}
-                        onChange={(e) => setSecondaryColor(e.target.value)}
-                        className="w-20 h-10"
-                      />
-                      <div 
-                        className="w-20 h-10 rounded"
-                        style={{ backgroundColor: secondaryColor }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="accent-color">Accent Color</Label>
-                    <div className="flex gap-4 items-center">
-                      <Input
-                        id="accent-color"
-                        type="color"
-                        value={accentColor}
-                        onChange={(e) => setAccentColor(e.target.value)}
-                        className="w-20 h-10"
-                      />
-                      <div 
-                        className="w-20 h-10 rounded"
-                        style={{ backgroundColor: accentColor }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
 
               <TabsContent value="branding" className="space-y-6">
                 <div className="grid gap-6">
@@ -244,12 +173,74 @@ export default function Settings() {
                       className="max-w-md"
                     />
                   </div>
+                  <Button onClick={handleSaveCompanyName} className="w-full sm:w-auto">
+                    Save Company Name
+                  </Button>
                 </div>
               </TabsContent>
 
-              <Button onClick={handleSaveTheme} className="w-full sm:w-auto mt-6">
-                Save Changes
-              </Button>
+              <TabsContent value="subscriptions" className="space-y-6">
+                <div className="grid gap-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Create New Plan</h3>
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-name">Plan Name</Label>
+                      <Input
+                        id="plan-name"
+                        value={newPlan.name}
+                        onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
+                        placeholder="e.g., Basic Monthly, Premium Annual"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-description">Description</Label>
+                      <Textarea
+                        id="plan-description"
+                        value={newPlan.description}
+                        onChange={(e) => setNewPlan({ ...newPlan, description: e.target.value })}
+                        placeholder="Describe what's included in this plan"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="plan-amount">Amount (USD)</Label>
+                      <Input
+                        id="plan-amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={newPlan.amount}
+                        onChange={(e) => setNewPlan({ ...newPlan, amount: parseFloat(e.target.value) })}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <Button onClick={handleCreatePlan} className="w-full sm:w-auto">
+                      Create Plan
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Existing Plans</h3>
+                    <div className="grid gap-4">
+                      {plans.map((plan) => (
+                        <Card key={plan.id} className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-medium">{plan.name}</h4>
+                              <p className="text-sm text-muted-foreground">{plan.description}</p>
+                              <p className="text-sm font-medium mt-2">
+                                ${plan.amount} / {plan.interval}
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                      {plans.length === 0 && (
+                        <p className="text-muted-foreground">No subscription plans created yet.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
             </Tabs>
           </Card>
         </div>

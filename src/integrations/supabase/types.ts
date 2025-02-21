@@ -388,6 +388,56 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          active: boolean | null
+          amount: number
+          coach_id: string
+          created_at: string | null
+          currency: string
+          description: string | null
+          id: string
+          interval: string
+          name: string
+          price_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          amount: number
+          coach_id: string
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          interval?: string
+          name: string
+          price_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          amount?: number
+          coach_id?: string
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          id?: string
+          interval?: string
+          name?: string
+          price_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_plans_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           amount: number
