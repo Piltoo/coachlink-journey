@@ -32,12 +32,13 @@ const Clients = () => {
     const { data: clientsData, error: clientsError } = await supabase
       .from('coach_clients')
       .select(`
-        client:client_id (
+        client_id,
+        status,
+        profiles!coach_clients_client_id_fkey (
           id,
           full_name,
           email
-        ),
-        status
+        )
       `)
       .eq('coach_id', user.id)
       .eq('status', 'active');
@@ -54,9 +55,9 @@ const Clients = () => {
 
     if (clientsData) {
       const formattedClients = clientsData.map(c => ({
-        id: c.client.id,
-        full_name: c.client.full_name,
-        email: c.client.email,
+        id: c.profiles.id,
+        full_name: c.profiles.full_name,
+        email: c.profiles.email,
         status: c.status
       }));
       setClients(formattedClients);
