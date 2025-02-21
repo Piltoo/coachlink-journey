@@ -78,27 +78,27 @@ export default function NutritionAndTraining() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
+    <div className="min-h-screen bg-[#f7f9f7]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-primary mb-8">Nutrition & Training Plans</h1>
+        <h1 className="text-2xl font-semibold text-[#1B4332] mb-6">Nutrition & Training Plans</h1>
         
-        <Tabs defaultValue="training" className="space-y-8">
-          <TabsList className="w-full flex justify-start gap-8 bg-transparent border-b border-gray-200">
+        <Tabs defaultValue="training" className="space-y-6">
+          <TabsList className="w-full flex justify-start space-x-8 border-b border-gray-200 bg-transparent p-0">
             <TabsTrigger 
               value="training"
-              className="pb-4 text-base font-medium border-b-2 border-transparent data-[state=active]:border-green-600 data-[state=active]:text-green-600 rounded-none transition-colors hover:text-green-600"
+              className="px-1 py-2 text-base font-medium text-gray-600 border-b-2 border-transparent data-[state=active]:border-[#27AE60] data-[state=active]:text-[#1B4332] rounded-none relative focus-visible:outline-none"
             >
               Training Plans
             </TabsTrigger>
             <TabsTrigger 
               value="nutrition"
-              className="pb-4 text-base font-medium border-b-2 border-transparent data-[state=active]:border-green-600 data-[state=active]:text-green-600 rounded-none transition-colors hover:text-green-600"
+              className="px-1 py-2 text-base font-medium text-gray-600 border-b-2 border-transparent data-[state=active]:border-[#27AE60] data-[state=active]:text-[#1B4332] rounded-none relative focus-visible:outline-none"
             >
               Nutrition Plans
             </TabsTrigger>
             <TabsTrigger 
               value="ingredients"
-              className="pb-4 text-base font-medium border-b-2 border-transparent data-[state=active]:border-green-600 data-[state=active]:text-green-600 rounded-none transition-colors hover:text-green-600"
+              className="px-1 py-2 text-base font-medium text-gray-600 border-b-2 border-transparent data-[state=active]:border-[#27AE60] data-[state=active]:text-[#1B4332] rounded-none relative focus-visible:outline-none"
             >
               Ingredients List
             </TabsTrigger>
