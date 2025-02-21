@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -61,13 +60,12 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
         return;
       }
 
-      // Map the exercises to match the order in plan.exercises
       const orderedExercises = plan.exercises.map(exerciseId => {
         const exerciseData = data.find(e => e.id === exerciseId);
         if (exerciseData) {
           return {
             ...exerciseData,
-            sets: 3, // Default values
+            sets: 3,
             reps: 12,
             weight: 0,
             order_index: plan.exercises!.indexOf(exerciseId)
@@ -130,7 +128,6 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     newExercises.splice(draggedIndex, 1);
     newExercises.splice(index, 0, draggedExercise);
     
-    // Update order_index for all exercises
     newExercises.forEach((exercise, idx) => {
       exercise.order_index = idx;
     });
@@ -155,7 +152,6 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
   const handleSaveChanges = async () => {
     try {
-      // Get the ordered exercise IDs
       const orderedExerciseIds = exercises.sort((a, b) => a.order_index - b.order_index).map(e => e.id);
 
       const { error } = await supabase
@@ -196,7 +192,6 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // First save all exercise details
       const exerciseDetails = exercises
         .sort((a, b) => a.order_index - b.order_index)
         .map(exercise => ({
@@ -240,11 +235,46 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     }
   };
 
+  const handleDeletePlan = async () => {
+    try {
+      const { error } = await supabase
+        .from('training_plan_templates')
+        .delete()
+        .eq('id', plan.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Training plan deleted successfully",
+      });
+      
+      onClose();
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting training plan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete training plan",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{plan.name}</DialogTitle>
+          <DialogTitle className="flex justify-between items-center">
+            {plan.name}
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={handleDeletePlan}
+            >
+              Delete Plan
+            </Button>
+          </DialogTitle>
         </DialogHeader>
         
         <div className="mt-4 space-y-4">
