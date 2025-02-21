@@ -13,6 +13,7 @@ interface Exercise {
   name: string;
   description: string;
   muscle_group: string;
+  equipment_needed?: string;
   sets?: number;
   reps?: number;
   weight?: number;
@@ -405,7 +406,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                             <div className="text-left">
                               <h5 className="font-medium">{exercise.name}</h5>
                               <p className="text-sm text-muted-foreground">
-                                {exercise.description} ({exercise.muscle_group})
+                                Equipment: {exercise.equipment_needed || 'No equipment needed'}
                               </p>
                             </div>
                           </Button>
