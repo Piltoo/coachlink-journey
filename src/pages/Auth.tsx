@@ -14,11 +14,10 @@ type ServiceOption = {
 };
 
 const serviceOptions: ServiceOption[] = [
-  { id: "nutrition", label: "Nutrition Planning" },
-  { id: "workout", label: "Workout Planning" },
   { id: "personal-training", label: "Personal Training" },
   { id: "coaching", label: "General Coaching" },
   { id: "treatments", label: "Treatments" },
+  { id: "others", label: "Others" },
 ];
 
 const Auth = () => {
