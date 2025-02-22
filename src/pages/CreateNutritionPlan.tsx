@@ -313,9 +313,11 @@ export default function CreateNutritionPlan() {
                       <div className="mt-4 p-3 bg-gray-100 rounded-lg">
                         <p className="font-semibold">Meal Total:</p>
                         <div className="text-sm text-gray-600 space-x-4">
-                          {Object.entries(calculateMealNutrition(mealIndex)).map(([key, value]) => (
-                            <span key={key}>{value.toFixed(1)}{key === 'calories' ? ' cal' : 'g'} {key !== 'calories' ? key : ''}</span>
-                          ))}
+                          <span>{calculateMealNutrition(mealIndex).calories.toFixed(1)} cal</span>
+                          <span>{calculateMealNutrition(mealIndex).protein.toFixed(1)}g protein</span>
+                          <span>{calculateMealNutrition(mealIndex).carbs.toFixed(1)}g carbs</span>
+                          <span>{calculateMealNutrition(mealIndex).fats.toFixed(1)}g fats</span>
+                          <span>{calculateMealNutrition(mealIndex).fiber.toFixed(1)}g fiber</span>
                         </div>
                       </div>
                     )}
@@ -332,9 +334,11 @@ export default function CreateNutritionPlan() {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="text-lg font-medium space-x-6">
-                  {Object.entries(calculateTotalNutrition()).map(([key, value]) => (
-                    <span key={key}>{value.toFixed(1)}{key === 'calories' ? ' cal' : 'g'} {key !== 'calories' ? key : ''}</span>
-                  ))}
+                  <span>{calculateTotalNutrition().calories.toFixed(1)} cal</span>
+                  <span>{calculateTotalNutrition().protein.toFixed(1)}g protein</span>
+                  <span>{calculateTotalNutrition().carbs.toFixed(1)}g carbs</span>
+                  <span>{calculateTotalNutrition().fats.toFixed(1)}g fats</span>
+                  <span>{calculateTotalNutrition().fiber.toFixed(1)}g fiber</span>
                 </div>
               </CardContent>
             </Card>
