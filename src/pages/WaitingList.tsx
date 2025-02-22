@@ -15,6 +15,16 @@ type PendingClient = {
   requested_services: string[];
 };
 
+type CoachClientRecord = {
+  client_id: string;
+  requested_services: string[] | null;
+  client: {
+    id: string;
+    full_name: string | null;
+    email: string;
+  };
+};
+
 export default function WaitingList() {
   const [pendingClients, setPendingClients] = useState<PendingClient[]>([]);
   const { toast } = useToast();
@@ -28,15 +38,14 @@ export default function WaitingList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log("Current user ID:", user.id); // Debug log
+      console.log("Current user ID:", user.id);
 
-      // Updated query with correct foreign key reference
       const { data, error } = await supabase
         .from('coach_clients')
         .select(`
           client_id,
           requested_services,
-          client:client_id (
+          client:profiles!coach_clients_client_id_fkey (
             id,
             full_name,
             email
@@ -45,7 +54,7 @@ export default function WaitingList() {
         .eq('coach_id', user.id)
         .eq('status', 'pending');
 
-      console.log("Query response:", { data, error }); // Debug log
+      console.log("Query response:", { data, error });
 
       if (error) {
         console.error("Error fetching clients:", error);
@@ -58,13 +67,13 @@ export default function WaitingList() {
       }
 
       if (data) {
-        const formattedClients = data.map(client => ({
+        const formattedClients = (data as CoachClientRecord[]).map(client => ({
           id: client.client.id,
           full_name: client.client.full_name,
           email: client.client.email,
           requested_services: client.requested_services || []
         }));
-        console.log("Formatted clients:", formattedClients); // Debug log
+        console.log("Formatted clients:", formattedClients);
         setPendingClients(formattedClients);
       }
     } catch (error) {
