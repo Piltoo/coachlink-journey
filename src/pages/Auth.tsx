@@ -54,14 +54,15 @@ const Auth = () => {
           throw new Error("Please agree to the terms and conditions");
         }
 
-        // Sign up the user
+        // First create the user account
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName,
-              role: 'client'
+              role: 'client',
+              requested_services: selectedServices
             },
           },
         });
@@ -69,7 +70,20 @@ const Auth = () => {
         if (signUpError) throw signUpError;
 
         if (signUpData.user) {
-          // Get all coaches to create not_connected relationships
+          // Insert the profile explicitly
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: signUpData.user.id,
+              email: email,
+              full_name: fullName,
+              role: 'client',
+              requested_services: selectedServices
+            });
+
+          if (profileError) throw profileError;
+
+          // Get all coaches
           const { data: coaches, error: coachesError } = await supabase
             .from('profiles')
             .select('id')
