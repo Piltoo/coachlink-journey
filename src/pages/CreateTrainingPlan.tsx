@@ -14,12 +14,19 @@ import { Exercise } from '@/components/nutrition-training/types/exercise';
 import { ExerciseCardView } from '@/components/nutrition-training/exercise/ExerciseCardView';
 import { ExerciseListView } from '@/components/nutrition-training/exercise/ExerciseListView';
 
+type ExerciseWithDetails = Exercise & {
+  sets?: number;
+  reps?: number;
+  weight?: number;
+  notes?: string;
+};
+
 export default function CreateTrainingPlan() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
+  const [selectedExercises, setSelectedExercises] = useState<ExerciseWithDetails[]>([]);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [muscleGroupFilter, setMuscleGroupFilter] = useState<string>('All');
 
@@ -91,8 +98,17 @@ export default function CreateTrainingPlan() {
     if (isSelected) {
       setSelectedExercises(selectedExercises.filter(ex => ex.id !== exercise.id));
     } else {
-      setSelectedExercises([...selectedExercises, exercise]);
+      setSelectedExercises([...selectedExercises, { ...exercise, sets: 3, reps: 12 }]);
     }
+  };
+
+  const updateExerciseDetails = (exerciseId: string, field: keyof ExerciseWithDetails, value: number | string) => {
+    setSelectedExercises(prev => prev.map(ex => {
+      if (ex.id === exerciseId) {
+        return { ...ex, [field]: value };
+      }
+      return ex;
+    }));
   };
 
   const filteredExercises = muscleGroupFilter === 'All' 
@@ -143,6 +159,77 @@ export default function CreateTrainingPlan() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Selected Exercises ({selectedExercises.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selectedExercises.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedExercises.map((exercise, index) => (
+                    <div key={exercise.id} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-medium">{exercise.name}</h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleExerciseClick(exercise)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label>Sets</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={exercise.sets || ''}
+                            onChange={(e) => updateExerciseDetails(exercise.id, 'sets', parseInt(e.target.value))}
+                            placeholder="Number of sets"
+                          />
+                        </div>
+                        <div>
+                          <Label>Reps</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={exercise.reps || ''}
+                            onChange={(e) => updateExerciseDetails(exercise.id, 'reps', parseInt(e.target.value))}
+                            placeholder="Number of reps"
+                          />
+                        </div>
+                        <div>
+                          <Label>Weight (kg)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={exercise.weight || ''}
+                            onChange={(e) => updateExerciseDetails(exercise.id, 'weight', parseFloat(e.target.value))}
+                            placeholder="Weight in kg"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Notes</Label>
+                        <Textarea
+                          value={exercise.notes || ''}
+                          onChange={(e) => updateExerciseDetails(exercise.id, 'notes', e.target.value)}
+                          placeholder="Add any notes about this exercise..."
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  No exercises selected. Add some exercises below.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Add Exercises</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -166,28 +253,6 @@ export default function CreateTrainingPlan() {
               </div>
 
               <div className="border rounded-lg p-4">
-                <h3 className="text-sm font-medium mb-2">Selected Exercises ({selectedExercises.length})</h3>
-                <div className="space-y-2">
-                  {selectedExercises.map((exercise) => (
-                    <div
-                      key={exercise.id}
-                      className="flex items-center justify-between p-2 bg-accent/10 rounded-md"
-                    >
-                      <span>{exercise.name}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleExerciseClick(exercise)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border rounded-lg p-4">
-                <h3 className="text-sm font-medium mb-2">Available Exercises</h3>
                 <ExerciseListView
                   exercises={filteredExercises}
                   onExerciseClick={handleExerciseClick}
