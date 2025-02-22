@@ -2,8 +2,6 @@
 import { useCallback } from "react";
 import { Users } from "lucide-react";
 import { InviteClientDialog } from "@/components/dashboard/InviteClientDialog";
-import { ClientProfileCard } from "@/components/dashboard/ClientProfileCard";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useClients } from "@/components/clients/useClients";
 import { ClientFilters } from "@/components/clients/ClientFilters";
@@ -73,17 +71,6 @@ const Clients = () => {
               onClientUpdated={fetchClients}
             />
           </ScrollArea>
-
-          <Dialog open={!!selectedClientId} onOpenChange={handleProfileClose}>
-            <DialogContent className="max-w-4xl h-[90vh]">
-              {selectedClientId && (
-                <ClientProfileCard
-                  clientId={selectedClientId}
-                  onUnsubscribe={handleProfileClose}
-                />
-              )}
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
     </div>

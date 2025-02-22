@@ -14,6 +14,7 @@ import { ServiceBadge } from "../new-arrivals/ServiceBadge";
 import { ClientActions } from "./ClientActions";
 import { CurrentServices } from "./CurrentServices";
 import { StatusBadge } from "./StatusBadge";
+import { useNavigate } from "react-router-dom";
 
 interface ClientTableProps {
   clients: Client[];
@@ -23,6 +24,7 @@ interface ClientTableProps {
 
 export function ClientTable({ clients, onClientSelected, onClientUpdated }: ClientTableProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleStatusChange = async (clientId: string, newStatus: string) => {
     try {
@@ -61,11 +63,44 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
   };
 
   const handleDeleteClient = async (clientId: string) => {
-    if (!confirm("Are you sure you want to delete this client? This will remove all their data and cannot be undone.")) {
+    // Prompt for password confirmation using a dialog
+    const { value: passwordConfirmation } = await prompt('Please enter your password to confirm deletion:');
+    
+    if (!passwordConfirmation) {
       return;
     }
 
     try {
+      // Verify the password first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to perform this action",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: passwordConfirmation,
+      });
+
+      if (signInError) {
+        toast({
+          title: "Error",
+          description: "Incorrect password",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If password is correct, show confirmation dialog
+      if (!confirm("Are you sure you want to delete this client? This action cannot be undone.")) {
+        return;
+      }
+
       const { error } = await supabase
         .from('coach_clients')
         .delete()
@@ -93,7 +128,6 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>
-          <TableHead>Email</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Services</TableHead>
           <TableHead>Requested Services</TableHead>
@@ -103,7 +137,7 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
       <TableBody>
         {clients.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
               No clients found.
             </TableCell>
           </TableRow>
@@ -113,7 +147,6 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
               <TableCell className="font-medium">
                 {client.full_name || "Unnamed Client"}
               </TableCell>
-              <TableCell>{client.email}</TableCell>
               <TableCell>
                 <StatusBadge status={client.status} />
               </TableCell>
@@ -135,7 +168,7 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
                 <ClientActions
                   clientId={client.id}
                   status={client.status}
-                  onViewProfile={onClientSelected}
+                  onViewProfile={() => navigate(`/clients/${client.id}`)}
                   onStatusChange={handleStatusChange}
                   onDelete={handleDeleteClient}
                 />
