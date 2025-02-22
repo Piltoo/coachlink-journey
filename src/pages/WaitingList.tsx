@@ -23,6 +23,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+type Profile = {
+  id: string;
+  full_name: string | null;
+  email: string;
+  registration_status: string | null;
+}
+
+type CoachClient = {
+  client_id: string;
+  requested_services: string[];
+  profiles: Profile;
+}
+
 type PendingClient = {
   id: string;
   full_name: string | null;
@@ -56,7 +69,7 @@ export default function WaitingList() {
         .select(`
           client_id,
           requested_services,
-          client:client_id (
+          profiles!coach_clients_client_id_fkey (
             id,
             full_name,
             email,
@@ -79,9 +92,9 @@ export default function WaitingList() {
       console.log("Received data:", clients);
 
       if (clients) {
-        const clientPromises = clients.map(async (record) => {
-          if (!record.client) {
-            console.log("No client found for record:", record);
+        const clientPromises = (clients as CoachClient[]).map(async (record) => {
+          if (!record.profiles) {
+            console.log("No profile found for record:", record);
             return null;
           }
 
@@ -104,11 +117,11 @@ export default function WaitingList() {
           ]);
 
           return {
-            id: record.client.id,
-            full_name: record.client.full_name,
-            email: record.client.email,
+            id: record.profiles.id,
+            full_name: record.profiles.full_name,
+            email: record.profiles.email,
             requested_services: record.requested_services || [],
-            registration_status: record.client.registration_status,
+            registration_status: record.profiles.registration_status,
             hasNutritionPlan: !!nutritionPlans.data,
             hasWorkoutPlan: !!workoutPlans.data,
             hasPersonalTraining: !!workoutSessions.data,
