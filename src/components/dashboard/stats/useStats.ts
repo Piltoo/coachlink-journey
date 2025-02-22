@@ -22,17 +22,11 @@ export const useStats = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+        // Get role from user metadata
+        const role = user.user_metadata?.role || null;
+        setUserRole(role);
 
-        if (!profile) return;
-        
-        setUserRole(profile.role);
-
-        if (profile.role === 'coach') {
+        if (role === 'coach') {
           // Get start and end of current week
           const now = new Date();
           const startOfWeek = new Date(now);
