@@ -52,16 +52,19 @@ const NewArrivals = () => {
       }
 
       // First get all client IDs that are already connected to coaches
-      const { data: connectedClientIds } = await supabase
+      const { data: connectedClients } = await supabase
         .from('coach_clients')
         .select('client_id');
+      
+      // Create an array of client IDs
+      const connectedIds = connectedClients?.map(row => row.client_id) || [];
 
       // Get all clients that are not connected to any coach
       const { data: availableClients, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
         .eq('role', 'client')
-        .not('id', 'in', connectedClientIds?.map(row => row.client_id) || []);
+        .not(connectedIds.length > 0 ? 'id' : 'id', 'in', `(${connectedIds.join(',')})`)
 
       if (profilesError) {
         throw profilesError;
