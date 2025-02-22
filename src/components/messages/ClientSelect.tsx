@@ -1,5 +1,11 @@
 
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Profile = {
   id: string;
@@ -17,28 +23,25 @@ interface ClientSelectProps {
 export function ClientSelect({ clients = [], selectedClient, onSelect, disabled }: ClientSelectProps) {
   return (
     <div className="space-y-4">
-      <h2 className="font-semibold">Your Clients</h2>
-      <Command className="rounded-lg border shadow-md">
-        <CommandInput placeholder="Search clients..." disabled={disabled} />
-        <CommandList>
-          <CommandEmpty>No clients found.</CommandEmpty>
-          <CommandGroup>
-            {(clients || []).map((client) => (
-              <CommandItem
-                key={client.id}
-                onSelect={() => onSelect(client)}
-                className={`cursor-pointer ${
-                  selectedClient?.id === client.id ? 'bg-accent' : ''
-                }`}
-              >
-                <span className="font-medium">
-                  {client.full_name || client.email}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </Command>
+      <Select
+        disabled={disabled}
+        value={selectedClient?.id}
+        onValueChange={(value) => {
+          const client = clients.find(c => c.id === value);
+          if (client) onSelect(client);
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Select a client" />
+        </SelectTrigger>
+        <SelectContent>
+          {clients.map((client) => (
+            <SelectItem key={client.id} value={client.id}>
+              {client.full_name || client.email}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
