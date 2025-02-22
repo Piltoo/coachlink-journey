@@ -77,8 +77,22 @@ export function StatsCards() {
             setTodaySessions(sessions);
           }
 
-          // Fetch stats data including new arrivals
-          const [activeClientsData, newClientsData, checkinsData, messagesData, newArrivalsData] = await Promise.all([
+          // Get all client IDs that are already connected to coaches
+          const { data: connectedClients } = await supabase
+            .from('coach_clients')
+            .select('client_id');
+          
+          // Get count of unconnected clients (new arrivals)
+          const { data: newArrivalsData } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('role', 'client')
+            .not(connectedClients?.length ? 'id' : 'id', 'in', 
+              `(${(connectedClients || []).map(c => c.client_id).join(',')})`)
+            .count();
+
+          // Fetch other stats
+          const [activeClientsData, newClientsData, checkinsData, messagesData] = await Promise.all([
             supabase
               .from('coach_clients')
               .select('id')
@@ -99,15 +113,6 @@ export function StatsCards() {
               .select('id')
               .eq('receiver_id', user.id)
               .eq('status', 'sent'),
-            supabase
-              .from('profiles')
-              .select('id')
-              .eq('role', 'client')
-              .not('id', 'in', (
-                supabase
-                  .from('coach_clients')
-                  .select('client_id')
-              ))
           ]);
 
           setStats({
@@ -124,7 +129,7 @@ export function StatsCards() {
               description: "New messages"
             },
             newArrivals: {
-              value: newArrivalsData.data?.length || 0,
+              value: newArrivalsData?.count || 0,
               description: "New potential clients"
             }
           });
