@@ -1,7 +1,5 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ClientProfileCard } from "@/components/dashboard/ClientProfileCard";
 import { ChevronLeft, UserX } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
