@@ -1,10 +1,10 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GlassCard } from "@/components/ui/glass-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { WaitingList } from "./WaitingList";
 
 type Stats = {
   activeClients: { value: number; description: string };
@@ -168,8 +168,6 @@ export function StatsCards() {
           <p className="text-4xl font-bold text-red-600">0</p>
           <p className="text-xs text-red-500 mt-1">0 kr overdue</p>
         </GlassCard>
-
-        <WaitingList />
       </div>
 
       {/* Right Side - Today's Assignments (spans 2 columns) */}
