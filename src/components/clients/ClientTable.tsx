@@ -10,16 +10,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreVertical, UserX, UserCheck, Trash2 } from "lucide-react";
 import { ServiceBadge } from "../new-arrivals/ServiceBadge";
+import { ClientActions } from "./ClientActions";
+import { CurrentServices } from "./CurrentServices";
+import { StatusBadge } from "./StatusBadge";
 
 interface ClientTableProps {
   clients: Client[];
@@ -94,17 +88,6 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-yellow-100 text-yellow-800';
-    }
-  };
-
   return (
     <Table>
       <TableHeader>
@@ -132,28 +115,14 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
               </TableCell>
               <TableCell>{client.email}</TableCell>
               <TableCell>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
-                  {client.status}
-                </span>
+                <StatusBadge status={client.status} />
               </TableCell>
               <TableCell>
-                <div className="flex gap-2">
-                  {client.hasNutritionPlan && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      Nutrition
-                    </span>
-                  )}
-                  {client.hasWorkoutPlan && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      Training
-                    </span>
-                  )}
-                  {client.hasPersonalTraining && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                      PT
-                    </span>
-                  )}
-                </div>
+                <CurrentServices
+                  hasNutritionPlan={client.hasNutritionPlan}
+                  hasWorkoutPlan={client.hasWorkoutPlan}
+                  hasPersonalTraining={client.hasPersonalTraining}
+                />
               </TableCell>
               <TableCell>
                 <div className="flex gap-2 flex-wrap">
@@ -163,43 +132,13 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
                 </div>
               </TableCell>
               <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onClientSelected(client.id)}>
-                      View Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {client.status === 'active' ? (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(client.id, 'inactive')}
-                        className="text-yellow-600"
-                      >
-                        <UserX className="w-4 h-4 mr-2" />
-                        Make Inactive
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem 
-                        onClick={() => handleStatusChange(client.id, 'active')}
-                        className="text-green-600"
-                      >
-                        <UserCheck className="w-4 h-4 mr-2" />
-                        Make Active
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem 
-                      onClick={() => handleDeleteClient(client.id)}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Client
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <ClientActions
+                  clientId={client.id}
+                  status={client.status}
+                  onViewProfile={onClientSelected}
+                  onStatusChange={handleStatusChange}
+                  onDelete={handleDeleteClient}
+                />
               </TableCell>
             </TableRow>
           ))
