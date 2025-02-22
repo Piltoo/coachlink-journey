@@ -5,11 +5,14 @@ import { useToast } from "@/hooks/use-toast";
 import { GlassCard } from "@/components/ui/glass-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { UserPlus } from "lucide-react";
 
 type Stats = {
   activeClients: { value: number; description: string };
   pendingCheckins: { value: number; description: string };
   unreadMessages: { value: number; description: string };
+  newArrivals: { value: number; description: string };
 };
 
 type TodaySession = {
@@ -24,11 +27,13 @@ export function StatsCards() {
   const [stats, setStats] = useState<Stats>({
     activeClients: { value: 0, description: "+0 new this week" },
     pendingCheckins: { value: 0, description: "Requires review" },
-    unreadMessages: { value: 0, description: "New messages" }
+    unreadMessages: { value: 0, description: "New messages" },
+    newArrivals: { value: 0, description: "New potential clients" }
   });
   const [todaySessions, setTodaySessions] = useState<TodaySession[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,8 +77,8 @@ export function StatsCards() {
             setTodaySessions(sessions);
           }
 
-          // Fetch stats data
-          const [activeClientsData, newClientsData, checkinsData, messagesData] = await Promise.all([
+          // Fetch stats data including new arrivals
+          const [activeClientsData, newClientsData, checkinsData, messagesData, newArrivalsData] = await Promise.all([
             supabase
               .from('coach_clients')
               .select('id')
@@ -93,7 +98,16 @@ export function StatsCards() {
               .from('messages')
               .select('id')
               .eq('receiver_id', user.id)
-              .eq('status', 'sent')
+              .eq('status', 'sent'),
+            supabase
+              .from('profiles')
+              .select('id')
+              .eq('role', 'client')
+              .not('id', 'in', (
+                supabase
+                  .from('coach_clients')
+                  .select('client_id')
+              ))
           ]);
 
           setStats({
@@ -108,6 +122,10 @@ export function StatsCards() {
             unreadMessages: {
               value: messagesData.data?.length || 0,
               description: "New messages"
+            },
+            newArrivals: {
+              value: newArrivalsData.data?.length || 0,
+              description: "New potential clients"
             }
           });
         }
@@ -125,6 +143,10 @@ export function StatsCards() {
   }, [toast]);
 
   if (userRole !== 'coach') return null;
+
+  const handleNewArrivalsClick = () => {
+    navigate('/clients?tab=new');
+  };
 
   return (
     <div className="grid grid-cols-4 gap-4">
@@ -151,16 +173,22 @@ export function StatsCards() {
 
       {/* Left Side Stats - Second Column */}
       <div className="space-y-4">
+        <GlassCard 
+          className="p-4 cursor-pointer transition-all hover:shadow-md hover:bg-green-50/50"
+          onClick={handleNewArrivalsClick}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-600">New Arrivals</h3>
+            <UserPlus className="w-5 h-5 text-[#1B4332]" />
+          </div>
+          <p className="text-4xl font-bold text-[#1B4332]">{stats.newArrivals.value}</p>
+          <p className="text-xs text-gray-500 mt-1">{stats.newArrivals.description}</p>
+        </GlassCard>
+
         <GlassCard className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Unread Messages</h3>
           <p className="text-4xl font-bold text-[#1B4332]">{stats.unreadMessages.value}</p>
           <p className="text-xs text-gray-500 mt-1">{stats.unreadMessages.description}</p>
-        </GlassCard>
-
-        <GlassCard className="p-4">
-          <h3 className="text-sm font-medium text-gray-600 mb-2">Upcoming Payments</h3>
-          <p className="text-4xl font-bold text-[#1B4332]">0</p>
-          <p className="text-xs text-gray-500 mt-1">0 kr due this week</p>
         </GlassCard>
 
         <GlassCard className="p-4">
