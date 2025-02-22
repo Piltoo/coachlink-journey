@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,9 @@ type AddIngredientDialogProps = {
   onIngredientAdded: () => void;
 };
 
-export function AddIngredientDialog({ groups, onIngredientAdded }: AddIngredientDialogProps) {
+export function AddIngredientDialog({ groups: userGroups, onIngredientAdded }: AddIngredientDialogProps) {
   const [showDialog, setShowDialog] = useState(false);
+  const [allGroups, setAllGroups] = useState<string[]>([]);
   const [formData, setFormData] = useState<IngredientFormData>({
     name: "",
     calories_per_100g: "",
@@ -27,6 +28,36 @@ export function AddIngredientDialog({ groups, onIngredientAdded }: AddIngredient
     group: "",
   });
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchAllGroups();
+  }, []);
+
+  const fetchAllGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ingredients_all_coaches')
+        .select('grop')
+        .not('grop', 'is', null)
+        .order('grop');
+
+      if (error) throw error;
+
+      const uniqueGroups = Array.from(new Set(
+        data
+          .map(item => item.grop)
+          .filter((group): group is string => 
+            Boolean(group) && group.trim() !== ''
+          )
+      )).sort();
+
+      // Merge with user's groups to ensure we include any new groups they've added
+      const mergedGroups = Array.from(new Set([...uniqueGroups, ...userGroups])).sort();
+      setAllGroups(mergedGroups);
+    } catch (error) {
+      console.error("Error fetching predefined groups:", error);
+    }
+  };
 
   const handleAddIngredient = async () => {
     if (!formData.name.trim()) {
@@ -126,7 +157,7 @@ export function AddIngredientDialog({ groups, onIngredientAdded }: AddIngredient
                 <SelectValue placeholder="Select a group" />
               </SelectTrigger>
               <SelectContent>
-                {groups.map((group) => (
+                {allGroups.map((group) => (
                   <SelectItem key={group} value={group}>
                     {group}
                   </SelectItem>
