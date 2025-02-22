@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,25 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-type ClientData = {
-  client_id: string;
-  status: string;
-  profiles: {
-    id: string;
-    full_name: string | null;
-    email: string;
-  };
-  nutrition_plans: {
-    id: string;
-  }[] | null;
-  workout_plans: {
-    id: string;
-  }[] | null;
-  workout_sessions: {
-    id: string;
-  }[] | null;
-};
 
 type Client = {
   id: string;
@@ -85,19 +65,10 @@ const Clients = () => {
         .select(`
           client_id,
           status,
-          profiles!coach_clients_client_id_fkey (
+          profiles:client_id (
             id,
             full_name,
             email
-          ),
-          nutrition_plans!nutrition_plans_client_id_fkey (
-            id
-          ),
-          workout_plans!workout_plans_client_id_fkey (
-            id
-          ),
-          workout_sessions!workout_sessions_client_id_fkey (
-            id
           )
         `)
         .eq('coach_id', user.id);
@@ -112,20 +83,38 @@ const Clients = () => {
         return;
       }
 
-      console.log("Full clients data:", clientsData);
-
       if (clientsData) {
-        const formattedClients = (clientsData as unknown as ClientData[])
-          .filter(c => c.profiles) // Filter out any null profiles
-          .map(c => ({
-            id: c.profiles.id,
-            full_name: c.profiles.full_name,
-            email: c.profiles.email,
-            status: c.status,
-            hasNutritionPlan: (c.nutrition_plans?.length || 0) > 0,
-            hasWorkoutPlan: (c.workout_plans?.length || 0) > 0,
-            hasPersonalTraining: (c.workout_sessions?.length || 0) > 0,
-          }));
+        const clientPromises = clientsData.map(async (clientData) => {
+          const [nutritionPlans, workoutPlans, workoutSessions] = await Promise.all([
+            supabase
+              .from('nutrition_plans')
+              .select('id')
+              .eq('client_id', clientData.client_id)
+              .maybeSingle(),
+            supabase
+              .from('workout_plans')
+              .select('id')
+              .eq('client_id', clientData.client_id)
+              .maybeSingle(),
+            supabase
+              .from('workout_sessions')
+              .select('id')
+              .eq('client_id', clientData.client_id)
+              .maybeSingle(),
+          ]);
+
+          return {
+            id: clientData.profiles.id,
+            full_name: clientData.profiles.full_name,
+            email: clientData.profiles.email,
+            status: clientData.status,
+            hasNutritionPlan: !!nutritionPlans.data,
+            hasWorkoutPlan: !!workoutPlans.data,
+            hasPersonalTraining: !!workoutSessions.data,
+          };
+        });
+
+        const formattedClients = await Promise.all(clientPromises);
         console.log("Formatted clients data:", formattedClients);
         setClients(formattedClients);
       }
