@@ -133,12 +133,56 @@ const Clients = () => {
 
   const handleStatusChange = async (clientId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('coach_clients')
-        .update({ status: newStatus })
-        .eq('client_id', clientId);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to perform this action",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      if (error) throw error;
+      if (newStatus === 'active') {
+        // Check if a relationship exists
+        const { data: existingRelation } = await supabase
+          .from('coach_clients')
+          .select('*')
+          .eq('client_id', clientId)
+          .eq('coach_id', user.id)
+          .maybeSingle();
+
+        if (existingRelation) {
+          // Update existing relationship
+          const { error } = await supabase
+            .from('coach_clients')
+            .update({ status: newStatus })
+            .eq('client_id', clientId)
+            .eq('coach_id', user.id);
+
+          if (error) throw error;
+        } else {
+          // Create new relationship
+          const { error } = await supabase
+            .from('coach_clients')
+            .insert({
+              coach_id: user.id,
+              client_id: clientId,
+              status: newStatus,
+            });
+
+          if (error) throw error;
+        }
+      } else {
+        // For other status changes, just update the existing relationship
+        const { error } = await supabase
+          .from('coach_clients')
+          .update({ status: newStatus })
+          .eq('client_id', clientId)
+          .eq('coach_id', user.id);
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",
@@ -147,9 +191,10 @@ const Clients = () => {
 
       fetchClients();
     } catch (error: any) {
+      console.error("Error updating client status:", error);
       toast({
         title: "Error",
-        description: "Failed to update client status",
+        description: "Failed to update client status: " + error.message,
         variant: "destructive",
       });
     }
