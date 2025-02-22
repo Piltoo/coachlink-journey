@@ -118,15 +118,13 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         </div>
       </div>
 
-      {selectedIngredient && (
-        <EditIngredientDialog
-          isOpen={showEditIngredient}
-          onClose={handleCloseDialog}
-          ingredient={selectedIngredient}
-          onIngredientUpdated={handleCloseDialog}
-          groups={groups}
-        />
-      )}
+      <EditIngredientDialog
+        isOpen={showEditIngredient}
+        onClose={handleCloseDialog}
+        ingredient={selectedIngredient}
+        onIngredientUpdated={handleCloseDialog}
+        groups={groups}
+      />
     </div>
   );
 }

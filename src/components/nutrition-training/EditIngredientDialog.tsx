@@ -88,7 +88,7 @@ export function EditIngredientDialog({
     }
   };
 
-  if (!editingIngredient) return null;
+  if (!editingIngredient || !ingredient) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
