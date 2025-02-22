@@ -64,25 +64,27 @@ export default function CreateNutritionPlan() {
       const transformedSharedData = (sharedData || []).map((item: any) => ({
         id: `shared_${item.name.toLowerCase().replace(/\s+/g, '_')}`,
         name: item.name,
-        calories_per_100g: Number(item.calories_per_100g) || 0,
-        protein_per_100g: Number(item.protein_per_100g) || 0,
-        carbs_per_100g: Number(item.carbs_per_100g) || 0,
-        fats_per_100g: Number(item.fats_per_100g) || 0,
-        fiber_per_100g: Number(item.fibers_per_100g) || 0,
+        calories_per_100g: parseFloat(item.calories_per_100g) || 0,
+        protein_per_100g: parseFloat(item.protein_per_100g) || 0,
+        carbs_per_100g: parseFloat(item.carbs_per_100g) || 0,
+        fats_per_100g: parseFloat(item.fats_per_100g) || 0,
+        fiber_per_100g: parseFloat(item.fibers_per_100g) || 0,
         group_name: item.grop || null
       }));
 
       // Ensure personal data values are numbers
       const transformedPersonalData = (personalData || []).map(item => ({
         ...item,
-        calories_per_100g: Number(item.calories_per_100g) || 0,
-        protein_per_100g: Number(item.protein_per_100g) || 0,
-        carbs_per_100g: Number(item.carbs_per_100g) || 0,
-        fats_per_100g: Number(item.fats_per_100g) || 0,
-        fiber_per_100g: Number(item.fiber_per_100g) || 0,
+        calories_per_100g: parseFloat(item.calories_per_100g) || 0,
+        protein_per_100g: parseFloat(item.protein_per_100g) || 0,
+        carbs_per_100g: parseFloat(item.carbs_per_100g) || 0,
+        fats_per_100g: parseFloat(item.fats_per_100g) || 0,
+        fiber_per_100g: parseFloat(item.fiber_per_100g) || 0,
       }));
 
-      return [...transformedPersonalData, ...transformedSharedData] as Ingredient[];
+      const results = [...transformedPersonalData, ...transformedSharedData];
+      console.log('Transformed search results:', results);
+      return results as Ingredient[];
     },
     enabled: searchQuery.length > 0,
   });
@@ -125,11 +127,11 @@ export default function CreateNutritionPlan() {
       ingredient_id: ingredient.id,
       ingredient: {
         ...ingredient,
-        calories_per_100g: Number(ingredient.calories_per_100g),
-        protein_per_100g: Number(ingredient.protein_per_100g),
-        carbs_per_100g: Number(ingredient.carbs_per_100g),
-        fats_per_100g: Number(ingredient.fats_per_100g),
-        fiber_per_100g: Number(ingredient.fiber_per_100g),
+        calories_per_100g: parseFloat(String(ingredient.calories_per_100g)) || 0,
+        protein_per_100g: parseFloat(String(ingredient.protein_per_100g)) || 0,
+        carbs_per_100g: parseFloat(String(ingredient.carbs_per_100g)) || 0,
+        fats_per_100g: parseFloat(String(ingredient.fats_per_100g)) || 0,
+        fiber_per_100g: parseFloat(String(ingredient.fiber_per_100g)) || 0,
       },
       quantity_grams: parseFloat(quantity),
     });
@@ -151,36 +153,36 @@ export default function CreateNutritionPlan() {
       (acc, { ingredient, quantity_grams }) => {
         const multiplier = quantity_grams / 100;
         
-        const calculatedValues = {
-          calories: Number(ingredient.calories_per_100g) * multiplier,
-          protein: Number(ingredient.protein_per_100g) * multiplier,
-          carbs: Number(ingredient.carbs_per_100g) * multiplier,
-          fats: Number(ingredient.fats_per_100g) * multiplier,
-          fiber: Number(ingredient.fiber_per_100g) * multiplier,
-        };
-
-        console.log('Ingredient calculation:', {
+        // Log raw values before calculation
+        console.log('Raw ingredient values:', {
           name: ingredient.name,
-          quantity: quantity_grams,
-          originalValues: {
-            carbs: ingredient.carbs_per_100g,
-            fiber: ingredient.fiber_per_100g
-          },
-          calculated: calculatedValues
+          carbs: ingredient.carbs_per_100g,
+          fiber: ingredient.fiber_per_100g,
+          quantity: quantity_grams
+        });
+
+        // Calculate each value separately for better debugging
+        const calculatedCarbs = parseFloat(String(ingredient.carbs_per_100g)) * multiplier;
+        const calculatedFiber = parseFloat(String(ingredient.fiber_per_100g)) * multiplier;
+        
+        console.log('Calculated values:', {
+          name: ingredient.name,
+          carbs: calculatedCarbs,
+          fiber: calculatedFiber
         });
 
         return {
-          calories: acc.calories + calculatedValues.calories,
-          protein: acc.protein + calculatedValues.protein,
-          carbs: acc.carbs + calculatedValues.carbs,
-          fats: acc.fats + calculatedValues.fats,
-          fiber: acc.fiber + calculatedValues.fiber,
+          calories: acc.calories + (parseFloat(String(ingredient.calories_per_100g)) * multiplier),
+          protein: acc.protein + (parseFloat(String(ingredient.protein_per_100g)) * multiplier),
+          carbs: acc.carbs + calculatedCarbs,
+          fats: acc.fats + (parseFloat(String(ingredient.fats_per_100g)) * multiplier),
+          fiber: acc.fiber + calculatedFiber,
         };
       },
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
     );
 
-    console.log('Meal nutrition:', mealNutrition);
+    console.log('Final meal nutrition:', mealNutrition);
     return mealNutrition;
   };
 
