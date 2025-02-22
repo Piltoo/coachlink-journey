@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -53,17 +54,43 @@ const Auth = () => {
           throw new Error("Please agree to the terms and conditions");
         }
 
-        const { error } = await supabase.auth.signUp({
+        // Sign up the user
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName,
-              requested_services: selectedServices,
             },
           },
         });
-        if (error) throw error;
+
+        if (signUpError) throw signUpError;
+        
+        if (signUpData.user) {
+          // Create coach-client relationship with initial "not_connected" status
+          const { error: relationshipError } = await supabase
+            .from('coach_clients')
+            .insert({
+              client_id: signUpData.user.id,
+              requested_services: selectedServices,
+              status: 'not_connected'
+            });
+
+          if (relationshipError) throw relationshipError;
+
+          // Update the user's profile registration_status
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ 
+              registration_status: 'pending',
+              requested_services: selectedServices 
+            })
+            .eq('id', signUpData.user.id);
+
+          if (profileError) throw profileError;
+        }
+
         setShowConfirmation(true);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -90,7 +117,7 @@ const Auth = () => {
         <GlassCard className="w-full max-w-md p-8 bg-white/40 backdrop-blur-lg text-center">
           <h2 className="text-2xl font-bold text-primary mb-4">Thank you for your request!</h2>
           <p className="text-gray-600">
-            We will send you an email with the confirmation when your account is approved.
+            We will send you an email with the confirmation when a coach accepts your request.
           </p>
           <p className="text-sm text-gray-500 mt-4">
             Redirecting to home page in a few seconds...
@@ -184,7 +211,6 @@ const Auth = () => {
                     type="button"
                     className="text-primary underline hover:text-primary/80"
                     onClick={() => {
-                      // Terms link placeholder - to be implemented
                       toast({
                         title: "Coming Soon",
                         description: "The terms and conditions are currently being drafted.",
@@ -211,9 +237,9 @@ const Auth = () => {
             type="button"
             onClick={() => {
               setIsSignUp(!isSignUp);
-              setSelectedServices([]); // Reset selected services when switching modes
-              setAgreedToTerms(false); // Reset terms agreement
-              setFullName(""); // Reset full name
+              setSelectedServices([]);
+              setAgreedToTerms(false);
+              setFullName("");
             }}
             className="text-[#a7cca4] hover:underline"
           >
