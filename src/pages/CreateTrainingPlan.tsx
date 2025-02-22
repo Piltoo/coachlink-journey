@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -29,6 +28,7 @@ export default function CreateTrainingPlan() {
   const [selectedExercises, setSelectedExercises] = useState<ExerciseWithDetails[]>([]);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [muscleGroupFilter, setMuscleGroupFilter] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchExercises();
@@ -111,9 +111,13 @@ export default function CreateTrainingPlan() {
     }));
   };
 
-  const filteredExercises = muscleGroupFilter === 'All' 
-    ? availableExercises
-    : availableExercises.filter(ex => ex.muscle_group === muscleGroupFilter);
+  const filteredExercises = availableExercises
+    .filter(exercise => 
+      (muscleGroupFilter === 'All' || exercise.muscle_group === muscleGroupFilter) &&
+      (searchQuery === '' || 
+        exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        exercise.muscle_group.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
   return (
     <div className="min-h-screen bg-background">
@@ -153,6 +157,45 @@ export default function CreateTrainingPlan() {
                     placeholder="Enter plan description"
                   />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Add Exercises</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <Select value={muscleGroupFilter} onValueChange={setMuscleGroupFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by muscle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Muscles</SelectItem>
+                    <SelectItem value="Shoulders">Shoulders</SelectItem>
+                    <SelectItem value="Chest">Chest</SelectItem>
+                    <SelectItem value="Biceps">Biceps</SelectItem>
+                    <SelectItem value="Triceps">Triceps</SelectItem>
+                    <SelectItem value="Abdominal">Abdominal</SelectItem>
+                    <SelectItem value="Quadriceps">Quadriceps</SelectItem>
+                    <SelectItem value="Hamstrings">Hamstrings</SelectItem>
+                    <SelectItem value="Gluts">Gluts</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  className="w-full sm:w-[280px]"
+                  placeholder="Search exercises..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="border rounded-lg p-4">
+                <ExerciseListView
+                  exercises={filteredExercises}
+                  onExerciseClick={handleExerciseClick}
+                />
               </div>
             </CardContent>
           </Card>
@@ -222,42 +265,9 @@ export default function CreateTrainingPlan() {
                 </div>
               ) : (
                 <p className="text-muted-foreground text-center py-4">
-                  No exercises selected. Add some exercises below.
+                  No exercises selected. Add some exercises from above.
                 </p>
               )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Add Exercises</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Select value={muscleGroupFilter} onValueChange={setMuscleGroupFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by muscle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Muscles</SelectItem>
-                    <SelectItem value="Shoulders">Shoulders</SelectItem>
-                    <SelectItem value="Chest">Chest</SelectItem>
-                    <SelectItem value="Biceps">Biceps</SelectItem>
-                    <SelectItem value="Triceps">Triceps</SelectItem>
-                    <SelectItem value="Abdominal">Abdominal</SelectItem>
-                    <SelectItem value="Quadriceps">Quadriceps</SelectItem>
-                    <SelectItem value="Hamstrings">Hamstrings</SelectItem>
-                    <SelectItem value="Gluts">Gluts</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="border rounded-lg p-4">
-                <ExerciseListView
-                  exercises={filteredExercises}
-                  onExerciseClick={handleExerciseClick}
-                />
-              </div>
             </CardContent>
           </Card>
           
