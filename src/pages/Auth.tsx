@@ -61,24 +61,14 @@ const Auth = () => {
           options: {
             data: {
               full_name: fullName,
+              role: 'client'
             },
           },
         });
 
         if (signUpError) throw signUpError;
-        
+
         if (signUpData.user) {
-          // Update the user's profile registration_status and requested services
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ 
-              registration_status: 'pending',
-              requested_services: selectedServices 
-            })
-            .eq('id', signUpData.user.id);
-
-          if (profileError) throw profileError;
-
           // Get all coaches to create not_connected relationships
           const { data: coaches, error: coachesError } = await supabase
             .from('profiles')
@@ -102,9 +92,9 @@ const Auth = () => {
 
             if (relationshipError) throw relationshipError;
           }
-        }
 
-        setShowConfirmation(true);
+          setShowConfirmation(true);
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -114,9 +104,10 @@ const Auth = () => {
         navigate("/dashboard");
       }
     } catch (error: any) {
+      console.error("Error during auth:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "An error occurred during authentication",
         variant: "destructive",
       });
     } finally {
@@ -213,7 +204,6 @@ const Auth = () => {
                   id="terms"
                   checked={agreedToTerms}
                   onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                  required
                 />
                 <label
                   htmlFor="terms"
