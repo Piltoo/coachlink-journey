@@ -29,6 +29,15 @@ export function AddIngredientDialog({ groups, onIngredientAdded }: AddIngredient
   const { toast } = useToast();
 
   const handleAddIngredient = async () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a name for the ingredient",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!formData.group) {
       toast({
         title: "Error",
@@ -43,12 +52,12 @@ export function AddIngredientDialog({ groups, onIngredientAdded }: AddIngredient
       if (!user) throw new Error("No user found");
 
       const ingredientData = {
-        name: formData.name,
-        calories_per_100g: parseFloat(formData.calories_per_100g),
-        protein_per_100g: parseFloat(formData.protein_per_100g),
-        carbs_per_100g: parseFloat(formData.carbs_per_100g),
-        fats_per_100g: parseFloat(formData.fats_per_100g),
-        fiber_per_100g: parseFloat(formData.fiber_per_100g),
+        name: formData.name.trim(),
+        calories_per_100g: parseFloat(formData.calories_per_100g) || 0,
+        protein_per_100g: parseFloat(formData.protein_per_100g) || 0,
+        carbs_per_100g: parseFloat(formData.carbs_per_100g) || 0,
+        fats_per_100g: parseFloat(formData.fats_per_100g) || 0,
+        fiber_per_100g: parseFloat(formData.fiber_per_100g) || 0,
         coach_id: user.id,
         group_name: formData.group,
       };
