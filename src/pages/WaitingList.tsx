@@ -30,7 +30,8 @@ export default function WaitingList() {
       const { data: pendingUsers, error } = await supabase
         .from('profiles')
         .select('id, full_name, email, raw_user_meta_data')
-        .eq('registration_status', 'pending');
+        .eq('registration_status', 'pending')
+        .eq('role', 'client'); // Only fetch clients
 
       if (error) throw error;
 
@@ -39,7 +40,7 @@ export default function WaitingList() {
           id: user.id,
           full_name: user.full_name,
           email: user.email,
-          requested_services: user.raw_user_meta_data?.requested_services || []
+          requested_services: (user.raw_user_meta_data as any)?.requested_services || []
         }));
         setPendingClients(formattedClients);
       }
