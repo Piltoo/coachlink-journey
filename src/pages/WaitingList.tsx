@@ -30,12 +30,13 @@ export default function WaitingList() {
 
       console.log("Current user ID:", user.id); // Debug log
 
+      // Updated query with correct foreign key reference
       const { data, error } = await supabase
         .from('coach_clients')
         .select(`
           client_id,
           requested_services,
-          profiles (
+          client:client_id (
             id,
             full_name,
             email
@@ -58,9 +59,9 @@ export default function WaitingList() {
 
       if (data) {
         const formattedClients = data.map(client => ({
-          id: client.profiles.id,
-          full_name: client.profiles.full_name,
-          email: client.profiles.email,
+          id: client.client.id,
+          full_name: client.client.full_name,
+          email: client.client.email,
           requested_services: client.requested_services || []
         }));
         console.log("Formatted clients:", formattedClients); // Debug log
