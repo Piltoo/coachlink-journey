@@ -43,16 +43,31 @@ export function NutritionPlansSection() {
       if (error) throw error;
 
       // Process the templates to calculate totals
-      return (data as Template[]).map(template => {
-        const totalNutrition = (template.meals || []).reduce((acc, meal) => {
-          const mealNutrition = (meal.ingredients || []).reduce((mealAcc, { ingredient, quantity_grams }) => {
-            const multiplier = Number(quantity_grams) / 100;
+      return (data || []).map(template => {
+        // Safely cast the meals data to our expected type
+        const meals = (template.meals as any[] || []).map(meal => ({
+          name: meal.name || '',
+          ingredients: (meal.ingredients || []).map((ing: any) => ({
+            ingredient: {
+              calories_per_100g: Number(ing.ingredient.calories_per_100g) || 0,
+              protein_per_100g: Number(ing.ingredient.protein_per_100g) || 0,
+              carbs_per_100g: Number(ing.ingredient.carbs_per_100g) || 0,
+              fats_per_100g: Number(ing.ingredient.fats_per_100g) || 0,
+              fiber_per_100g: Number(ing.ingredient.fiber_per_100g) || 0
+            },
+            quantity_grams: Number(ing.quantity_grams) || 0
+          }))
+        }));
+
+        const totalNutrition = meals.reduce((acc, meal) => {
+          const mealNutrition = meal.ingredients.reduce((mealAcc, { ingredient, quantity_grams }) => {
+            const multiplier = quantity_grams / 100;
             return {
-              calories: mealAcc.calories + (Number(ingredient.calories_per_100g) * multiplier),
-              protein: mealAcc.protein + (Number(ingredient.protein_per_100g) * multiplier),
-              carbs: mealAcc.carbs + (Number(ingredient.carbs_per_100g) * multiplier),
-              fats: mealAcc.fats + (Number(ingredient.fats_per_100g) * multiplier),
-              fiber: mealAcc.fiber + (Number(ingredient.fiber_per_100g) * multiplier)
+              calories: mealAcc.calories + (ingredient.calories_per_100g * multiplier),
+              protein: mealAcc.protein + (ingredient.protein_per_100g * multiplier),
+              carbs: mealAcc.carbs + (ingredient.carbs_per_100g * multiplier),
+              fats: mealAcc.fats + (ingredient.fats_per_100g * multiplier),
+              fiber: mealAcc.fiber + (ingredient.fiber_per_100g * multiplier)
             };
           }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
 
@@ -66,7 +81,11 @@ export function NutritionPlansSection() {
         }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
 
         return {
-          ...template,
+          id: template.id,
+          title: template.title,
+          description: template.description,
+          created_at: template.created_at,
+          meals,
           totalNutrition
         };
       });
