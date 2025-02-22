@@ -26,6 +26,10 @@ type MealItemProps = {
 };
 
 export function MealItem({ item, onQuantityChange, onOptionalToggle, onRemove }: MealItemProps) {
+  const calculateNutritionValue = (value: number) => {
+    return (value * (item.quantity / 100)).toFixed(1);
+  };
+
   return (
     <div className="p-4 border rounded-lg">
       <div className="flex justify-between items-center mb-2">
@@ -63,11 +67,11 @@ export function MealItem({ item, onQuantityChange, onOptionalToggle, onRemove }:
         </div>
       </div>
       <div className="text-sm text-muted-foreground grid grid-cols-5 gap-2">
-        <div>Calories: {item.nutrition.calories.toFixed(1)}</div>
-        <div>Protein: {item.nutrition.protein.toFixed(1)}g</div>
-        <div>Carbs: {item.nutrition.carbs.toFixed(1)}g</div>
-        <div>Fats: {item.nutrition.fats.toFixed(1)}g</div>
-        <div>Fiber: {item.nutrition.fiber.toFixed(1)}g</div>
+        <div>Calories: {calculateNutritionValue(item.nutrition.calories)}</div>
+        <div>Protein: {calculateNutritionValue(item.nutrition.protein)}g</div>
+        <div>Carbs: {calculateNutritionValue(item.nutrition.carbs)}g</div>
+        <div>Fats: {calculateNutritionValue(item.nutrition.fats)}g</div>
+        <div>Fiber: {calculateNutritionValue(item.nutrition.fiber)}g</div>
       </div>
     </div>
   );
