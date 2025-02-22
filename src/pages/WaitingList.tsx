@@ -15,6 +15,16 @@ type PendingClient = {
   requested_services: string[];
 };
 
+type CoachClientRecord = {
+  client_id: string;
+  requested_services: string[] | null;
+  client: {
+    id: string;
+    full_name: string | null;
+    email: string;
+  };
+};
+
 export default function WaitingList() {
   const [pendingClients, setPendingClients] = useState<PendingClient[]>([]);
   const { toast } = useToast();
@@ -35,7 +45,7 @@ export default function WaitingList() {
         .select(`
           client_id,
           requested_services,
-          profiles:client_id (
+          client:profiles!coach_clients_client_id_fkey (
             id,
             full_name,
             email
@@ -57,11 +67,11 @@ export default function WaitingList() {
       }
 
       if (data) {
-        const formattedClients = data.map(client => ({
-          id: client.profiles.id,
-          full_name: client.profiles.full_name,
-          email: client.profiles.email,
-          requested_services: client.requested_services || []
+        const formattedClients = (data as CoachClientRecord[]).map(record => ({
+          id: record.client.id,
+          full_name: record.client.full_name,
+          email: record.client.email,
+          requested_services: record.requested_services || []
         }));
         console.log("Formatted clients:", formattedClients); // Debug log
         setPendingClients(formattedClients);
