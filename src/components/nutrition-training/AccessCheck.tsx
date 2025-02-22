@@ -1,6 +1,6 @@
 
 interface AccessCheckProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function AccessCheck({ children }: AccessCheckProps) {
