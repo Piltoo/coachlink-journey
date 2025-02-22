@@ -39,6 +39,7 @@ type Client = {
   hasNutritionPlan: boolean;
   hasWorkoutPlan: boolean;
   hasPersonalTraining: boolean;
+  isActiveWithOtherCoach: boolean;
 };
 
 const Clients = () => {
@@ -60,6 +61,17 @@ const Clients = () => {
 
       console.log("Current coach ID:", user.id);
 
+      const { data: activeRelationships, error: relationshipsError } = await supabase
+        .from('coach_clients')
+        .select('client_id, status')
+        .eq('status', 'active');
+
+      if (relationshipsError) {
+        throw relationshipsError;
+      }
+
+      const activeClientIds = [...new Set(activeRelationships?.map(rel => rel.client_id) || [])];
+
       const { data: clientProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
@@ -69,21 +81,25 @@ const Clients = () => {
         throw profilesError;
       }
 
-      const { data: relationships, error: relationshipsError } = await supabase
+      const { data: coachRelationships, error: coachRelError } = await supabase
         .from('coach_clients')
         .select('client_id, status')
         .eq('coach_id', user.id);
 
-      if (relationshipsError) {
-        throw relationshipsError;
+      if (coachRelError) {
+        throw coachRelError;
       }
 
-      const relationshipMap = new Map(
-        relationships?.map(rel => [rel.client_id, rel.status]) || []
+      const coachRelationshipMap = new Map(
+        coachRelationships?.map(rel => [rel.client_id, rel.status]) || []
       );
 
       if (clientProfiles) {
         const clientPromises = clientProfiles.map(async (profile) => {
+          const isActiveClient = activeClientIds.includes(profile.id);
+          
+          const relationshipStatus = coachRelationshipMap.get(profile.id) || 'not_connected';
+
           const [nutritionPlans, workoutPlans, workoutSessions] = await Promise.all([
             supabase
               .from('nutrition_plans')
@@ -106,7 +122,8 @@ const Clients = () => {
             id: profile.id,
             full_name: profile.full_name,
             email: profile.email,
-            status: relationshipMap.get(profile.id) || 'not_connected',
+            status: relationshipStatus,
+            isActiveWithOtherCoach: isActiveClient && relationshipStatus === 'not_connected',
             hasNutritionPlan: !!nutritionPlans.data,
             hasWorkoutPlan: !!workoutPlans.data,
             hasPersonalTraining: !!workoutSessions.data,
@@ -144,7 +161,6 @@ const Clients = () => {
       }
 
       if (newStatus === 'active') {
-        // Check if a relationship exists
         const { data: existingRelation } = await supabase
           .from('coach_clients')
           .select('*')
@@ -153,7 +169,6 @@ const Clients = () => {
           .maybeSingle();
 
         if (existingRelation) {
-          // Update existing relationship
           const { error } = await supabase
             .from('coach_clients')
             .update({ status: newStatus })
@@ -162,7 +177,6 @@ const Clients = () => {
 
           if (error) throw error;
         } else {
-          // Create new relationship
           const { error } = await supabase
             .from('coach_clients')
             .insert({
@@ -174,7 +188,6 @@ const Clients = () => {
           if (error) throw error;
         }
       } else {
-        // For other status changes, just update the existing relationship
         const { error } = await supabase
           .from('coach_clients')
           .update({ status: newStatus })
@@ -228,7 +241,10 @@ const Clients = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, isActiveWithOtherCoach?: boolean) => {
+    if (isActiveWithOtherCoach) {
+      return 'bg-orange-100 text-orange-800';
+    }
     switch (status) {
       case 'active':
         return 'bg-green-100 text-green-800';
@@ -323,8 +339,8 @@ const Clients = () => {
                     </TableCell>
                     <TableCell>{client.email}</TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
-                        {client.status}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(client.status, client.isActiveWithOtherCoach)}`}>
+                        {client.isActiveWithOtherCoach ? 'Active (Other Coach)' : client.status}
                       </span>
                     </TableCell>
                     <TableCell>
