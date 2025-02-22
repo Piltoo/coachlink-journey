@@ -5,18 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, Search } from "lucide-react";
 import type { PartialMeal, Ingredient, MealNutrition } from "@/components/nutrition-training/types";
 
 export default function CreateNutritionPlan() {
@@ -27,6 +21,7 @@ export default function CreateNutritionPlan() {
   const [selectedIngredient, setSelectedIngredient] = useState<string>("");
   const [quantity, setQuantity] = useState<string>("");
   const [currentMealIndex, setCurrentMealIndex] = useState<number | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const { data: ingredients = [] } = useQuery({
     queryKey: ["ingredients"],
@@ -95,7 +90,7 @@ export default function CreateNutritionPlan() {
     setMeals(updatedMeals);
     setSelectedIngredient("");
     setQuantity("");
-    setCurrentMealIndex(null);
+    setSearchOpen(false);
   };
 
   const removeIngredient = (mealIndex: number, ingredientIndex: number) => {
@@ -208,23 +203,43 @@ export default function CreateNutritionPlan() {
                 <CardContent className="p-6">
                   {currentMealIndex === mealIndex && (
                     <div className="flex gap-4 mb-4">
-                      <Select
-                        value={selectedIngredient}
-                        onValueChange={setSelectedIngredient}
-                      >
-                        <SelectTrigger className="w-[300px]">
-                          <SelectValue placeholder="Select an ingredient" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {[...ingredients, ...allCoachesIngredients].map((ingredient) => (
-                              <SelectItem key={ingredient.id} value={ingredient.id}>
-                                {ingredient.name}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
+                      <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={searchOpen}
+                            className="w-[300px] justify-between"
+                          >
+                            {selectedIngredient ? 
+                              [...ingredients, ...allCoachesIngredients].find((item) => item.id === selectedIngredient)?.name :
+                              "Search ingredient..."}
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0">
+                          <Command>
+                            <CommandInput placeholder="Search ingredient..." />
+                            <CommandEmpty>No ingredient found.</CommandEmpty>
+                            <CommandList>
+                              <CommandGroup>
+                                {[...ingredients, ...allCoachesIngredients].map((ingredient) => (
+                                  <CommandItem
+                                    key={ingredient.id}
+                                    value={ingredient.id}
+                                    onSelect={(value) => {
+                                      setSelectedIngredient(value);
+                                      setSearchOpen(false);
+                                    }}
+                                  >
+                                    {ingredient.name}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <Input
                         type="number"
                         placeholder="Grams"
