@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { UserCheck, UserX, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 type PendingClient = {
   id: string;
@@ -17,7 +17,6 @@ type PendingClient = {
 
 export default function WaitingList() {
   const [pendingClients, setPendingClients] = useState<PendingClient[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -32,6 +31,7 @@ export default function WaitingList() {
       .from('coach_clients')
       .select(`
         client_id,
+        requested_services,
         profiles!coach_clients_client_id_fkey (
           id,
           full_name,
@@ -43,6 +43,11 @@ export default function WaitingList() {
 
     if (clientsError) {
       console.error("Error fetching clients:", clientsError);
+      toast({
+        title: "Error",
+        description: "Failed to fetch pending clients",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -51,7 +56,7 @@ export default function WaitingList() {
         id: c.profiles.id,
         full_name: c.profiles.full_name,
         email: c.profiles.email,
-        requested_services: []
+        requested_services: c.requested_services || []
       }));
       setPendingClients(formattedClients);
     }
@@ -67,7 +72,6 @@ export default function WaitingList() {
       if (error) throw error;
 
       setPendingClients(prev => prev.filter(client => client.id !== clientId));
-      setSelectedClientId(null);
       
       toast({
         title: "Success",
@@ -100,35 +104,53 @@ export default function WaitingList() {
 
           <div className="grid gap-4">
             {pendingClients.map((client) => (
-              <Card key={client.id} className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {client.full_name || 'Unnamed Client'}
-                    </h3>
-                    <p className="text-sm text-gray-500">{client.email}</p>
+              <Card key={client.id} className="overflow-hidden">
+                <CardHeader className="bg-white/50">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {client.full_name || 'Unnamed Client'}
+                      </h3>
+                      <p className="text-sm text-gray-500">{client.email}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
+                        onClick={() => handleClientResponse(client.id, true)}
+                      >
+                        <UserCheck className="w-4 h-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                        onClick={() => handleClientResponse(client.id, false)}
+                      >
+                        <UserX className="w-4 h-4 mr-1" />
+                        Reject
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-green-600 hover:text-green-700"
-                      onClick={() => handleClientResponse(client.id, true)}
-                    >
-                      <UserCheck className="w-4 h-4 mr-1" />
-                      Approve
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => handleClientResponse(client.id, false)}
-                    >
-                      <UserX className="w-4 h-4 mr-1" />
-                      Reject
-                    </Button>
+                </CardHeader>
+                <CardContent className="bg-white/30">
+                  <div className="mt-2">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Requested Services:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {client.requested_services && client.requested_services.length > 0 ? (
+                        client.requested_services.map((service, index) => (
+                          <Badge key={index} variant="secondary" className="bg-green-100/50">
+                            {service}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-500">No specific services requested</span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </CardContent>
               </Card>
             ))}
             {pendingClients.length === 0 && (
@@ -139,17 +161,6 @@ export default function WaitingList() {
           </div>
         </div>
       </div>
-
-      <Dialog open={!!selectedClientId} onOpenChange={() => setSelectedClientId(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Client Details</DialogTitle>
-            <DialogDescription>
-              Review client information and manage their access.
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
