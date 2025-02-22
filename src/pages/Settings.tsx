@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings2, Building2, CreditCard } from "lucide-react";
+import { Settings2, Building2, CreditCard, User } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 type SubscriptionPlan = {
@@ -27,6 +26,9 @@ type SubscriptionPlan = {
 
 export default function Settings() {
   const [companyName, setCompanyName] = useState("FitCoach");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -40,17 +42,26 @@ export default function Settings() {
 
   useEffect(() => {
     const fetchUserAndSettings = async () => {
-      console.log("Fetching user and settings...");
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log("No user found");
-        return;
-      }
-      console.log("User found:", user.id);
+      if (!user) return;
       setUserId(user.id);
 
+      // Fetch user profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, first_name, last_name, email')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setUserRole(profile.role);
+        setFirstName(profile.first_name || "");
+        setLastName(profile.last_name || "");
+        setEmail(profile.email || "");
+      }
+
       // Fetch user role
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile2, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
@@ -61,9 +72,9 @@ export default function Settings() {
         return;
       }
 
-      if (profile) {
-        console.log("User role:", profile.role);
-        setUserRole(profile.role);
+      if (profile2) {
+        console.log("User role:", profile2.role);
+        setUserRole(profile2.role);
       }
 
       // Fetch subscription plans
@@ -83,6 +94,40 @@ export default function Settings() {
 
     fetchUserAndSettings();
   }, []);
+
+  const handleSaveProfile = async () => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User not found. Please try logging in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+      })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: "Profile updated successfully",
+    });
+  };
 
   const handleSaveCompanyName = async () => {
     if (!userId) {
@@ -148,8 +193,12 @@ export default function Settings() {
           </div>
 
           <Card className="p-6 bg-white/40 backdrop-blur-lg border border-green-100">
-            <Tabs defaultValue="branding">
+            <Tabs defaultValue="account">
               <TabsList className="mb-4">
+                <TabsTrigger value="account" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Account
+                </TabsTrigger>
                 <TabsTrigger value="branding" className="flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   Branding
@@ -159,6 +208,41 @@ export default function Settings() {
                   Subscription Plans
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="account" className="space-y-6">
+                <div className="grid gap-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      value={email}
+                      disabled
+                      className="max-w-md"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="first-name">First Name</Label>
+                    <Input
+                      id="first-name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="max-w-md"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="last-name">Last Name</Label>
+                    <Input
+                      id="last-name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="max-w-md"
+                    />
+                  </div>
+                  <Button onClick={handleSaveProfile} className="w-full sm:w-auto">
+                    Save Profile
+                  </Button>
+                </div>
+              </TabsContent>
 
               <TabsContent value="branding" className="space-y-6">
                 <div className="grid gap-6">

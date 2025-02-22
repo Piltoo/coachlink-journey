@@ -21,6 +21,7 @@ type PendingClient = {
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [firstName, setFirstName] = useState<string>("");
   const [pendingClients, setPendingClients] = useState<PendingClient[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -33,11 +34,10 @@ const Dashboard = () => {
           console.log("No user found");
           return;
         }
-        console.log("User found:", user);
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, first_name')
           .eq('id', user.id)
           .single();
 
@@ -46,18 +46,15 @@ const Dashboard = () => {
           return;
         }
 
-        console.log("User profile:", profile);
-
         if (!profile) {
           console.log("No profile found");
           return;
         }
+        
         setUserRole(profile.role);
-        console.log("User role set to:", profile.role);
+        setFirstName(profile.first_name || "");
 
         if (profile.role === 'coach') {
-          console.log("Fetching pending clients for coach");
-          // Fetch pending client requests
           const { data: clients, error: clientsError } = await supabase
             .from('coach_clients')
             .select(`
@@ -76,16 +73,13 @@ const Dashboard = () => {
             return;
           }
 
-          console.log("Pending clients data:", clients);
-
           if (clients) {
             const formattedClients = clients.map(c => ({
               id: c.profiles.id,
               full_name: c.profiles.full_name,
               email: c.profiles.email,
-              requested_services: [] // You might want to fetch this from user metadata
+              requested_services: []
             }));
-            console.log("Formatted clients:", formattedClients);
             setPendingClients(formattedClients);
           }
         }
@@ -132,7 +126,7 @@ const Dashboard = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold text-[#1B4332]">
-              Welcome Back {userRole ? `(${userRole})` : ''}
+              Welcome Back{firstName ? `, ${firstName}` : ''}
             </h1>
             <div className="text-sm text-gray-600">
               {new Date().toLocaleDateString('en-US', { 
