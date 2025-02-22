@@ -24,24 +24,32 @@ const NewArrivals = () => {
         return;
       }
 
-      const { data: connectedClients } = await supabase
+      // Get all coach-client relationships where the status is not_connected
+      const { data: notConnectedClients, error: relationshipsError } = await supabase
         .from('coach_clients')
-        .select('client_id');
-      
-      const connectedIds = connectedClients?.map(row => row.client_id) || [];
+        .select('client_id, status')
+        .eq('coach_id', user.id)
+        .eq('status', 'not_connected');
 
-      const { data: availableClients, error: profilesError } = await supabase
+      if (relationshipsError) throw relationshipsError;
+
+      const clientIds = notConnectedClients?.map(rel => rel.client_id) || [];
+
+      if (clientIds.length === 0) {
+        setClients([]);
+        return;
+      }
+
+      const { data: clientProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, email, requested_services')
         .eq('role', 'client')
-        .not(connectedIds.length > 0 ? 'id' : 'id', 'in', `(${connectedIds.join(',')})`)
+        .in('id', clientIds);
 
-      if (profilesError) {
-        throw profilesError;
-      }
+      if (profilesError) throw profilesError;
 
-      if (availableClients) {
-        const clientPromises = availableClients.map(async (profile) => {
+      if (clientProfiles) {
+        const clientPromises = clientProfiles.map(async (profile) => {
           const [nutritionPlans, workoutPlans, workoutSessions] = await Promise.all([
             supabase
               .from('nutrition_plans')
