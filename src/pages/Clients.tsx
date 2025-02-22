@@ -24,12 +24,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Users, MoreVertical, UserX, UserCheck, Trash2 } from "lucide-react";
 
+type ClientData = {
+  client_id: string;
+  status: string;
+  profiles: {
+    id: string;
+    full_name: string | null;
+    email: string;
+  } | null;
+  subscriptions: Array<{
+    status: string;
+  }> | null;
+};
+
 type Client = {
   id: string;
   full_name: string | null;
   email: string;
   status: string;
-  subscription_status?: string | null;
+  subscription_status: string | null;
 };
 
 const Clients = () => {
@@ -78,14 +91,14 @@ const Clients = () => {
       console.log("Full clients data:", clientsData);
 
       if (clientsData) {
-        const formattedClients = clientsData
+        const formattedClients = (clientsData as ClientData[])
           .filter(c => c.profiles) // Filter out any null profiles
           .map(c => ({
-            id: c.profiles.id,
-            full_name: c.profiles.full_name,
-            email: c.profiles.email,
+            id: c.profiles!.id,
+            full_name: c.profiles!.full_name,
+            email: c.profiles!.email,
             status: c.status,
-            subscription_status: c.subscriptions?.[0]?.status
+            subscription_status: c.subscriptions?.[0]?.status || null
           }));
         console.log("Formatted clients data:", formattedClients);
         setClients(formattedClients);
