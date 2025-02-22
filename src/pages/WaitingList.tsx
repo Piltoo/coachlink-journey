@@ -33,7 +33,7 @@ export default function WaitingList() {
         .select(`
           client_id,
           requested_services,
-          profiles:client_id (
+          profiles!coach_clients_client_id_fkey (
             id,
             full_name,
             email
