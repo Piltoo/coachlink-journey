@@ -28,12 +28,14 @@ export default function WaitingList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log("Current user ID:", user.id); // Debug log
+
       const { data, error } = await supabase
         .from('coach_clients')
         .select(`
           client_id,
           requested_services,
-          profiles!coach_clients_client_id_fkey (
+          profiles (
             id,
             full_name,
             email
@@ -41,6 +43,8 @@ export default function WaitingList() {
         `)
         .eq('coach_id', user.id)
         .eq('status', 'pending');
+
+      console.log("Query response:", { data, error }); // Debug log
 
       if (error) {
         console.error("Error fetching clients:", error);
@@ -59,6 +63,7 @@ export default function WaitingList() {
           email: client.profiles.email,
           requested_services: client.requested_services || []
         }));
+        console.log("Formatted clients:", formattedClients); // Debug log
         setPendingClients(formattedClients);
       }
     } catch (error) {
