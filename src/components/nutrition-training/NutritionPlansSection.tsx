@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,7 @@ type Template = {
   title: string;
   description: string | null;
   created_at: string;
-  meals: Json | null;
+  meals: any | null;
 };
 
 type Client = {
@@ -67,13 +66,15 @@ export function NutritionPlansSection() {
 
       if (error) throw error;
 
+      if (!data) return [];
+
       return data
         .filter(d => d.profiles)
         .map(d => ({
           id: d.profiles.id,
           full_name: d.profiles.full_name,
           email: d.profiles.email
-        })) || [];
+        }));
     }
   });
 
