@@ -68,18 +68,7 @@ const Auth = () => {
         if (signUpError) throw signUpError;
         
         if (signUpData.user) {
-          // Create coach-client relationship with initial "not_connected" status
-          const { error: relationshipError } = await supabase
-            .from('coach_clients')
-            .insert({
-              client_id: signUpData.user.id,
-              requested_services: selectedServices,
-              status: 'not_connected'
-            });
-
-          if (relationshipError) throw relationshipError;
-
-          // Update the user's profile registration_status
+          // Update the user's profile registration_status and requested services
           const { error: profileError } = await supabase
             .from('profiles')
             .update({ 
@@ -89,6 +78,30 @@ const Auth = () => {
             .eq('id', signUpData.user.id);
 
           if (profileError) throw profileError;
+
+          // Get all coaches to create not_connected relationships
+          const { data: coaches, error: coachesError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('role', 'coach');
+
+          if (coachesError) throw coachesError;
+
+          if (coaches && coaches.length > 0) {
+            // Create coach-client relationships with initial "not_connected" status
+            const coachClientRelations = coaches.map(coach => ({
+              client_id: signUpData.user.id,
+              coach_id: coach.id,
+              requested_services: selectedServices,
+              status: 'not_connected'
+            }));
+
+            const { error: relationshipError } = await supabase
+              .from('coach_clients')
+              .insert(coachClientRelations);
+
+            if (relationshipError) throw relationshipError;
+          }
         }
 
         setShowConfirmation(true);
