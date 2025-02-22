@@ -11,6 +11,7 @@ export type Client = {
   hasNutritionPlan: boolean;
   hasWorkoutPlan: boolean;
   hasPersonalTraining: boolean;
+  requested_services: string[] | null;
 };
 
 export const useClients = () => {
@@ -57,7 +58,7 @@ export const useClients = () => {
 
       const { data: clientProfiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
+        .select('id, full_name, email, requested_services')
         .eq('role', 'client')
         .in('id', coachRelationships?.map(rel => rel.client_id) || []);
 
@@ -97,6 +98,7 @@ export const useClients = () => {
             hasNutritionPlan: !!nutritionPlans.data,
             hasWorkoutPlan: !!workoutPlans.data,
             hasPersonalTraining: !!workoutSessions.data,
+            requested_services: profile.requested_services,
           };
         });
 

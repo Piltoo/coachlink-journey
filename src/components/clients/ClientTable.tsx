@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, UserX, UserCheck, Trash2 } from "lucide-react";
+import { ServiceBadge } from "../new-arrivals/ServiceBadge";
 
 interface ClientTableProps {
   clients: Client[];
@@ -112,13 +113,14 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
           <TableHead>Email</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Services</TableHead>
+          <TableHead>Requested Services</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {clients.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
               No clients found.
             </TableCell>
           </TableRow>
@@ -151,6 +153,13 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
                       PT
                     </span>
                   )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-2 flex-wrap">
+                  {client.requested_services?.map((service) => (
+                    <ServiceBadge key={service} service={service} />
+                  ))}
                 </div>
               </TableCell>
               <TableCell className="text-right">
