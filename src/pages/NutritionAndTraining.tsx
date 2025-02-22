@@ -7,6 +7,7 @@ import { IngredientsSection } from "@/components/nutrition-training/IngredientsS
 import { ExercisesSection } from "@/components/nutrition-training/ExercisesSection";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 type Ingredient = {
   id: string;
@@ -35,12 +36,16 @@ export default function NutritionAndTraining() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          navigate('/auth');
+          return;
+        }
 
         const { data: profile, error } = await supabase
           .from('profiles')
@@ -53,16 +58,20 @@ export default function NutritionAndTraining() {
           return;
         }
 
-        setUserRole(profile?.user_role);
+        if (!profile || profile.user_role !== 'coach') {
+          navigate('/dashboard');
+          return;
+        }
+
+        setUserRole(profile.user_role);
+        await Promise.all([fetchIngredients(), fetchExercises()]);
       } catch (error) {
         console.error("Error in fetchUserRole:", error);
       }
     };
 
     fetchUserRole();
-    fetchIngredients();
-    fetchExercises();
-  }, []);
+  }, [navigate]);
 
   const fetchIngredients = async () => {
     try {
@@ -100,17 +109,7 @@ export default function NutritionAndTraining() {
   };
 
   if (userRole !== 'coach') {
-    return (
-      <div className="min-h-screen bg-background pt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-red-100">
-            <p className="text-center text-red-600">
-              You don't have permission to access this page.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
