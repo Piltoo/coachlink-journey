@@ -20,13 +20,32 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
   const [groups, setGroups] = useState<string[]>([]);
 
   useEffect(() => {
-    const uniqueGroups = Array.from(new Set(
-      ingredients
-        .map(item => item.group_name)
-        .filter((group): group is string => Boolean(group))
-    )).sort();
-    setGroups(uniqueGroups);
-  }, [ingredients]);
+    fetchPredefinedGroups();
+  }, []);
+
+  const fetchPredefinedGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ingredients_all_coaches')
+        .select('grop')
+        .not('grop', 'is', null)
+        .order('grop');
+
+      if (error) throw error;
+
+      const uniqueGroups = Array.from(new Set(
+        data
+          .map(item => item.grop)
+          .filter((group): group is string => 
+            Boolean(group) && group.trim() !== ''
+          )
+      )).sort();
+
+      setGroups(uniqueGroups);
+    } catch (error) {
+      console.error("Error fetching predefined groups:", error);
+    }
+  };
 
   const handleIngredientClick = (ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);
