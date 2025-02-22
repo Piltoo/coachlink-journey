@@ -34,7 +34,7 @@ function App() {
               <Route path="/settings/*" element={<Settings />} />
               <Route path="/clients" element={<Clients />} />
               <Route path="/messages" element={<Messages />} />
-              <Route path="/nutrition-and-training" element={<NutritionAndTraining />} />
+              <Route path="/nutrition-training" element={<NutritionAndTraining />} />
               <Route path="/program/:programId" element={<Program />} />
               <Route path="/waiting-list" element={<WaitingList />} />
               <Route path="*" element={<NotFound />} />
