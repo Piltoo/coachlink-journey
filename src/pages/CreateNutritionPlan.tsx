@@ -101,6 +101,15 @@ export default function CreateNutritionPlan() {
     );
     if (!ingredient) return;
 
+    console.log('Adding ingredient with nutrition values:', {
+      name: ingredient.name,
+      calories: ingredient.calories_per_100g,
+      protein: ingredient.protein_per_100g,
+      carbs: ingredient.carbs_per_100g,
+      fats: ingredient.fats_per_100g,
+      fiber: ingredient.fiber_per_100g
+    });
+
     const updatedMeals = [...meals];
     updatedMeals[mealIndex].ingredients.push({
       ingredient_id: ingredient.id,
@@ -121,9 +130,29 @@ export default function CreateNutritionPlan() {
   };
 
   const calculateMealNutrition = (mealIndex: number): MealNutrition => {
-    return meals[mealIndex].ingredients.reduce(
+    const mealNutrition = meals[mealIndex].ingredients.reduce(
       (acc, { ingredient, quantity_grams }) => {
         const multiplier = quantity_grams / 100;
+        console.log('Calculating nutrition for ingredient:', {
+          name: ingredient.name,
+          quantity: quantity_grams,
+          multiplier,
+          originalValues: {
+            calories: ingredient.calories_per_100g,
+            protein: ingredient.protein_per_100g,
+            carbs: ingredient.carbs_per_100g,
+            fats: ingredient.fats_per_100g,
+            fiber: ingredient.fiber_per_100g
+          },
+          calculatedValues: {
+            calories: ingredient.calories_per_100g * multiplier,
+            protein: ingredient.protein_per_100g * multiplier,
+            carbs: ingredient.carbs_per_100g * multiplier,
+            fats: ingredient.fats_per_100g * multiplier,
+            fiber: ingredient.fiber_per_100g * multiplier
+          }
+        });
+        
         return {
           calories: acc.calories + (ingredient.calories_per_100g * multiplier),
           protein: acc.protein + (ingredient.protein_per_100g * multiplier),
@@ -134,10 +163,13 @@ export default function CreateNutritionPlan() {
       },
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
     );
+    
+    console.log('Meal nutrition result:', mealNutrition);
+    return mealNutrition;
   };
 
   const calculateTotalNutrition = (): MealNutrition => {
-    return meals.reduce(
+    const totalNutrition = meals.reduce(
       (acc, _, index) => {
         const mealNutrition = calculateMealNutrition(index);
         return {
@@ -150,7 +182,12 @@ export default function CreateNutritionPlan() {
       },
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
     );
+    
+    console.log('Total nutrition result:', totalNutrition);
+    return totalNutrition;
   };
+
+  console.log('Search results:', searchResults);
 
   return (
     <div className="min-h-screen bg-background py-8">
