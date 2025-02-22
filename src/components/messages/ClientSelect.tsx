@@ -1,5 +1,5 @@
 
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
 type Profile = {
   id: string;
@@ -20,22 +20,24 @@ export function ClientSelect({ clients = [], selectedClient, onSelect, disabled 
       <h2 className="font-semibold">Your Clients</h2>
       <Command className="rounded-lg border shadow-md">
         <CommandInput placeholder="Search clients..." disabled={disabled} />
-        <CommandEmpty>No clients found.</CommandEmpty>
-        <CommandGroup>
-          {(clients || []).map((client) => (
-            <CommandItem
-              key={client.id}
-              onSelect={() => onSelect(client)}
-              className={`cursor-pointer ${
-                selectedClient?.id === client.id ? 'bg-accent' : ''
-              }`}
-            >
-              <span className="font-medium">
-                {client.full_name || client.email}
-              </span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
+        <CommandList>
+          <CommandEmpty>No clients found.</CommandEmpty>
+          <CommandGroup>
+            {(clients || []).map((client) => (
+              <CommandItem
+                key={client.id}
+                onSelect={() => onSelect(client)}
+                className={`cursor-pointer ${
+                  selectedClient?.id === client.id ? 'bg-accent' : ''
+                }`}
+              >
+                <span className="font-medium">
+                  {client.full_name || client.email}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
       </Command>
     </div>
   );
