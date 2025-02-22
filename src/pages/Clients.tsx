@@ -22,7 +22,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Users, MoreVertical, UserX, UserCheck, Trash2 } from "lucide-react";
+import { Users, MoreVertical, UserX, UserCheck, Trash2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type ClientData = {
   client_id: string;
@@ -31,10 +39,16 @@ type ClientData = {
     id: string;
     full_name: string | null;
     email: string;
-  } | null;
-  subscriptions: Array<{
-    status: string;
-  }> | null;
+  };
+  nutrition_plans: {
+    id: string;
+  }[] | null;
+  workout_plans: {
+    id: string;
+  }[] | null;
+  workout_sessions: {
+    id: string;
+  }[] | null;
 };
 
 type Client = {
@@ -42,12 +56,17 @@ type Client = {
   full_name: string | null;
   email: string;
   status: string;
-  subscription_status: string | null;
+  hasNutritionPlan: boolean;
+  hasWorkoutPlan: boolean;
+  hasPersonalTraining: boolean;
 };
 
 const Clients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
   const { toast } = useToast();
 
   const fetchClients = async () => {
@@ -71,12 +90,17 @@ const Clients = () => {
             full_name,
             email
           ),
-          subscriptions (
-            status
+          nutrition_plans!nutrition_plans_client_id_fkey (
+            id
+          ),
+          workout_plans!workout_plans_client_id_fkey (
+            id
+          ),
+          workout_sessions!workout_sessions_client_id_fkey (
+            id
           )
         `)
-        .eq('coach_id', user.id)
-        .order('status', { ascending: false });
+        .eq('coach_id', user.id);
 
       if (clientsError) {
         console.error("Error fetching clients:", clientsError);
@@ -91,14 +115,16 @@ const Clients = () => {
       console.log("Full clients data:", clientsData);
 
       if (clientsData) {
-        const formattedClients = (clientsData as ClientData[])
+        const formattedClients = (clientsData as unknown as ClientData[])
           .filter(c => c.profiles) // Filter out any null profiles
           .map(c => ({
-            id: c.profiles!.id,
-            full_name: c.profiles!.full_name,
-            email: c.profiles!.email,
+            id: c.profiles.id,
+            full_name: c.profiles.full_name,
+            email: c.profiles.email,
             status: c.status,
-            subscription_status: c.subscriptions?.[0]?.status || null
+            hasNutritionPlan: (c.nutrition_plans?.length || 0) > 0,
+            hasWorkoutPlan: (c.workout_plans?.length || 0) > 0,
+            hasPersonalTraining: (c.workout_sessions?.length || 0) > 0,
           }));
         console.log("Formatted clients data:", formattedClients);
         setClients(formattedClients);
@@ -180,6 +206,23 @@ const Clients = () => {
     }
   };
 
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = (
+      (client.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
+    
+    const matchesService = serviceFilter === 'all' || (
+      (serviceFilter === 'nutrition' && client.hasNutritionPlan) ||
+      (serviceFilter === 'training' && client.hasWorkoutPlan) ||
+      (serviceFilter === 'personal-training' && client.hasPersonalTraining)
+    );
+
+    return matchesSearch && matchesStatus && matchesService;
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -192,6 +235,39 @@ const Clients = () => {
             <InviteClientDialog onClientAdded={fetchClients} />
           </div>
 
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={serviceFilter} onValueChange={setServiceFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by service" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Services</SelectItem>
+                <SelectItem value="nutrition">Nutrition</SelectItem>
+                <SelectItem value="training">Training</SelectItem>
+                <SelectItem value="personal-training">Personal Training</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <ScrollArea className="h-[calc(100vh-12rem)] w-full">
             <Table>
               <TableHeader>
@@ -199,12 +275,12 @@ const Clients = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Subscription</TableHead>
+                  <TableHead>Services</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clients.map((client) => (
+                {filteredClients.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">
                       {client.full_name || "Unnamed Client"}
@@ -216,13 +292,23 @@ const Clients = () => {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        client.subscription_status === 'active' 
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {client.subscription_status || 'No subscription'}
-                      </span>
+                      <div className="flex gap-2">
+                        {client.hasNutritionPlan && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Nutrition
+                          </span>
+                        )}
+                        {client.hasWorkoutPlan && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Training
+                          </span>
+                        )}
+                        {client.hasPersonalTraining && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                            PT
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -265,10 +351,13 @@ const Clients = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-                {clients.length === 0 && (
+                {filteredClients.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                      No clients found. Invite your first client using the button above.
+                      {clients.length === 0 ? 
+                        "No clients found. Invite your first client using the button above." :
+                        "No clients match your search criteria."
+                      }
                     </TableCell>
                   </TableRow>
                 )}
