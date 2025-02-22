@@ -65,7 +65,7 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         <AddIngredientDialog groups={groups} onIngredientAdded={onIngredientAdded} />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <Input
           type="text"
           placeholder="Search ingredients..."
@@ -86,34 +86,34 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
             ))}
           </TabsList>
         </Tabs>
-      </div>
-      
-      {filteredIngredients.length > 0 ? (
-        <div className="space-y-4 mt-6">
-          {filteredIngredients.map((ingredient) => (
-            <div 
-              key={ingredient.id} 
-              className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out cursor-pointer hover:bg-white/80"
-              onClick={() => handleIngredientClick(ingredient)}
-            >
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-medium">{ingredient.name}</h3>
-                  <p className="text-sm text-gray-500">{ingredient.group_name}</p>
+
+        <div className="space-y-4">
+          {filteredIngredients.length > 0 ? (
+            filteredIngredients.map((ingredient) => (
+              <div 
+                key={ingredient.id} 
+                className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out cursor-pointer hover:bg-white/80"
+                onClick={() => handleIngredientClick(ingredient)}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">{ingredient.name}</h3>
+                    <p className="text-sm text-gray-500">{ingredient.group_name}</p>
+                  </div>
+                  <p className="text-sm text-gray-500">
+                    Per 100g: {ingredient.calories_per_100g} cal | P: {ingredient.protein_per_100g}g | 
+                    C: {ingredient.carbs_per_100g}g | F: {ingredient.fats_per_100g}g | Fiber: {ingredient.fiber_per_100g}g
+                  </p>
                 </div>
-                <p className="text-sm text-gray-500">
-                  Per 100g: {ingredient.calories_per_100g} cal | P: {ingredient.protein_per_100g}g | 
-                  C: {ingredient.carbs_per_100g}g | F: {ingredient.fats_per_100g}g | Fiber: {ingredient.fiber_per_100g}g
-                </p>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              No ingredients found.
             </div>
-          ))}
+          )}
         </div>
-      ) : (
-        <div className="text-center py-12 text-gray-500">
-          No ingredients found.
-        </div>
-      )}
+      </div>
 
       <EditIngredientDialog
         isOpen={showEditIngredient}
