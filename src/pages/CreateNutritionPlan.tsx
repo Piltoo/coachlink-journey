@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,7 @@ type Meal = {
 
 export default function CreateNutritionPlan() {
   const navigate = useNavigate();
+  const { planId } = useParams();
   const { toast } = useToast();
   const [title, setTitle] = useState('');
   const [meals, setMeals] = useState<Meal[]>([]);
@@ -49,6 +50,42 @@ export default function CreateNutritionPlan() {
   const [searchResults, setSearchResults] = useState<{ [key: string]: Ingredient[] }>({});
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
   const [isOptional, setIsOptional] = useState<{ [key: string]: boolean }>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (planId) {
+      loadExistingPlan();
+    }
+  }, [planId]);
+
+  const loadExistingPlan = async () => {
+    setIsLoading(true);
+    try {
+      const { data: plan, error } = await supabase
+        .from('nutrition_plan_templates')
+        .select('*')
+        .eq('id', planId)
+        .single();
+
+      if (error) throw error;
+
+      if (plan) {
+        setTitle(plan.title);
+        if (plan.meals) {
+          setMeals(plan.meals as Meal[]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading nutrition plan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load nutrition plan",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const calculateNutrition = (ingredient: Ingredient, grams: number) => {
     const multiplier = grams / 100;
@@ -253,33 +290,52 @@ export default function CreateNutritionPlan() {
         return;
       }
 
-      const { error } = await supabase
-        .from('nutrition_plan_templates')
-        .insert([
-          {
-            title,
-            coach_id: user.id,
-            meals: meals,
-          }
-        ]);
+      const planData = {
+        title,
+        coach_id: user.id,
+        meals: meals,
+        updated_at: new Date().toISOString(),
+      };
+
+      let error;
+      if (planId) {
+        const { error: updateError } = await supabase
+          .from('nutrition_plan_templates')
+          .update(planData)
+          .eq('id', planId);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('nutrition_plan_templates')
+          .insert([planData]);
+        error = insertError;
+      }
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Nutrition plan created successfully",
+        description: `Nutrition plan ${planId ? 'updated' : 'created'} successfully`,
       });
 
       navigate('/nutrition-and-training');
     } catch (error) {
-      console.error('Error creating nutrition plan:', error);
+      console.error('Error saving nutrition plan:', error);
       toast({
         title: "Error",
-        description: "Failed to create nutrition plan",
+        description: "Failed to save nutrition plan",
         variant: "destructive",
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -296,7 +352,7 @@ export default function CreateNutritionPlan() {
         <form onSubmit={handleSubmit} className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Create New Nutrition Plan</CardTitle>
+              <CardTitle>{planId ? 'Edit' : 'Create'} Nutrition Plan</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -494,7 +550,7 @@ export default function CreateNutritionPlan() {
           )}
 
           <Button type="submit" disabled={!title.trim() || meals.length === 0}>
-            Create Nutrition Plan
+            {planId ? 'Update' : 'Create'} Nutrition Plan
           </Button>
         </form>
       </div>
