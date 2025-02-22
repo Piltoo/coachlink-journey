@@ -24,7 +24,7 @@ const Dashboard = () => {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role, first_name')
+          .select('user_role, first_name')
           .eq('id', user.id)
           .single();
 
@@ -38,7 +38,7 @@ const Dashboard = () => {
           return;
         }
         
-        setUserRole(profile.role);
+        setUserRole(profile.user_role as UserRole);
         setFirstName(profile.first_name || "");
       } catch (error) {
         console.error('Error fetching dashboard data:', error);

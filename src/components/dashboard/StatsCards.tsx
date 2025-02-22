@@ -39,15 +39,15 @@ export function StatsCards() {
 
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('user_role')
           .eq('id', user.id)
           .single();
 
         if (!profile) return;
         
-        setUserRole(profile.role);
+        setUserRole(profile.user_role);
 
-        if (profile.role === 'coach') {
+        if (profile.user_role === 'coach') {
           // Fetch today's sessions
           const today = new Date();
           today.setHours(0, 0, 0, 0);
