@@ -31,6 +31,7 @@ type Client = {
   hasNutritionPlan: boolean;
   hasWorkoutPlan: boolean;
   hasPersonalTraining: boolean;
+  requested_services: string[] | null;
 };
 
 const NewArrivals = () => {
@@ -56,7 +57,7 @@ const NewArrivals = () => {
 
       const { data: availableClients, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, email')
+        .select('id, full_name, email, requested_services')
         .eq('role', 'client')
         .not(connectedIds.length > 0 ? 'id' : 'id', 'in', `(${connectedIds.join(',')})`)
 
@@ -92,6 +93,7 @@ const NewArrivals = () => {
             hasNutritionPlan: !!nutritionPlans.data,
             hasWorkoutPlan: !!workoutPlans.data,
             hasPersonalTraining: !!workoutSessions.data,
+            requested_services: profile.requested_services,
           };
         });
 
@@ -107,10 +109,6 @@ const NewArrivals = () => {
       });
     }
   };
-
-  useEffect(() => {
-    fetchClients();
-  }, []);
 
   const handleStatusChange = async (clientId: string, newStatus: string) => {
     try {
@@ -178,6 +176,34 @@ const NewArrivals = () => {
     }
   };
 
+  const getServiceBadgeColor = (service: string) => {
+    switch (service) {
+      case 'personal-training':
+        return 'bg-indigo-100 text-indigo-800';
+      case 'coaching':
+        return 'bg-purple-100 text-purple-800';
+      case 'treatments':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getServiceLabel = (service: string) => {
+    switch (service) {
+      case 'personal-training':
+        return 'Personal Training';
+      case 'coaching':
+        return 'Coaching';
+      case 'treatments':
+        return 'Treatments';
+      case 'others':
+        return 'Others';
+      default:
+        return service;
+    }
+  };
+
   const filteredClients = clients.filter(client => {
     const matchesSearch = (
       (client.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -186,6 +212,10 @@ const NewArrivals = () => {
     
     return matchesSearch;
   });
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
@@ -217,7 +247,8 @@ const NewArrivals = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Services</TableHead>
+                  <TableHead>Current Services</TableHead>
+                  <TableHead>Requested Services</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -250,6 +281,18 @@ const NewArrivals = () => {
                             PT
                           </span>
                         )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2 flex-wrap">
+                        {client.requested_services?.map((service) => (
+                          <span
+                            key={service}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getServiceBadgeColor(service)}`}
+                          >
+                            {getServiceLabel(service)}
+                          </span>
+                        ))}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -285,7 +328,7 @@ const NewArrivals = () => {
                 ))}
                 {filteredClients.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       No new arrivals found.
                     </TableCell>
                   </TableRow>
