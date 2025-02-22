@@ -44,7 +44,7 @@ export default function NutritionAndTraining() {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('role')
+          .select('user_role')
           .eq('id', user.id)
           .single();
 
@@ -53,7 +53,7 @@ export default function NutritionAndTraining() {
           return;
         }
 
-        setUserRole(profile?.role);
+        setUserRole(profile?.user_role);
       } catch (error) {
         console.error("Error in fetchUserRole:", error);
       }
