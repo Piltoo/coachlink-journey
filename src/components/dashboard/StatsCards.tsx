@@ -145,7 +145,7 @@ export function StatsCards() {
   if (userRole !== 'coach') return null;
 
   const handleNewArrivalsClick = () => {
-    navigate('/clients?tab=new');
+    navigate('/new-arrivals');
   };
 
   return (
