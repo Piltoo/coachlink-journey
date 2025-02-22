@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type Ingredient = {
   id: string;
@@ -44,15 +43,26 @@ export default function CreateNutritionPlan() {
   const { toast } = useToast();
   const [title, setTitle] = useState('');
   const [meals, setMeals] = useState<Meal[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<Ingredient[]>([]);
-  const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState<number>(100);
-  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
+  const [searchResults, setSearchResults] = useState<{ [key: string]: Ingredient[] }>({});
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
 
-  const searchIngredients = async (term: string) => {
+  const calculateNutrition = (ingredient: Ingredient, grams: number) => {
+    const multiplier = grams / 100;
+    return {
+      calories: ingredient.calories_per_100g * multiplier,
+      protein: ingredient.protein_per_100g * multiplier,
+      carbs: ingredient.carbs_per_100g * multiplier,
+      fats: ingredient.fats_per_100g * multiplier,
+      fiber: ingredient.fiber_per_100g * multiplier,
+    };
+  };
+
+  const searchIngredients = async (mealId: string, term: string) => {
+    setSearchTerms({ ...searchTerms, [mealId]: term });
+
     if (!term.trim()) {
-      setSearchResults([]);
+      setSearchResults({ ...searchResults, [mealId]: [] });
       return;
     }
 
@@ -82,22 +92,13 @@ export default function CreateNutritionPlan() {
     }));
 
     const combined = [...(coachIngredients || []), ...formattedAllIngredients];
-    setSearchResults(combined);
-  };
-
-  const calculateNutrition = (ingredient: Ingredient, grams: number) => {
-    const multiplier = grams / 100;
-    return {
-      calories: ingredient.calories_per_100g * multiplier,
-      protein: ingredient.protein_per_100g * multiplier,
-      carbs: ingredient.carbs_per_100g * multiplier,
-      fats: ingredient.fats_per_100g * multiplier,
-      fiber: ingredient.fiber_per_100g * multiplier,
-    };
+    setSearchResults({ ...searchResults, [mealId]: combined });
   };
 
   const addIngredientToMeal = (mealId: string, ingredient: Ingredient) => {
+    const quantity = quantities[mealId] || 100;
     const nutrition = calculateNutrition(ingredient, quantity);
+    
     setMeals(meals.map(meal => {
       if (meal.id === mealId) {
         return {
@@ -113,10 +114,10 @@ export default function CreateNutritionPlan() {
       }
       return meal;
     }));
-    setShowSearch(false);
-    setSearchTerm('');
-    setSearchResults([]);
-    setQuantity(100);
+
+    setSearchTerms({ ...searchTerms, [mealId]: '' });
+    setSearchResults({ ...searchResults, [mealId]: [] });
+    setQuantities({ ...quantities, [mealId]: 100 });
   };
 
   const calculateTotalNutrition = () => {
@@ -278,80 +279,53 @@ export default function CreateNutritionPlan() {
                       </div>
                     ))}
 
-                    <Dialog open={showSearch && selectedMealId === meal.id} onOpenChange={(open) => {
-                      setShowSearch(open);
-                      if (open) setSelectedMealId(meal.id);
-                      else {
-                        setSelectedMealId(null);
-                        setSearchTerm('');
-                        setSearchResults([]);
-                      }
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedMealId(meal.id);
-                            setShowSearch(true);
-                          }}
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Food Item
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle>Add Food Item</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="flex gap-4">
-                            <div className="flex-1">
-                              <Label htmlFor="search">Search Ingredients</Label>
-                              <div className="relative">
-                                <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  id="search"
-                                  value={searchTerm}
-                                  onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    searchIngredients(e.target.value);
-                                  }}
-                                  className="pl-8"
-                                  placeholder="Search ingredients..."
-                                />
-                              </div>
-                            </div>
-                            <div className="w-24">
-                              <Label htmlFor="quantity">Grams</Label>
-                              <Input
-                                id="quantity"
-                                type="number"
-                                value={quantity}
-                                onChange={(e) => setQuantity(Number(e.target.value))}
-                                min="0"
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="max-h-[300px] overflow-y-auto space-y-2">
-                            {searchResults.map((ingredient) => (
-                              <Button
-                                key={ingredient.id}
-                                type="button"
-                                variant="outline"
-                                className="w-full justify-between"
-                                onClick={() => addIngredientToMeal(meal.id, ingredient)}
-                              >
-                                <span>{ingredient.name}</span>
-                                <span>{ingredient.calories_per_100g} cal/100g</span>
-                              </Button>
-                            ))}
+                    <div className="space-y-4 border rounded-lg p-4">
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <Label htmlFor={`search-${meal.id}`}>Search Ingredients</Label>
+                          <div className="relative">
+                            <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id={`search-${meal.id}`}
+                              value={searchTerms[meal.id] || ''}
+                              onChange={(e) => searchIngredients(meal.id, e.target.value)}
+                              className="pl-8"
+                              placeholder="Search ingredients..."
+                            />
                           </div>
                         </div>
-                      </DialogContent>
-                    </Dialog>
+                        <div className="w-24">
+                          <Label htmlFor={`quantity-${meal.id}`}>Grams</Label>
+                          <Input
+                            id={`quantity-${meal.id}`}
+                            type="number"
+                            value={quantities[meal.id] || 100}
+                            onChange={(e) => setQuantities({
+                              ...quantities,
+                              [meal.id]: Number(e.target.value)
+                            })}
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                      
+                      {(searchResults[meal.id] || []).length > 0 && (
+                        <div className="max-h-[200px] overflow-y-auto space-y-2">
+                          {searchResults[meal.id].map((ingredient) => (
+                            <Button
+                              key={ingredient.id}
+                              type="button"
+                              variant="outline"
+                              className="w-full justify-between"
+                              onClick={() => addIngredientToMeal(meal.id, ingredient)}
+                            >
+                              <span>{ingredient.name}</span>
+                              <span>{ingredient.calories_per_100g} cal/100g</span>
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
