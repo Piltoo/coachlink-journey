@@ -183,13 +183,15 @@ export default function CreateNutritionPlan() {
 
   const calculateTotalNutrition = () => {
     return meals.reduce((total, meal) => {
-      const mealTotal = meal.items.reduce((mealSum, item) => ({
-        calories: mealSum.calories + item.nutrition.calories,
-        protein: mealSum.protein + item.nutrition.protein,
-        carbs: mealSum.carbs + item.nutrition.carbs,
-        fats: mealSum.fats + item.nutrition.fats,
-        fiber: mealSum.fiber + item.nutrition.fiber,
-      }), { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
+      const mealTotal = meal.items
+        .filter(item => !item.optional)
+        .reduce((mealSum, item) => ({
+          calories: mealSum.calories + item.nutrition.calories,
+          protein: mealSum.protein + item.nutrition.protein,
+          carbs: mealSum.carbs + item.nutrition.carbs,
+          fats: mealSum.fats + item.nutrition.fats,
+          fiber: mealSum.fiber + item.nutrition.fiber,
+        }), { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
 
       return {
         calories: total.calories + mealTotal.calories,
