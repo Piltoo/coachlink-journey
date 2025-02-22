@@ -1,10 +1,13 @@
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Plus, Edit, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CreateNutritionPlanDialog } from "./CreateNutritionPlanDialog";
+import { useToast } from "@/hooks/use-toast";
+import { ClientSelect } from "../messages/ClientSelect";
 
 type Template = {
   id: string;
@@ -26,10 +29,19 @@ type Template = {
   }>;
 };
 
-export function NutritionPlansSection() {
-  const navigate = useNavigate();
+type Client = {
+  id: string;
+  full_name: string | null;
+  email: string;
+};
 
-  const { data: templates = [] } = useQuery({
+export function NutritionPlansSection() {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const { toast } = useToast();
+
+  const { data: templates = [], refetch } = useQuery({
     queryKey: ["nutrition_plan_templates"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -38,80 +50,102 @@ export function NutritionPlansSection() {
       const { data, error } = await supabase
         .from('nutrition_plan_templates')
         .select('*')
+        .eq('coach_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Process the templates to calculate totals
-      return (data || []).map(template => {
-        // Safely cast the meals data to our expected type
-        const meals = (template.meals as any[] || []).map(meal => ({
-          name: meal.name || '',
-          ingredients: (meal.ingredients || []).map((ing: any) => ({
-            ingredient: {
-              calories_per_100g: Number(ing.ingredient.calories_per_100g) || 0,
-              protein_per_100g: Number(ing.ingredient.protein_per_100g) || 0,
-              carbs_per_100g: Number(ing.ingredient.carbs_per_100g) || 0,
-              fats_per_100g: Number(ing.ingredient.fats_per_100g) || 0,
-              fiber_per_100g: Number(ing.ingredient.fiber_per_100g) || 0
-            },
-            quantity_grams: Number(ing.quantity_grams) || 0
-          }))
-        }));
-
-        const totalNutrition = meals.reduce((acc, meal) => {
-          const mealNutrition = meal.ingredients.reduce((mealAcc, { ingredient, quantity_grams }) => {
-            const multiplier = quantity_grams / 100;
-            return {
-              calories: mealAcc.calories + (ingredient.calories_per_100g * multiplier),
-              protein: mealAcc.protein + (ingredient.protein_per_100g * multiplier),
-              carbs: mealAcc.carbs + (ingredient.carbs_per_100g * multiplier),
-              fats: mealAcc.fats + (ingredient.fats_per_100g * multiplier),
-              fiber: mealAcc.fiber + (ingredient.fiber_per_100g * multiplier)
-            };
-          }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
-
-          return {
-            calories: acc.calories + mealNutrition.calories,
-            protein: acc.protein + mealNutrition.protein,
-            carbs: acc.carbs + mealNutrition.carbs,
-            fats: acc.fats + mealNutrition.fats,
-            fiber: acc.fiber + mealNutrition.fiber
-          };
-        }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
-
-        return {
-          id: template.id,
-          title: template.title,
-          description: template.description,
-          created_at: template.created_at,
-          meals,
-          totalNutrition
-        };
-      });
+      return data || [];
     }
   });
 
+  const { data: clients = [] } = useQuery({
+    queryKey: ["clients"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('coach_clients')
+        .select(`
+          client_id,
+          profiles!coach_clients_client_id_fkey (
+            id,
+            full_name,
+            email
+          )
+        `)
+        .eq('coach_id', user.id);
+
+      if (error) throw error;
+
+      return data
+        .filter(d => d.profiles)
+        .map(d => ({
+          id: d.profiles.id,
+          full_name: d.profiles.full_name,
+          email: d.profiles.email
+        }));
+    }
+  });
+
+  const handleSendToClient = async (template: Template) => {
+    if (!selectedClient) {
+      toast({
+        title: "Error",
+        description: "Please select a client first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('nutrition_plans')
+        .insert([
+          {
+            title: template.title,
+            description: template.description,
+            meal_plan: template.meals,
+            coach_id: user.id,
+            client_id: selectedClient.id,
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Nutrition plan sent to client successfully",
+      });
+
+      setSelectedClient(null);
+    } catch (error) {
+      console.error('Error sending nutrition plan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send nutrition plan to client",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <div className="bg-white/40 backdrop-blur-lg rounded-lg border border-gray-200/50 p-6 shadow-sm transition-all duration-200 ease-in-out">
+    <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Nutrition Plans</h2>
-        <Button 
-          onClick={() => navigate("/nutrition-training/create")}
-          className="bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Plan
+        <h2 className="text-xl font-semibold">Nutrition Plan Templates</h2>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create New Template
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {templates.map((template) => (
-          <Card 
-            key={template.id} 
-            className="cursor-pointer hover:bg-accent/5 transition-colors"
-            onClick={() => navigate(`/nutrition-training/create?template=${template.id}`)}
-          >
+          <Card key={template.id}>
             <CardHeader>
               <CardTitle>{template.title}</CardTitle>
               <CardDescription>
@@ -119,35 +153,56 @@ export function NutritionPlansSection() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {template.description || "No description provided"}
+              <p className="text-sm text-muted-foreground mb-4">
+                {template.description}
               </p>
-              <div className="mt-4 space-y-1 text-sm text-muted-foreground">
-                <p>Total Calories: {template.totalNutrition.calories.toFixed(0)} kcal</p>
-                <p>Protein: {template.totalNutrition.protein.toFixed(1)}g</p>
-                <p>Carbs: {template.totalNutrition.carbs.toFixed(1)}g</p>
-                <p>Fats: {template.totalNutrition.fats.toFixed(1)}g</p>
+              <div className="space-y-4">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setSelectedTemplate(template);
+                    setIsCreateDialogOpen(true);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Template
+                </Button>
+                <div className="space-y-2">
+                  <ClientSelect
+                    clients={clients}
+                    selectedClient={selectedClient}
+                    onSelect={setSelectedClient}
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={() => handleSendToClient(template)}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Send to Client
+                  </Button>
+                </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="mt-4"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/nutrition-training/create?template=${template.id}`);
-                }}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Template
-              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
 
+      <CreateNutritionPlanDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => {
+          setIsCreateDialogOpen(false);
+          setSelectedTemplate(null);
+        }}
+        onPlanCreated={() => {
+          refetch();
+        }}
+        planToEdit={selectedTemplate || undefined}
+      />
+
       {templates.length === 0 && (
         <div className="text-center py-12 text-gray-500">
-          No nutrition plans created yet.
+          No nutrition plan templates created yet.
         </div>
       )}
     </div>
