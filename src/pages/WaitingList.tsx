@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { UserCheck, ArrowLeft, Search } from "lucide-react";
+import { UserCheck, ArrowLeft, Search, UserPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Profile = {
   id: string;
@@ -47,15 +47,52 @@ type PendingClient = {
   hasPersonalTraining: boolean;
 };
 
+type UnassignedClient = {
+  id: string;
+  full_name: string | null;
+  email: string;
+  registration_status: string | null;
+};
+
 export default function WaitingList() {
   const [pendingClients, setPendingClients] = useState<PendingClient[]>([]);
+  const [unassignedClients, setUnassignedClients] = useState<UnassignedClient[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [serviceFilter, setServiceFilter] = useState<string>("all");
   const { toast } = useToast();
 
   useEffect(() => {
     fetchPendingClients();
+    fetchUnassignedClients();
   }, []);
+
+  const fetchUnassignedClients = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get all clients that are not connected to any coach
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'client')
+        .not('id', 'in', (
+          supabase
+            .from('coach_clients')
+            .select('client_id')
+        ));
+
+      if (error) {
+        console.error("Error fetching unassigned clients:", error);
+        return;
+      }
+
+      console.log("Unassigned clients:", profiles);
+      setUnassignedClients(profiles || []);
+    } catch (error) {
+      console.error("Error in fetchUnassignedClients:", error);
+    }
+  };
 
   const fetchPendingClients = async () => {
     try {
@@ -186,6 +223,43 @@ export default function WaitingList() {
     }
   };
 
+  const handleAssignClient = async (clientId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Create coach-client relationship
+      const { error: insertError } = await supabase
+        .from('coach_clients')
+        .insert({
+          coach_id: user.id,
+          client_id: clientId,
+          status: 'not_connected',
+          requested_services: []
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Remove from unassigned list and refresh pending clients
+      setUnassignedClients(prev => prev.filter(client => client.id !== clientId));
+      fetchPendingClients();
+
+      toast({
+        title: "Success",
+        description: "Client assigned successfully",
+      });
+    } catch (error) {
+      console.error("Error assigning client:", error);
+      toast({
+        title: "Error",
+        description: "Failed to assign client",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredClients = pendingClients.filter(client => {
     const matchesSearch = (
       (client.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -199,6 +273,13 @@ export default function WaitingList() {
     );
 
     return matchesSearch && matchesService;
+  });
+
+  const filteredUnassignedClients = unassignedClients.filter(client => {
+    return (
+      (client.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   return (
@@ -237,58 +318,112 @@ export default function WaitingList() {
             </Select>
           </div>
 
-          <ScrollArea className="h-[calc(100vh-12rem)] w-full">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Services</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClients.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-medium">
-                      {client.full_name || "Unnamed Client"}
-                    </TableCell>
-                    <TableCell>{client.email}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {client.requested_services.map((service, index) => (
-                          <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {service}
-                          </span>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
-                        onClick={() => handleClientResponse(client.id)}
-                      >
-                        <UserCheck className="w-4 h-4 mr-1" />
-                        Activate
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredClients.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                      {pendingClients.length === 0 ? 
-                        "No available clients found." :
-                        "No clients match your search criteria."
-                      }
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+          <Tabs defaultValue="pending" className="w-full">
+            <TabsList>
+              <TabsTrigger value="pending">Pending Clients</TabsTrigger>
+              <TabsTrigger value="unassigned">Unassigned Clients</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="pending">
+              <ScrollArea className="h-[calc(100vh-16rem)] w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Services</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredClients.map((client) => (
+                      <TableRow key={client.id}>
+                        <TableCell className="font-medium">
+                          {client.full_name || "Unnamed Client"}
+                        </TableCell>
+                        <TableCell>{client.email}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {client.requested_services.map((service, index) => (
+                              <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {service}
+                              </span>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
+                            onClick={() => handleClientResponse(client.id)}
+                          >
+                            <UserCheck className="w-4 h-4 mr-1" />
+                            Activate
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredClients.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                          {pendingClients.length === 0 ? 
+                            "No pending clients found." :
+                            "No clients match your search criteria."
+                          }
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="unassigned">
+              <ScrollArea className="h-[calc(100vh-16rem)] w-full">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUnassignedClients.map((client) => (
+                      <TableRow key={client.id}>
+                        <TableCell className="font-medium">
+                          {client.full_name || "Unnamed Client"}
+                        </TableCell>
+                        <TableCell>{client.email}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-700 border-blue-200 hover:bg-blue-50"
+                            onClick={() => handleAssignClient(client.id)}
+                          >
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Assign
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredUnassignedClients.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                          {unassignedClients.length === 0 ? 
+                            "No unassigned clients found." :
+                            "No clients match your search criteria."
+                          }
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
