@@ -122,13 +122,16 @@ export default function CreateNutritionPlan() {
 
   const calculateMealNutrition = (mealIndex: number): MealNutrition => {
     return meals[mealIndex].ingredients.reduce(
-      (acc, { ingredient, quantity_grams }) => ({
-        calories: acc.calories + (ingredient.calories_per_100g * quantity_grams) / 100,
-        protein: acc.protein + (ingredient.protein_per_100g * quantity_grams) / 100,
-        carbs: acc.carbs + (ingredient.carbs_per_100g * quantity_grams) / 100,
-        fats: acc.fats + (ingredient.fats_per_100g * quantity_grams) / 100,
-        fiber: acc.fiber + (ingredient.fiber_per_100g * quantity_grams) / 100,
-      }),
+      (acc, { ingredient, quantity_grams }) => {
+        const multiplier = quantity_grams / 100;
+        return {
+          calories: acc.calories + (ingredient.calories_per_100g * multiplier),
+          protein: acc.protein + (ingredient.protein_per_100g * multiplier),
+          carbs: acc.carbs + (ingredient.carbs_per_100g * multiplier),
+          fats: acc.fats + (ingredient.fats_per_100g * multiplier),
+          fiber: acc.fiber + (ingredient.fiber_per_100g * multiplier),
+        };
+      },
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
     );
   };
