@@ -1,44 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, Search, X } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-type Ingredient = {
-  id: string;
-  name: string;
-  calories_per_100g: number;
-  protein_per_100g: number;
-  carbs_per_100g: number;
-  fats_per_100g: number;
-  fiber_per_100g: number;
-};
-
-type MealItem = {
-  id: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  optional: boolean;
-  nutrition: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fats: number;
-    fiber: number;
-  };
-};
-
-type Meal = {
-  id: string;
-  name: string;
-  items: MealItem[];
-};
+import { MealCard } from '@/components/nutrition-training/create-plan/MealCard';
+import { TotalNutrition } from '@/components/nutrition-training/create-plan/TotalNutrition';
+import { Ingredient, MealItem, Meal } from '@/components/nutrition-training/types/nutrition-training';
 
 export default function CreateNutritionPlan() {
   const navigate = useNavigate();
@@ -135,12 +107,25 @@ export default function CreateNutritionPlan() {
     setSearchResults({ ...searchResults, [mealId]: combined });
   };
 
-  const addIngredientToMeal = (mealId: string, ingredient: Ingredient) => {
+  const handleAddMeal = () => {
+    const newMeal: Meal = {
+      id: Math.random().toString(),
+      name: `Meal ${meals.length + 1}`,
+      items: []
+    };
+    setMeals([...meals, newMeal]);
+  };
+
+  const handleUpdateMealName = (mealId: string, newName: string) => {
+    setMeals(meals.map(meal => 
+      meal.id === mealId ? { ...meal, name: newName } : meal
+    ));
+  };
+
+  const handleAddIngredient = (mealId: string, ingredient: Ingredient) => {
     const quantity = quantities[mealId] || 100;
     const optional = isOptional[mealId] || false;
     const nutrition = calculateNutrition(ingredient, quantity);
-    
-    console.log('Adding ingredient with nutrition:', nutrition);
     
     setMeals(meals.map(meal => {
       if (meal.id === mealId) {
@@ -165,7 +150,35 @@ export default function CreateNutritionPlan() {
     setIsOptional({ ...isOptional, [mealId]: false });
   };
 
-  const toggleItemOptional = (mealId: string, itemId: string) => {
+  const handleUpdateItemQuantity = (mealId: string, itemId: string, newQuantity: number) => {
+    setMeals(meals.map(meal => {
+      if (meal.id === mealId) {
+        return {
+          ...meal,
+          items: meal.items.map(item => {
+            if (item.id === itemId) {
+              const gramsMultiplier = newQuantity / item.quantity;
+              return {
+                ...item,
+                quantity: newQuantity,
+                nutrition: {
+                  calories: item.nutrition.calories * gramsMultiplier,
+                  protein: item.nutrition.protein * gramsMultiplier,
+                  carbs: item.nutrition.carbs * gramsMultiplier,
+                  fats: item.nutrition.fats * gramsMultiplier,
+                  fiber: item.nutrition.fiber * gramsMultiplier,
+                },
+              };
+            }
+            return item;
+          })
+        };
+      }
+      return meal;
+    }));
+  };
+
+  const handleToggleItemOptional = (mealId: string, itemId: string) => {
     setMeals(meals.map(meal => {
       if (meal.id === mealId) {
         return {
@@ -182,36 +195,12 @@ export default function CreateNutritionPlan() {
     }));
   };
 
-  const updateItemQuantity = (mealId: string, itemId: string, newQuantity: number) => {
-    console.log('Updating quantity:', { mealId, itemId, newQuantity });
-    
+  const handleRemoveItem = (mealId: string, itemId: string) => {
     setMeals(meals.map(meal => {
       if (meal.id === mealId) {
         return {
           ...meal,
-          items: meal.items.map(item => {
-            if (item.id === itemId) {
-              const gramsMultiplier = newQuantity / item.quantity;
-              const updatedNutrition = {
-                calories: item.nutrition.calories * gramsMultiplier,
-                protein: item.nutrition.protein * gramsMultiplier,
-                carbs: item.nutrition.carbs * gramsMultiplier,
-                fats: item.nutrition.fats * gramsMultiplier,
-                fiber: item.nutrition.fiber * gramsMultiplier,
-              };
-              
-              console.log('Original nutrition:', item.nutrition);
-              console.log('Multiplier:', gramsMultiplier);
-              console.log('Updated nutrition:', updatedNutrition);
-              
-              return {
-                ...item,
-                quantity: newQuantity,
-                nutrition: updatedNutrition
-              };
-            }
-            return item;
-          })
+          items: meal.items.filter(item => item.id !== itemId)
         };
       }
       return meal;
@@ -238,33 +227,6 @@ export default function CreateNutritionPlan() {
         fiber: total.fiber + mealTotal.fiber,
       };
     }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
-  };
-
-  const handleAddMeal = () => {
-    const newMeal: Meal = {
-      id: Math.random().toString(),
-      name: `Meal ${meals.length + 1}`,
-      items: []
-    };
-    setMeals([...meals, newMeal]);
-  };
-
-  const handleUpdateMealName = (mealId: string, newName: string) => {
-    setMeals(meals.map(meal => 
-      meal.id === mealId ? { ...meal, name: newName } : meal
-    ));
-  };
-
-  const removeIngredient = (mealId: string, itemId: string) => {
-    setMeals(meals.map(meal => {
-      if (meal.id === mealId) {
-        return {
-          ...meal,
-          items: meal.items.filter(item => item.id !== itemId)
-        };
-      }
-      return meal;
-    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -384,169 +346,27 @@ export default function CreateNutritionPlan() {
             </div>
 
             {meals.map((meal) => (
-              <Card key={meal.id} className="bg-card">
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <Input
-                      value={meal.name}
-                      onChange={(e) => handleUpdateMealName(meal.id, e.target.value)}
-                      placeholder="Meal name"
-                      className="font-medium"
-                    />
-                    
-                    {meal.items.map((item) => (
-                      <div key={item.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{item.name}</span>
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id={`optional-${item.id}`}
-                                checked={item.optional}
-                                onCheckedChange={() => toggleItemOptional(meal.id, item.id)}
-                              />
-                              <Label htmlFor={`optional-${item.id}`} className="text-sm text-muted-foreground">
-                                Optional
-                              </Label>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) => updateItemQuantity(meal.id, item.id, Number(e.target.value))}
-                              className="w-20"
-                              min="0"
-                            />
-                            <span className="text-sm text-muted-foreground">g</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => removeIngredient(meal.id, item.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="text-sm text-muted-foreground grid grid-cols-5 gap-2">
-                          <div>Calories: {item.nutrition.calories.toFixed(1)}</div>
-                          <div>Protein: {item.nutrition.protein.toFixed(1)}g</div>
-                          <div>Carbs: {item.nutrition.carbs.toFixed(1)}g</div>
-                          <div>Fats: {item.nutrition.fats.toFixed(1)}g</div>
-                          <div>Fiber: {item.nutrition.fiber.toFixed(1)}g</div>
-                        </div>
-                      </div>
-                    ))}
-
-                    <div className="space-y-4 border rounded-lg p-4">
-                      <div className="flex gap-4">
-                        <div className="flex-1">
-                          <Label htmlFor={`search-${meal.id}`}>Search Ingredients</Label>
-                          <div className="relative">
-                            <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id={`search-${meal.id}`}
-                              value={searchTerms[meal.id] || ''}
-                              onChange={(e) => searchIngredients(meal.id, e.target.value)}
-                              className="pl-8"
-                              placeholder="Search ingredients..."
-                            />
-                          </div>
-                        </div>
-                        <div className="w-24">
-                          <Label htmlFor={`quantity-${meal.id}`}>Grams</Label>
-                          <Input
-                            id={`quantity-${meal.id}`}
-                            type="number"
-                            value={quantities[meal.id] || 100}
-                            onChange={(e) => setQuantities({
-                              ...quantities,
-                              [meal.id]: Number(e.target.value)
-                            })}
-                            min="0"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`optional-new-${meal.id}`}
-                          checked={isOptional[meal.id] || false}
-                          onCheckedChange={(checked) => {
-                            setIsOptional({
-                              ...isOptional,
-                              [meal.id]: checked === true
-                            });
-                          }}
-                        />
-                        <Label htmlFor={`optional-new-${meal.id}`}>Mark as optional ingredient</Label>
-                      </div>
-                      
-                      {(searchResults[meal.id] || []).length > 0 && (
-                        <div className="max-h-[200px] overflow-y-auto space-y-2">
-                          {searchResults[meal.id].map((ingredient) => (
-                            <Button
-                              key={ingredient.id}
-                              type="button"
-                              variant="outline"
-                              className="w-full justify-between"
-                              onClick={() => addIngredientToMeal(meal.id, ingredient)}
-                            >
-                              <span>{ingredient.name}</span>
-                              <span>{ingredient.calories_per_100g} cal/100g</span>
-                            </Button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <MealCard
+                key={meal.id}
+                meal={meal}
+                searchTerm={searchTerms[meal.id] || ''}
+                searchResults={searchResults[meal.id] || []}
+                quantity={quantities[meal.id] || 100}
+                isOptional={isOptional[meal.id] || false}
+                onMealNameChange={(name) => handleUpdateMealName(meal.id, name)}
+                onSearchChange={(term) => searchIngredients(meal.id, term)}
+                onQuantityChange={(quantity) => setQuantities({ ...quantities, [meal.id]: quantity })}
+                onOptionalChange={(optional) => setIsOptional({ ...isOptional, [meal.id]: optional })}
+                onIngredientSelect={(ingredient) => handleAddIngredient(meal.id, ingredient)}
+                onItemQuantityChange={(itemId, quantity) => handleUpdateItemQuantity(meal.id, itemId, quantity)}
+                onItemOptionalToggle={(itemId) => handleToggleItemOptional(meal.id, itemId)}
+                onItemRemove={(itemId) => handleRemoveItem(meal.id, itemId)}
+              />
             ))}
           </div>
 
           {meals.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Nutrition</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-5 gap-4 text-center">
-                  <div>
-                    <div className="text-lg font-medium">
-                      {calculateTotalNutrition().calories.toFixed(1)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Calories</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-medium">
-                      {calculateTotalNutrition().protein.toFixed(1)}g
-                    </div>
-                    <div className="text-sm text-muted-foreground">Protein</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-medium">
-                      {calculateTotalNutrition().carbs.toFixed(1)}g
-                    </div>
-                    <div className="text-sm text-muted-foreground">Carbs</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-medium">
-                      {calculateTotalNutrition().fats.toFixed(1)}g
-                    </div>
-                    <div className="text-sm text-muted-foreground">Fats</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-medium">
-                      {calculateTotalNutrition().fiber.toFixed(1)}g
-                    </div>
-                    <div className="text-sm text-muted-foreground">Fiber</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <TotalNutrition totals={calculateTotalNutrition()} />
           )}
 
           <Button type="submit" disabled={!title.trim() || meals.length === 0}>
