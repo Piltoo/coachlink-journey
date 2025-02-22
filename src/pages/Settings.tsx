@@ -23,12 +23,12 @@ export default function Settings() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('user_role')
         .eq('id', user.id)
         .single();
 
       if (profile) {
-        setUserRole(profile.role);
+        setUserRole(profile.user_role);
       }
     };
 
