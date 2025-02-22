@@ -14,19 +14,7 @@ type Template = {
   title: string;
   description: string | null;
   created_at: string;
-  meals: Array<{
-    name: string;
-    ingredients: Array<{
-      ingredient: {
-        calories_per_100g: number;
-        protein_per_100g: number;
-        carbs_per_100g: number;
-        fats_per_100g: number;
-        fiber_per_100g: number;
-      };
-      quantity_grams: number;
-    }>;
-  }>;
+  meals: Json | null;
 };
 
 type Client = {
@@ -59,7 +47,7 @@ export function NutritionPlansSection() {
     }
   });
 
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [], isLoading: isLoadingClients } = useQuery({
     queryKey: ["clients"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -85,7 +73,7 @@ export function NutritionPlansSection() {
           id: d.profiles.id,
           full_name: d.profiles.full_name,
           email: d.profiles.email
-        }));
+        })) || [];
     }
   });
 
@@ -173,6 +161,7 @@ export function NutritionPlansSection() {
                     clients={clients}
                     selectedClient={selectedClient}
                     onSelect={setSelectedClient}
+                    disabled={isLoadingClients}
                   />
                   <Button
                     className="w-full"
@@ -197,7 +186,7 @@ export function NutritionPlansSection() {
         onPlanCreated={() => {
           refetch();
         }}
-        planToEdit={selectedTemplate || undefined}
+        planToEdit={selectedTemplate}
       />
 
       {templates.length === 0 && (
