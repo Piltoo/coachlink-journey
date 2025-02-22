@@ -2,10 +2,11 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
-import { UserCheck, UserX } from "lucide-react";
+import { UserCheck, UserX, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 type PendingClient = {
   id: string;
@@ -55,65 +56,36 @@ export function WaitingList() {
     fetchPendingClients();
   }, []);
 
-  const handleClientResponse = async (clientId: string, approved: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('coach_clients')
-        .update({ status: approved ? 'active' : 'inactive' })
-        .eq('client_id', clientId);
-
-      if (error) throw error;
-
-      setPendingClients(prev => prev.filter(client => client.id !== clientId));
-      
-      toast({
-        title: "Success",
-        description: `Client ${approved ? 'approved' : 'rejected'} successfully`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to update client status",
-        variant: "destructive",
-      });
-    }
-  };
-
   if (pendingClients.length === 0) return null;
 
   return (
     <GlassCard className="p-6">
-      <h2 className="text-lg font-semibold text-primary mb-4">Waiting List ({pendingClients.length})</h2>
-      <ScrollArea className="h-[300px]">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Users className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold text-primary">Waiting List</h2>
+        </div>
+        <Link to="/waiting-list">
+          <Button variant="outline" size="sm" className="text-primary">
+            View All ({pendingClients.length})
+          </Button>
+        </Link>
+      </div>
+      <ScrollArea className="h-[200px]">
         <div className="space-y-4">
-          {pendingClients.map((client) => (
+          {pendingClients.slice(0, 3).map((client) => (
             <div key={client.id} className="flex items-center justify-between p-4 bg-white/50 rounded-lg">
               <div>
                 <h3 className="font-medium text-gray-900">{client.full_name || 'Unnamed Client'}</h3>
                 <p className="text-sm text-gray-500">{client.email}</p>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-green-600 hover:text-green-700"
-                  onClick={() => handleClientResponse(client.id, true)}
-                >
-                  <UserCheck className="w-4 h-4 mr-1" />
-                  Approve
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700"
-                  onClick={() => handleClientResponse(client.id, false)}
-                >
-                  <UserX className="w-4 h-4 mr-1" />
-                  Reject
-                </Button>
-              </div>
             </div>
           ))}
+          {pendingClients.length > 3 && (
+            <div className="text-center text-sm text-gray-500 pt-2">
+              And {pendingClients.length - 3} more...
+            </div>
+          )}
         </div>
       </ScrollArea>
     </GlassCard>
