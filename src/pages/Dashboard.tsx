@@ -29,20 +29,36 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          console.log("No user found");
+          return;
+        }
+        console.log("User found:", user);
 
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', user.id)
           .single();
 
-        if (!profile) return;
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          return;
+        }
+
+        console.log("User profile:", profile);
+
+        if (!profile) {
+          console.log("No profile found");
+          return;
+        }
         setUserRole(profile.role);
+        console.log("User role set to:", profile.role);
 
         if (profile.role === 'coach') {
+          console.log("Fetching pending clients for coach");
           // Fetch pending client requests
-          const { data: clients } = await supabase
+          const { data: clients, error: clientsError } = await supabase
             .from('coach_clients')
             .select(`
               client_id,
@@ -55,6 +71,13 @@ const Dashboard = () => {
             .eq('coach_id', user.id)
             .eq('status', 'pending');
 
+          if (clientsError) {
+            console.error("Error fetching clients:", clientsError);
+            return;
+          }
+
+          console.log("Pending clients data:", clients);
+
           if (clients) {
             const formattedClients = clients.map(c => ({
               id: c.profiles.id,
@@ -62,6 +85,7 @@ const Dashboard = () => {
               email: c.profiles.email,
               requested_services: [] // You might want to fetch this from user metadata
             }));
+            console.log("Formatted clients:", formattedClients);
             setPendingClients(formattedClients);
           }
         }
@@ -107,7 +131,9 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-[#1B4332]">Welcome Back</h1>
+            <h1 className="text-2xl font-semibold text-[#1B4332]">
+              Welcome Back {userRole ? `(${userRole})` : ''}
+            </h1>
             <div className="text-sm text-gray-600">
               {new Date().toLocaleDateString('en-US', { 
                 weekday: 'long', 
