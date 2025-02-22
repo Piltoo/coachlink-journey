@@ -42,30 +42,32 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
     setIsInviting(true);
 
     try {
-      const currentUser = await supabase.auth.getUser();
-      if (!currentUser.data.user) {
+      // First get the current coach's ID
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      if (!currentUser) {
         throw new Error("No authenticated user found");
       }
 
-      // First, sign up the user directly
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Create the new client using admin functions
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newClientEmail,
         password: newClientPassword,
-        options: {
-          data: {
-            full_name: newClientName,
-          },
-        },
+        email_confirm: true,
+        user_metadata: {
+          full_name: newClientName,
+        }
       });
 
       if (authError) throw authError;
 
-      if (authData && authData.user) {
+      if (authData.user) {
         // Create the coach-client relationship
         const { error: relationError } = await supabase
           .from('coach_clients')
           .insert({
-            coach_id: currentUser.data.user.id,
+            coach_id: currentUser.id,
             client_id: authData.user.id,
             status: 'active'
           });
@@ -82,10 +84,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         setNewClientName("");
         setNewClientPassword("");
         setIsOpen(false);
-        
-        // Navigate to dashboard after successful client creation
-        navigate('/dashboard');
-        
+
         // Call the callback to refresh the client list if provided
         if (onClientAdded) {
           onClientAdded();
