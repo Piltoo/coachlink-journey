@@ -60,54 +60,53 @@ const Clients = () => {
 
       console.log("Current coach ID:", user.id);
 
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('coach_clients')
-        .select(`
-          client_id,
-          status,
-          profiles:client_id (
-            id,
-            full_name,
-            email
-          )
-        `)
-        .eq('coach_id', user.id);
+      const { data: clientProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('role', 'client');
 
-      if (clientsError) {
-        console.error("Error fetching clients:", clientsError);
-        toast({
-          title: "Error",
-          description: "Failed to load clients: " + clientsError.message,
-          variant: "destructive",
-        });
-        return;
+      if (profilesError) {
+        throw profilesError;
       }
 
-      if (clientsData) {
-        const clientPromises = clientsData.map(async (clientData) => {
+      const { data: relationships, error: relationshipsError } = await supabase
+        .from('coach_clients')
+        .select('client_id, status')
+        .eq('coach_id', user.id);
+
+      if (relationshipsError) {
+        throw relationshipsError;
+      }
+
+      const relationshipMap = new Map(
+        relationships?.map(rel => [rel.client_id, rel.status]) || []
+      );
+
+      if (clientProfiles) {
+        const clientPromises = clientProfiles.map(async (profile) => {
           const [nutritionPlans, workoutPlans, workoutSessions] = await Promise.all([
             supabase
               .from('nutrition_plans')
               .select('id')
-              .eq('client_id', clientData.client_id)
+              .eq('client_id', profile.id)
               .maybeSingle(),
             supabase
               .from('workout_plans')
               .select('id')
-              .eq('client_id', clientData.client_id)
+              .eq('client_id', profile.id)
               .maybeSingle(),
             supabase
               .from('workout_sessions')
               .select('id')
-              .eq('client_id', clientData.client_id)
+              .eq('client_id', profile.id)
               .maybeSingle(),
           ]);
 
           return {
-            id: clientData.profiles.id,
-            full_name: clientData.profiles.full_name,
-            email: clientData.profiles.email,
-            status: clientData.status,
+            id: profile.id,
+            full_name: profile.full_name,
+            email: profile.email,
+            status: relationshipMap.get(profile.id) || 'not_connected',
             hasNutritionPlan: !!nutritionPlans.data,
             hasWorkoutPlan: !!workoutPlans.data,
             hasPersonalTraining: !!workoutSessions.data,
@@ -190,6 +189,8 @@ const Clients = () => {
         return 'bg-green-100 text-green-800';
       case 'inactive':
         return 'bg-gray-100 text-gray-800';
+      case 'not_connected':
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-yellow-100 text-yellow-800';
     }
@@ -242,6 +243,7 @@ const Clients = () => {
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="not_connected">Not Connected</SelectItem>
               </SelectContent>
             </Select>
             <Select value={serviceFilter} onValueChange={setServiceFilter}>
