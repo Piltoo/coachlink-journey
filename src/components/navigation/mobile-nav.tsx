@@ -52,7 +52,7 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
             variant="ghost"
             className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/10"
           >
-            <Link to="/nutrition-training" onClick={() => onOpenChange(false)}>
+            <Link to="/nutrition-and-training" onClick={() => onOpenChange(false)}>
               <Dumbbell className="h-5 w-5 mr-2" />
               Nutrition & Training
             </Link>

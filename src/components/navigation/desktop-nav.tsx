@@ -37,9 +37,9 @@ export function DesktopNav({ onSignOut }: DesktopNavProps) {
         asChild
         variant="ghost"
         size="icon"
-        className={`w-12 h-12 rounded-full ${isActive('/nutrition-training') ? 'bg-green-100/20 text-green-100' : 'text-gray-400 hover:text-green-100 hover:bg-green-100/20'}`}
+        className={`w-12 h-12 rounded-full ${isActive('/nutrition-and-training') ? 'bg-green-100/20 text-green-100' : 'text-gray-400 hover:text-green-100 hover:bg-green-100/20'}`}
       >
-        <Link to="/nutrition-training" title="Nutrition & Training">
+        <Link to="/nutrition-and-training" title="Nutrition & Training">
           <Dumbbell className="h-5 w-5" />
         </Link>
       </Button>
