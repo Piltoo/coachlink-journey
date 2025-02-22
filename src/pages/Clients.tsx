@@ -39,7 +39,6 @@ type Client = {
   hasNutritionPlan: boolean;
   hasWorkoutPlan: boolean;
   hasPersonalTraining: boolean;
-  isActiveWithOtherCoach: boolean;
 };
 
 const Clients = () => {
