@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,6 +18,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
   const [isInviting, setIsInviting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleInviteClient = async () => {
     if (!newClientEmail || !newClientName || !newClientPassword) {
@@ -81,7 +83,10 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         setNewClientPassword("");
         setIsOpen(false);
         
-        // Call the callback to refresh the client list
+        // Navigate to dashboard after successful client creation
+        navigate('/dashboard');
+        
+        // Call the callback to refresh the client list if provided
         if (onClientAdded) {
           onClientAdded();
         }
