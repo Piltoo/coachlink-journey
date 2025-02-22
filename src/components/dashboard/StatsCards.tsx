@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -169,15 +168,12 @@ export function StatsCards() {
           <p className="text-4xl font-bold text-red-600">0</p>
           <p className="text-xs text-red-500 mt-1">0 kr overdue</p>
         </GlassCard>
-      </div>
 
-      {/* Waiting List - Spans two columns */}
-      <div className="col-span-2">
         <WaitingList />
       </div>
 
       {/* Right Side - Today's Assignments (spans 2 columns) */}
-      <div className="col-span-2 row-span-2">
+      <div className="col-span-2">
         <GlassCard className="p-4 h-full">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
           {todaySessions.length > 0 ? (
