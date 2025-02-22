@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { CreateNutritionPlanDialog } from "./CreateNutritionPlanDialog";
 import { useToast } from "@/hooks/use-toast";
 import { ClientSelect } from "../messages/ClientSelect";
+import { useNavigate } from "react-router-dom";
 
 type Template = {
   id: string;
@@ -23,6 +25,7 @@ type Client = {
 };
 
 export function NutritionPlansSection() {
+  const navigate = useNavigate();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -126,7 +129,7 @@ export function NutritionPlansSection() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Nutrition Plan Templates</h2>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => navigate("/nutrition-and-training/create-nutrition-plan")}>
           <Plus className="h-4 w-4 mr-2" />
           Create New Template
         </Button>
