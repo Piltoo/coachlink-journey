@@ -5,9 +5,23 @@ interface ExerciseListViewProps {
   exercises: Exercise[];
   onExerciseClick: (exercise: Exercise) => void;
   selectedExerciseIds?: string[];
+  hasActiveFilters?: boolean;
 }
 
-export function ExerciseListView({ exercises, onExerciseClick, selectedExerciseIds = [] }: ExerciseListViewProps) {
+export function ExerciseListView({ 
+  exercises, 
+  onExerciseClick, 
+  selectedExerciseIds = [],
+  hasActiveFilters = false
+}: ExerciseListViewProps) {
+  if (!hasActiveFilters) {
+    return (
+      <div className="text-center py-4 text-muted-foreground">
+        Search for exercises or select a muscle group to start
+      </div>
+    );
+  }
+
   if (!exercises.length) {
     return (
       <div className="text-center py-4 text-muted-foreground">

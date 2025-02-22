@@ -111,6 +111,8 @@ export default function CreateTrainingPlan() {
     }));
   };
 
+  const hasActiveFilters = muscleGroupFilter !== 'All' || searchQuery.trim() !== '';
+
   const filteredExercises = availableExercises
     .filter(exercise => 
       (muscleGroupFilter === 'All' || exercise.muscle_group === muscleGroupFilter) &&
@@ -195,6 +197,8 @@ export default function CreateTrainingPlan() {
                 <ExerciseListView
                   exercises={filteredExercises}
                   onExerciseClick={handleExerciseClick}
+                  selectedExerciseIds={selectedExercises.map(ex => ex.id)}
+                  hasActiveFilters={hasActiveFilters}
                 />
               </div>
             </CardContent>
