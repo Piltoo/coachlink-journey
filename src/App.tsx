@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { NavBar } from "@/components/navigation/nav-bar";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
@@ -35,6 +35,7 @@ function App() {
               <Route path="/clients" element={<Clients />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/nutrition-and-training" element={<NutritionAndTraining />} />
+              <Route path="/nutrition-training" element={<Navigate to="/nutrition-and-training" replace />} />
               <Route path="/program/:programId" element={<Program />} />
               <Route path="/waiting-list" element={<WaitingList />} />
               <Route path="*" element={<NotFound />} />
