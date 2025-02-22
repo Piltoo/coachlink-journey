@@ -1,34 +1,10 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TrainingPlansSection } from "@/components/nutrition-training/TrainingPlansSection";
-import { NutritionPlansSection } from "@/components/nutrition-training/NutritionPlansSection";
-import { IngredientsSection } from "@/components/nutrition-training/IngredientsSection";
-import { ExercisesSection } from "@/components/nutrition-training/ExercisesSection";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-
-type Ingredient = {
-  id: string;
-  name: string;
-  calories_per_100g: number;
-  protein_per_100g: number;
-  carbs_per_100g: number;
-  fats_per_100g: number;
-  fiber_per_100g: number;
-};
-
-type Exercise = {
-  id: string;
-  name: string;
-  description: string;
-  muscle_group: string;
-  start_position_image: string | null;
-  mid_position_image: string | null;
-  difficulty_level: string;
-  equipment_needed: string | null;
-  instructions: string;
-};
+import { NavigationTabs } from "@/components/nutrition-training/NavigationTabs";
+import { AccessCheck } from "@/components/nutrition-training/AccessCheck";
+import { Exercise, Ingredient } from "@/components/nutrition-training/types/nutrition-training";
 
 export default function NutritionAndTraining() {
   const [hasAccess, setHasAccess] = useState<boolean>(false);
@@ -57,7 +33,6 @@ export default function NutritionAndTraining() {
           return;
         }
 
-        // Check both user_role and role fields for 'coach'
         setHasAccess(profile?.user_role === 'coach' || profile?.role === 'coach');
       } catch (error) {
         console.error("Error in fetchUserRole:", error);
@@ -106,74 +81,22 @@ export default function NutritionAndTraining() {
   };
 
   if (!hasAccess) {
-    return (
-      <div className="min-h-screen bg-background pt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-red-100">
-            <p className="text-center text-red-600">
-              You don't have permission to access this page.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return <AccessCheck />;
   }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-8">Nutrition & Training Plans</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-8">
+          Nutrition & Training Plans
+        </h1>
         
-        <Tabs defaultValue="training" className="space-y-6">
-          <TabsList className="w-full flex border-b border-gray-200 bg-transparent p-0 space-x-8">
-            <TabsTrigger 
-              value="training"
-              className="px-1 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-gray-900 rounded-none relative focus-visible:outline-none"
-            >
-              Training Plans
-            </TabsTrigger>
-            <TabsTrigger 
-              value="nutrition"
-              className="px-1 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-gray-900 rounded-none relative focus-visible:outline-none"
-            >
-              Nutrition Plans
-            </TabsTrigger>
-            <TabsTrigger 
-              value="ingredients"
-              className="px-1 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-gray-900 rounded-none relative focus-visible:outline-none"
-            >
-              Ingredients List
-            </TabsTrigger>
-            <TabsTrigger 
-              value="exercises"
-              className="px-1 py-4 text-sm font-medium text-gray-500 border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:text-gray-900 rounded-none relative focus-visible:outline-none"
-            >
-              Exercise Library
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="training" className="mt-6">
-            <TrainingPlansSection />
-          </TabsContent>
-
-          <TabsContent value="nutrition" className="mt-6">
-            <NutritionPlansSection />
-          </TabsContent>
-
-          <TabsContent value="ingredients" className="mt-6">
-            <IngredientsSection 
-              ingredients={ingredients} 
-              onIngredientAdded={fetchIngredients}
-            />
-          </TabsContent>
-
-          <TabsContent value="exercises" className="mt-6">
-            <ExercisesSection 
-              exercises={exercises}
-              onExerciseChange={fetchExercises}
-            />
-          </TabsContent>
-        </Tabs>
+        <NavigationTabs
+          ingredients={ingredients}
+          exercises={exercises}
+          onIngredientAdded={fetchIngredients}
+          onExerciseChange={fetchExercises}
+        />
       </div>
     </div>
   );
