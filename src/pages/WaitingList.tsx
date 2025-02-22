@@ -15,16 +15,6 @@ type PendingClient = {
   requested_services: string[];
 };
 
-type CoachClientRecord = {
-  client_id: string;
-  requested_services: string[] | null;
-  client: {
-    id: string;
-    full_name: string | null;
-    email: string;
-  };
-};
-
 export default function WaitingList() {
   const [pendingClients, setPendingClients] = useState<PendingClient[]>([]);
   const { toast } = useToast();
@@ -38,26 +28,17 @@ export default function WaitingList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log("Current user ID:", user.id);
+      // Get all users with pending registration status
+      const { data: users, error: usersError } = await supabase.auth.admin.listUsers({
+        filter: {
+          raw_user_meta_data: {
+            registration_status: 'pending'
+          }
+        }
+      });
 
-      const { data, error } = await supabase
-        .from('coach_clients')
-        .select(`
-          client_id,
-          requested_services,
-          client:profiles!coach_clients_client_id_fkey (
-            id,
-            full_name,
-            email
-          )
-        `)
-        .eq('coach_id', user.id)
-        .eq('status', 'pending');
-
-      console.log("Query response:", { data, error });
-
-      if (error) {
-        console.error("Error fetching clients:", error);
+      if (usersError) {
+        console.error("Error fetching users:", usersError);
         toast({
           title: "Error",
           description: "Failed to fetch pending clients",
@@ -66,14 +47,13 @@ export default function WaitingList() {
         return;
       }
 
-      if (data) {
-        const formattedClients = (data as CoachClientRecord[]).map(client => ({
-          id: client.client.id,
-          full_name: client.client.full_name,
-          email: client.client.email,
-          requested_services: client.requested_services || []
+      if (users) {
+        const formattedClients = users.map(user => ({
+          id: user.id,
+          full_name: user.user_metadata.full_name,
+          email: user.email!,
+          requested_services: user.user_metadata.requested_services || []
         }));
-        console.log("Formatted clients:", formattedClients);
         setPendingClients(formattedClients);
       }
     } catch (error) {
@@ -88,12 +68,45 @@ export default function WaitingList() {
 
   const handleClientResponse = async (clientId: string, approved: boolean) => {
     try {
-      const { error } = await supabase
-        .from('coach_clients')
-        .update({ status: approved ? 'active' : 'rejected' })
-        .eq('client_id', clientId);
+      const { data: { user: coach } } = await supabase.auth.getUser();
+      if (!coach) throw new Error("Coach not authenticated");
 
-      if (error) throw error;
+      if (approved) {
+        // Create the coach-client relationship
+        const { error: relationError } = await supabase
+          .from('coach_clients')
+          .insert([{
+            client_id: clientId,
+            coach_id: coach.id,
+            status: 'active'
+          }]);
+
+        if (relationError) throw relationError;
+
+        // Generate a secure password for the client
+        const password = Math.random().toString(36).slice(-12);
+
+        // Update the client's auth status and set their password
+        const { error: userError } = await supabase.rpc('set_client_password', {
+          client_email: clientId,
+          new_password: password
+        });
+
+        if (userError) throw userError;
+
+        // Email the password to the client (in a real app, use a secure email service)
+        toast({
+          title: "Client Approved",
+          description: `Temporary password: ${password}. In production, this would be securely emailed to the client.`,
+        });
+      }
+
+      // Update the user's registration status
+      await supabase.auth.updateUser({
+        data: {
+          registration_status: approved ? 'approved' : 'rejected'
+        }
+      });
 
       setPendingClients(prev => prev.filter(client => client.id !== clientId));
       
@@ -101,11 +114,11 @@ export default function WaitingList() {
         title: "Success",
         description: `Client ${approved ? 'approved' : 'rejected'} successfully`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating client status:", error);
       toast({
         title: "Error",
-        description: "Failed to update client status",
+        description: error.message || "Failed to update client status",
         variant: "destructive",
       });
     }

@@ -21,9 +21,6 @@ const serviceOptions: ServiceOption[] = [
   { id: "others", label: "Others" },
 ];
 
-// Default coach ID - replace this with the actual coach's ID
-const DEFAULT_COACH_ID = "fbffb098-6b6e-4735-aff0-aabb9efecedd";
-
 const Auth = () => {
   // Sign In State
   const [signInEmail, setSignInEmail] = useState("");
@@ -77,10 +74,21 @@ const Auth = () => {
         throw new Error("Please agree to the terms and conditions");
       }
 
-      // Generate a temporary password
-      const tempPassword = Math.random().toString(36).slice(-8);
+      // First, check if the email already exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
 
-      console.log("Starting sign up process...");
+      if (existingUser) {
+        throw new Error("An account with this email already exists");
+      }
+
+      // Create a temporary random password
+      const tempPassword = Math.random().toString(36).slice(-12);
+
+      // Sign up the user
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: tempPassword,
@@ -101,24 +109,20 @@ const Auth = () => {
         throw new Error("Failed to create user");
       }
 
-      console.log("User created successfully:", signUpData.user.id);
+      // Store their requested services in a temporary table or in the user's metadata
+      // This will be used when a coach approves them
+      const { error: metadataError } = await supabase.auth.updateUser({
+        data: {
+          requested_services: selectedServices,
+          registration_status: 'pending'
+        }
+      });
 
-      // Create the coach-client relationship
-      const { error: relationError } = await supabase
-        .from('coach_clients')
-        .insert([{
-          client_id: signUpData.user.id,
-          coach_id: DEFAULT_COACH_ID,
-          status: 'pending',
-          requested_services: selectedServices
-        }]);
-
-      if (relationError) {
-        console.error("Relation error:", relationError);
-        throw relationError;
+      if (metadataError) {
+        console.error("Metadata update error:", metadataError);
+        throw metadataError;
       }
 
-      console.log("Coach-client relationship created successfully");
       setShowConfirmation(true);
       setTimeout(() => {
         navigate("/");
