@@ -64,7 +64,25 @@ export default function CreateNutritionPlan() {
       if (plan) {
         setTitle(plan.title);
         if (plan.meals) {
-          setMeals(plan.meals as Meal[]);
+          const loadedMeals: Meal[] = plan.meals.map((meal: any) => ({
+            id: meal.id || Math.random().toString(),
+            name: meal.name,
+            items: meal.items.map((item: any) => ({
+              id: item.id || Math.random().toString(),
+              name: item.name,
+              quantity: item.quantity,
+              unit: item.unit,
+              optional: item.optional,
+              nutrition: {
+                calories: parseFloat(item.nutrition.calories) || 0,
+                protein: parseFloat(item.nutrition.protein) || 0,
+                carbs: parseFloat(item.nutrition.carbs) || 0,
+                fats: parseFloat(item.nutrition.fats) || 0,
+                fiber: parseFloat(item.nutrition.fiber) || 0,
+              }
+            }))
+          }));
+          setMeals(loadedMeals);
         }
       }
     } catch (error) {
@@ -291,10 +309,29 @@ export default function CreateNutritionPlan() {
         return;
       }
 
+      const mealsData = meals.map(meal => ({
+        id: meal.id,
+        name: meal.name,
+        items: meal.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          optional: item.optional,
+          nutrition: {
+            calories: item.nutrition.calories,
+            protein: item.nutrition.protein,
+            carbs: item.nutrition.carbs,
+            fats: item.nutrition.fats,
+            fiber: item.nutrition.fiber,
+          }
+        }))
+      }));
+
       const planData = {
         title,
         coach_id: user.id,
-        meals: meals,
+        meals: mealsData,
         updated_at: new Date().toISOString(),
       };
 
