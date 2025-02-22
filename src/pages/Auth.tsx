@@ -21,6 +21,9 @@ const serviceOptions: ServiceOption[] = [
   { id: "others", label: "Others" },
 ];
 
+// Default coach ID - replace this with the actual coach's ID
+const DEFAULT_COACH_ID = "fbffb098-6b6e-4735-aff0-aabb9efecedd";
+
 const Auth = () => {
   // Sign In State
   const [signInEmail, setSignInEmail] = useState("");
@@ -105,7 +108,7 @@ const Auth = () => {
         .from('coach_clients')
         .insert([{
           client_id: signUpData.user.id,
-          coach_id: "00000000-0000-0000-0000-000000000000", // This is a temporary UUID for testing
+          coach_id: DEFAULT_COACH_ID,
           status: 'pending',
           requested_services: selectedServices
         }]);
