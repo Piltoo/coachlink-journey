@@ -93,6 +93,9 @@ export default function WaitingList() {
         title: "Success",
         description: "Client approved successfully",
       });
+
+      // Refresh the clients list after approval
+      fetchPendingClients();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -130,6 +133,9 @@ export default function WaitingList() {
         title: "Success",
         description: "Client rejected successfully",
       });
+
+      // Refresh the clients list after rejection
+      fetchPendingClients();
     } catch (error: any) {
       toast({
         title: "Error",
