@@ -35,43 +35,73 @@ export default function NutritionAndTraining() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        setLoading(true);
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.error("Auth error:", authError);
           navigate('/auth');
           return;
         }
 
-        const { data: profile, error } = await supabase
+        if (!user) {
+          console.log("No user found");
+          navigate('/auth');
+          return;
+        }
+
+        console.log("Current user ID:", user.id);
+
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('user_role')
+          .select('user_role, first_name')
           .eq('id', user.id)
           .single();
 
-        if (error) {
-          console.error("Error fetching profile:", error);
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
           return;
         }
 
-        if (!profile || profile.user_role !== 'coach') {
-          navigate('/dashboard');
+        if (!profile) {
+          console.log("No profile found");
           return;
         }
-
+        
+        console.log("User role from profile:", profile.user_role);
         setUserRole(profile.user_role);
-        await Promise.all([fetchIngredients(), fetchExercises()]);
+
+        if (profile.user_role === 'coach') {
+          try {
+            await Promise.all([fetchIngredients(), fetchExercises()]);
+          } catch (error) {
+            console.error("Error fetching data:", error);
+          }
+        } else {
+          console.log("User is not a coach");
+          navigate('/dashboard');
+        }
       } catch (error) {
-        console.error("Error in fetchUserRole:", error);
+        console.error('Error fetching dashboard data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUserRole();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const fetchIngredients = async () => {
     try {
@@ -102,13 +132,26 @@ export default function NutritionAndTraining() {
         .order('name');
 
       if (error) throw error;
-      setExercises(data);
+      setExercises(data || []);
     } catch (error) {
       console.error("Error fetching exercises:", error);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (!userRole) {
+    return null;
+  }
+
   if (userRole !== 'coach') {
+    navigate('/dashboard');
     return null;
   }
 
