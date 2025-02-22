@@ -79,17 +79,6 @@ export default function CreateNutritionPlan() {
     }
   };
 
-  const calculateNutrition = (ingredient: Ingredient, grams: number) => {
-    const multiplier = grams / 100;
-    return {
-      calories: ingredient.calories_per_100g * multiplier,
-      protein: ingredient.protein_per_100g * multiplier,
-      carbs: ingredient.carbs_per_100g * multiplier,
-      fats: ingredient.fats_per_100g * multiplier,
-      fiber: ingredient.fiber_per_100g * multiplier,
-    };
-  };
-
   const searchIngredients = async (mealId: string, term: string) => {
     setSearchTerms({ ...searchTerms, [mealId]: term });
 
@@ -113,14 +102,20 @@ export default function CreateNutritionPlan() {
       return;
     }
 
+    const parseNutritionValue = (value: string | number | null): number => {
+      if (value === null || value === undefined) return 0;
+      const parsed = typeof value === 'string' ? parseFloat(value) : value;
+      return isNaN(parsed) ? 0 : parsed;
+    };
+
     const formattedAllIngredients = (allIngredients || []).map(ing => ({
       id: `all_${ing.name}`,
       name: ing.name,
-      calories_per_100g: Number(ing.calories_per_100g) || 0,
-      protein_per_100g: Number(ing.protein_per_100g) || 0,
-      carbs_per_100g: Number(ing.carbs_per_100g) || 0,
-      fats_per_100g: Number(ing.fats_per_100g) || 0,
-      fiber_per_100g: Number(ing.fibers_per_100g) || 0,
+      calories_per_100g: parseNutritionValue(ing.calories_per_100g),
+      protein_per_100g: parseNutritionValue(ing.protein_per_100g),
+      carbs_per_100g: parseNutritionValue(ing.carbs_per_100g),
+      fats_per_100g: parseNutritionValue(ing.fats_per_100g),
+      fiber_per_100g: parseNutritionValue(ing.fibers_per_100g),
     }));
 
     const combined = [...(coachIngredients || []), ...formattedAllIngredients];
@@ -171,6 +166,10 @@ export default function CreateNutritionPlan() {
   };
 
   const handleUpdateItemQuantity = (mealId: string, itemId: string, newQuantity: number) => {
+    if (isNaN(newQuantity) || newQuantity < 0) {
+      newQuantity = 0;
+    }
+
     setMeals(meals.map(meal => {
       if (meal.id === mealId) {
         return {
@@ -178,11 +177,11 @@ export default function CreateNutritionPlan() {
           items: meal.items.map(item => {
             if (item.id === itemId) {
               const per100g = {
-                calories: (item.nutrition.calories * 100) / item.quantity,
-                protein: (item.nutrition.protein * 100) / item.quantity,
-                carbs: (item.nutrition.carbs * 100) / item.quantity,
-                fats: (item.nutrition.fats * 100) / item.quantity,
-                fiber: (item.nutrition.fiber * 100) / item.quantity,
+                calories: (item.nutrition.calories * 100) / item.quantity || 0,
+                protein: (item.nutrition.protein * 100) / item.quantity || 0,
+                carbs: (item.nutrition.carbs * 100) / item.quantity || 0,
+                fats: (item.nutrition.fats * 100) / item.quantity || 0,
+                fiber: (item.nutrition.fiber * 100) / item.quantity || 0,
               };
               
               const multiplier = newQuantity / 100;
@@ -190,11 +189,11 @@ export default function CreateNutritionPlan() {
                 ...item,
                 quantity: newQuantity,
                 nutrition: {
-                  calories: per100g.calories * multiplier,
-                  protein: per100g.protein * multiplier,
-                  carbs: per100g.carbs * multiplier,
-                  fats: per100g.fats * multiplier,
-                  fiber: per100g.fiber * multiplier,
+                  calories: per100g.calories * multiplier || 0,
+                  protein: per100g.protein * multiplier || 0,
+                  carbs: per100g.carbs * multiplier || 0,
+                  fats: per100g.fats * multiplier || 0,
+                  fiber: per100g.fiber * multiplier || 0,
                 },
               };
             }
