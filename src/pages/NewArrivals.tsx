@@ -247,7 +247,6 @@ const NewArrivals = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Current Services</TableHead>
                   <TableHead>Requested Services</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -263,25 +262,6 @@ const NewArrivals = () => {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                         new arrival
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {client.hasNutritionPlan && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Nutrition
-                          </span>
-                        )}
-                        {client.hasWorkoutPlan && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Training
-                          </span>
-                        )}
-                        {client.hasPersonalTraining && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                            PT
-                          </span>
-                        )}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2 flex-wrap">
@@ -328,7 +308,7 @@ const NewArrivals = () => {
                 ))}
                 {filteredClients.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                       No new arrivals found.
                     </TableCell>
                   </TableRow>
