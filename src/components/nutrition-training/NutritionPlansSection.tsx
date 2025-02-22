@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Send } from "lucide-react";
+import { Plus, Edit, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CreateNutritionPlanDialog } from "./CreateNutritionPlanDialog";
@@ -29,6 +29,7 @@ export function NutritionPlansSection() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showClientSelect, setShowClientSelect] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const { data: templates = [], refetch } = useQuery({
@@ -115,6 +116,7 @@ export function NutritionPlansSection() {
       });
 
       setSelectedClient(null);
+      setShowClientSelect(prev => ({ ...prev, [template.id]: false }));
     } catch (error) {
       console.error('Error sending nutrition plan:', error);
       toast({
@@ -123,6 +125,13 @@ export function NutritionPlansSection() {
         variant: "destructive",
       });
     }
+  };
+
+  const toggleClientSelect = (templateId: string) => {
+    setShowClientSelect(prev => ({
+      ...prev,
+      [templateId]: !prev[templateId]
+    }));
   };
 
   return (
@@ -161,19 +170,35 @@ export function NutritionPlansSection() {
                   Edit Template
                 </Button>
                 <div className="space-y-2">
-                  <ClientSelect
-                    clients={clients}
-                    selectedClient={selectedClient}
-                    onSelect={setSelectedClient}
-                    disabled={isLoadingClients}
-                  />
                   <Button
+                    variant="outline"
                     className="w-full"
-                    onClick={() => handleSendToClient(template)}
+                    onClick={() => toggleClientSelect(template.id)}
                   >
-                    <Send className="h-4 w-4 mr-2" />
+                    {showClientSelect[template.id] ? (
+                      <ChevronUp className="h-4 w-4 mr-2" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 mr-2" />
+                    )}
                     Send to Client
                   </Button>
+                  {showClientSelect[template.id] && (
+                    <div className="space-y-2">
+                      <ClientSelect
+                        clients={clients}
+                        selectedClient={selectedClient}
+                        onSelect={setSelectedClient}
+                        disabled={isLoadingClients}
+                      />
+                      <Button
+                        className="w-full"
+                        onClick={() => handleSendToClient(template)}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Send Plan
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
