@@ -23,7 +23,8 @@ export const useStats = () => {
         if (!user) return;
 
         // Get role from user metadata
-        const role = user.user_metadata?.role || null;
+        const role = user.raw_user_meta_data?.role || null;
+        console.log("User role from metadata:", role); // Debug log
         setUserRole(role);
 
         if (role === 'coach') {
