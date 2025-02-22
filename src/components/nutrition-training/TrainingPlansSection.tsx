@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { TrainingPlanDetails } from "./TrainingPlanDetails";
 import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 type Exercise = {
   id: string;
@@ -147,7 +149,12 @@ export function TrainingPlansSection() {
             onClick={() => setSelectedPlan(plan)}
           >
             <CardHeader>
-              <CardTitle>{plan.name}</CardTitle>
+              <CardTitle className="flex justify-between items-center">
+                <span>{plan.name}</span>
+                <Badge variant="secondary">
+                  {plan.exercises?.length || 0} exercises
+                </Badge>
+              </CardTitle>
               <CardDescription>
                 Created on {new Date(plan.created_at).toLocaleDateString()}
               </CardDescription>
@@ -161,7 +168,6 @@ export function TrainingPlansSection() {
         ))}
       </div>
 
-      {/* Plan Details Dialog */}
       {selectedPlan && (
         <TrainingPlanDetails
           plan={selectedPlan}
