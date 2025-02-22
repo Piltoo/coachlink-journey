@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -18,7 +17,6 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
   const [isInviting, setIsInviting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleInviteClient = async () => {
     if (!newClientEmail || !newClientName || !newClientPassword) {
@@ -42,6 +40,15 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
     setIsInviting(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("You must be logged in to invite clients");
+      }
+
+      console.log("Coach ID:", user.id);
+
+      // Use the invite_client function
       const { data, error } = await supabase
         .rpc('invite_client', {
           client_email: newClientEmail,
