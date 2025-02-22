@@ -51,6 +51,8 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
 
       if (error) throw error;
 
+      console.log("Client invited successfully:", data);
+
       toast({
         title: "Success",
         description: "Client account created successfully",
@@ -64,15 +66,15 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
 
       // Call the callback to refresh the client list if provided
       if (onClientAdded) {
-        onClientAdded();
+        await onClientAdded();
       }
     } catch (error: any) {
+      console.error("Error inviting client:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create client account",
         variant: "destructive",
       });
-      console.error("Error inviting client:", error);
     } finally {
       setIsInviting(false);
     }
