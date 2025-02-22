@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { TrainingPlanDetails } from "./TrainingPlanDetails";
+import { useNavigate } from "react-router-dom";
 
 type Exercise = {
   id: string;
@@ -24,6 +25,7 @@ type Exercise = {
 };
 
 export function TrainingPlansSection() {
+  const navigate = useNavigate();
   const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [planName, setPlanName] = useState("");
@@ -131,7 +133,7 @@ export function TrainingPlansSection() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Training Plans</h2>
-        <Button onClick={() => setShowCreateDialog(true)}>
+        <Button onClick={() => navigate("/nutrition-and-training/create-plan")}>
           <Plus className="w-4 h-4 mr-2" />
           Create Plan
         </Button>
@@ -158,86 +160,6 @@ export function TrainingPlansSection() {
           </Card>
         ))}
       </div>
-
-      {/* Create Plan Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>Create Training Plan</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Plan Name
-              </Label>
-              <Input id="name" value={planName} onChange={(e) => setPlanName(e.target.value)} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="description" className="text-right mt-2">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                value={planDescription}
-                onChange={(e) => setPlanDescription(e.target.value)}
-                className="col-span-3 resize-none"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label>Add Exercises</Label>
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="Search for exercises..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    searchExercises();
-                  }}
-                />
-                <Search className="absolute top-2.5 right-3 h-5 w-5 text-gray-500" />
-              </div>
-
-              <ScrollArea className="h-40 mt-2">
-                {exercises.map((exercise) => (
-                  <div
-                    key={exercise.id}
-                    className="flex items-center justify-between px-2 py-1 hover:bg-gray-100 cursor-pointer"
-                    onClick={() => toggleExerciseSelection(exercise)}
-                  >
-                    <span>{exercise.name}</span>
-                    <input
-                      type="checkbox"
-                      checked={selectedExercises.find(e => e.id === exercise.id) !== undefined}
-                      readOnly
-                    />
-                  </div>
-                ))}
-              </ScrollArea>
-            </div>
-
-            <div>
-              <Label>Selected Exercises</Label>
-              <ScrollArea className="h-40 mt-2">
-                {selectedExercises.map((exercise) => (
-                  <div
-                    key={exercise.id}
-                    className="flex items-center justify-between px-2 py-1 hover:bg-gray-100"
-                  >
-                    <span>{exercise.name}</span>
-                    <Button size="sm" variant="secondary" onClick={() => toggleExerciseSelection(exercise)}>
-                      Remove
-                    </Button>
-                  </div>
-                ))}
-              </ScrollArea>
-            </div>
-          </div>
-          <Button onClick={handleCreatePlan}>Create Plan</Button>
-        </DialogContent>
-      </Dialog>
 
       {/* Plan Details Dialog */}
       {selectedPlan && (
