@@ -51,12 +51,26 @@ export default function WaitingList() {
 
       console.log("Fetching clients for coach:", user.id);
 
+      // First, let's check if there are any coach_client relationships
+      const { data: relationshipCheck, error: relationshipError } = await supabase
+        .from('coach_clients')
+        .select('client_id')
+        .eq('coach_id', user.id)
+        .eq('status', 'not_connected');
+
+      if (relationshipError) {
+        console.error("Error checking relationships:", relationshipError);
+        return;
+      }
+
+      console.log("Found relationships:", relationshipCheck);
+
       const { data, error } = await supabase
         .from('coach_clients')
         .select(`
           client_id,
           requested_services,
-          profiles!coach_clients_client_id_fkey!inner (
+          profiles (
             id,
             full_name,
             email,
@@ -80,6 +94,11 @@ export default function WaitingList() {
 
       if (data) {
         const clientPromises = data.map(async (record) => {
+          if (!record.profiles) {
+            console.log("No profile found for record:", record);
+            return null;
+          }
+
           const [nutritionPlans, workoutPlans, workoutSessions] = await Promise.all([
             supabase
               .from('nutrition_plans')
@@ -110,7 +129,7 @@ export default function WaitingList() {
           };
         });
 
-        const formattedClients = await Promise.all(clientPromises);
+        const formattedClients = (await Promise.all(clientPromises)).filter(client => client !== null) as PendingClient[];
         console.log("Formatted clients:", formattedClients);
         setPendingClients(formattedClients);
       }
