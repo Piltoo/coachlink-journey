@@ -154,9 +154,9 @@ export default function CreateNutritionPlan() {
           items: [...meal.items, {
             id: Math.random().toString(),
             name: ingredient.name,
-            quantity: quantity,
+            quantity,
             unit: 'g',
-            optional: optional,
+            optional,
             nutrition,
           }]
         };
@@ -177,16 +177,24 @@ export default function CreateNutritionPlan() {
           ...meal,
           items: meal.items.map(item => {
             if (item.id === itemId) {
-              const gramsMultiplier = newQuantity / item.quantity;
+              const per100g = {
+                calories: (item.nutrition.calories * 100) / item.quantity,
+                protein: (item.nutrition.protein * 100) / item.quantity,
+                carbs: (item.nutrition.carbs * 100) / item.quantity,
+                fats: (item.nutrition.fats * 100) / item.quantity,
+                fiber: (item.nutrition.fiber * 100) / item.quantity,
+              };
+              
+              const multiplier = newQuantity / 100;
               return {
                 ...item,
                 quantity: newQuantity,
                 nutrition: {
-                  calories: item.nutrition.calories * gramsMultiplier,
-                  protein: item.nutrition.protein * gramsMultiplier,
-                  carbs: item.nutrition.carbs * gramsMultiplier,
-                  fats: item.nutrition.fats * gramsMultiplier,
-                  fiber: item.nutrition.fiber * gramsMultiplier,
+                  calories: per100g.calories * multiplier,
+                  protein: per100g.protein * multiplier,
+                  carbs: per100g.carbs * multiplier,
+                  fats: per100g.fats * multiplier,
+                  fiber: per100g.fiber * multiplier,
                 },
               };
             }
@@ -232,11 +240,11 @@ export default function CreateNutritionPlan() {
       const mealTotal = meal.items
         .filter(item => !item.optional)
         .reduce((mealSum, item) => ({
-          calories: mealSum.calories + item.nutrition.calories,
-          protein: mealSum.protein + item.nutrition.protein,
-          carbs: mealSum.carbs + item.nutrition.carbs,
-          fats: mealSum.fats + item.nutrition.fats,
-          fiber: mealSum.fiber + item.nutrition.fiber,
+          calories: mealSum.calories + (item.nutrition?.calories || 0),
+          protein: mealSum.protein + (item.nutrition?.protein || 0),
+          carbs: mealSum.carbs + (item.nutrition?.carbs || 0),
+          fats: mealSum.fats + (item.nutrition?.fats || 0),
+          fiber: mealSum.fiber + (item.nutrition?.fiber || 0),
         }), { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
 
       return {
