@@ -40,6 +40,7 @@ function App() {
               <Route path="/new-arrivals" element={<NewArrivals />} />
               <Route path="/nutrition-and-training/*" element={<NutritionAndTraining />} />
               <Route path="/nutrition-and-training/create-nutrition-plan" element={<CreateNutritionPlan />} />
+              <Route path="/nutrition-and-training/create-nutrition-plan/:planId" element={<CreateNutritionPlan />} />
               <Route path="/nutrition-training/*" element={<Navigate to="/nutrition-and-training" replace />} />
               <Route path="/program/:programId" element={<Program />} />
               <Route path="*" element={<NotFound />} />
