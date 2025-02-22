@@ -40,6 +40,11 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
     setIsInviting(true);
 
     try {
+      const currentUser = await supabase.auth.getUser();
+      if (!currentUser.data.user) {
+        throw new Error("No authenticated user found");
+      }
+
       // First, sign up the user directly
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newClientEmail,
@@ -58,7 +63,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         const { error: relationError } = await supabase
           .from('coach_clients')
           .insert({
-            coach_id: (await supabase.auth.getUser()).data.user?.id,
+            coach_id: currentUser.data.user.id,
             client_id: authData.user.id,
             status: 'active'
           });
@@ -77,7 +82,9 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         setIsOpen(false);
         
         // Call the callback to refresh the client list
-        onClientAdded?.();
+        if (onClientAdded) {
+          onClientAdded();
+        }
       }
     } catch (error: any) {
       toast({
@@ -85,6 +92,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         description: error.message || "Failed to create client account",
         variant: "destructive",
       });
+      console.error("Error inviting client:", error);
     } finally {
       setIsInviting(false);
     }
