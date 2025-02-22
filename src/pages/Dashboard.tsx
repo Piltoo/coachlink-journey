@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { ClientProgress } from "@/components/dashboard/ClientProgress";
-import { WaitingList } from "@/components/dashboard/WaitingList";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 type UserRole = 'client' | 'coach' | 'admin';
@@ -60,7 +59,6 @@ const Dashboard = () => {
         <div className="space-y-6">
           <DashboardHeader firstName={firstName} />
           <StatsCards />
-          {userRole === 'coach' && <WaitingList />}
           {userRole === 'client' && <ClientProgress />}
         </div>
       </div>
