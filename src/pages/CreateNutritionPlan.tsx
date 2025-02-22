@@ -103,6 +103,8 @@ export default function CreateNutritionPlan() {
     const optional = isOptional[mealId] || false;
     const nutrition = calculateNutrition(ingredient, quantity);
     
+    console.log('Adding ingredient with nutrition:', nutrition);
+    
     setMeals(meals.map(meal => {
       if (meal.id === mealId) {
         return {
@@ -144,6 +146,8 @@ export default function CreateNutritionPlan() {
   };
 
   const updateItemQuantity = (mealId: string, itemId: string, newQuantity: number) => {
+    console.log('Updating quantity:', { mealId, itemId, newQuantity });
+    
     setMeals(meals.map(meal => {
       if (meal.id === mealId) {
         return {
@@ -151,16 +155,22 @@ export default function CreateNutritionPlan() {
           items: meal.items.map(item => {
             if (item.id === itemId) {
               const gramsMultiplier = newQuantity / item.quantity;
+              const updatedNutrition = {
+                calories: item.nutrition.calories * gramsMultiplier,
+                protein: item.nutrition.protein * gramsMultiplier,
+                carbs: item.nutrition.carbs * gramsMultiplier,
+                fats: item.nutrition.fats * gramsMultiplier,
+                fiber: item.nutrition.fiber * gramsMultiplier,
+              };
+              
+              console.log('Original nutrition:', item.nutrition);
+              console.log('Multiplier:', gramsMultiplier);
+              console.log('Updated nutrition:', updatedNutrition);
+              
               return {
                 ...item,
                 quantity: newQuantity,
-                nutrition: {
-                  calories: item.nutrition.calories * gramsMultiplier,
-                  protein: item.nutrition.protein * gramsMultiplier,
-                  carbs: item.nutrition.carbs * gramsMultiplier,
-                  fats: item.nutrition.fats * gramsMultiplier,
-                  fiber: item.nutrition.fiber * gramsMultiplier,
-                }
+                nutrition: updatedNutrition
               };
             }
             return item;
