@@ -4,16 +4,32 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { InviteClientDialog } from "@/components/dashboard/InviteClientDialog";
 import { ClientProfileCard } from "@/components/dashboard/ClientProfileCard";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Users, UserCircle } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Users, MoreVertical, UserX, UserCheck, Trash2 } from "lucide-react";
 
 type Client = {
   id: string;
   full_name: string | null;
   email: string;
   status: string;
+  subscription_status?: string | null;
 };
 
 const Clients = () => {
@@ -32,19 +48,6 @@ const Clients = () => {
 
       console.log("Current coach ID:", user.id);
 
-      // First, let's check the coach_clients table directly
-      const { data: relationshipsData, error: relationshipsError } = await supabase
-        .from('coach_clients')
-        .select('*')
-        .eq('coach_id', user.id);
-
-      console.log("Raw coach_clients relationships:", relationshipsData);
-
-      if (relationshipsError) {
-        console.error("Error fetching coach_clients relationships:", relationshipsError);
-      }
-
-      // Now fetch the full client data with profiles
       const { data: clientsData, error: clientsError } = await supabase
         .from('coach_clients')
         .select(`
@@ -54,9 +57,13 @@ const Clients = () => {
             id,
             full_name,
             email
+          ),
+          subscriptions (
+            status
           )
         `)
-        .eq('coach_id', user.id);
+        .eq('coach_id', user.id)
+        .order('status', { ascending: false });
 
       if (clientsError) {
         console.error("Error fetching clients:", clientsError);
@@ -77,7 +84,8 @@ const Clients = () => {
             id: c.profiles.id,
             full_name: c.profiles.full_name,
             email: c.profiles.email,
-            status: c.status
+            status: c.status,
+            subscription_status: c.subscriptions?.[0]?.status
           }));
         console.log("Formatted clients data:", formattedClients);
         setClients(formattedClients);
@@ -96,13 +104,67 @@ const Clients = () => {
     fetchClients();
   }, []);
 
-  const handleClientClick = (clientId: string) => {
-    setSelectedClientId(clientId);
+  const handleStatusChange = async (clientId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('coach_clients')
+        .update({ status: newStatus })
+        .eq('client_id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Client status updated to ${newStatus}`,
+      });
+
+      fetchClients();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to update client status",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUnsubscribe = () => {
-    setSelectedClientId(null);
-    fetchClients();
+  const handleDeleteClient = async (clientId: string) => {
+    if (!confirm("Are you sure you want to delete this client? This will remove all their data and cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('coach_clients')
+        .delete()
+        .eq('client_id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Client deleted successfully",
+      });
+
+      fetchClients();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to delete client",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
   };
 
   return (
@@ -117,41 +179,88 @@ const Clients = () => {
             <InviteClientDialog onClientAdded={fetchClients} />
           </div>
 
-          <ScrollArea className="h-[calc(100vh-12rem)]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {clients.length === 0 ? (
-                <div className="col-span-full text-center text-muted-foreground py-8">
-                  No clients found. Invite your first client using the button above.
-                </div>
-              ) : (
-                clients.map((client) => (
-                  <Card
-                    key={client.id}
-                    className="bg-white/40 backdrop-blur-lg border border-gray-200/50 cursor-pointer hover:bg-accent/5 transition-all duration-200 ease-in-out"
-                    onClick={() => handleClientClick(client.id)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <UserCircle className="w-12 h-12 text-primary" />
-                        <div>
-                          <h3 className="font-semibold text-lg">
-                            {client.full_name || "Unnamed Client"}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">{client.email}</p>
-                          <span className={`mt-2 inline-block text-sm px-2 py-1 rounded-full ${
-                            client.status === 'active' 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-yellow-100 text-yellow-700'
-                          }`}>
-                            {client.status}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+          <ScrollArea className="h-[calc(100vh-12rem)] w-full">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Subscription</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clients.map((client) => (
+                  <TableRow key={client.id}>
+                    <TableCell className="font-medium">
+                      {client.full_name || "Unnamed Client"}
+                    </TableCell>
+                    <TableCell>{client.email}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(client.status)}`}>
+                        {client.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        client.subscription_status === 'active' 
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {client.subscription_status || 'No subscription'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setSelectedClientId(client.id)}>
+                            View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {client.status === 'active' ? (
+                            <DropdownMenuItem 
+                              onClick={() => handleStatusChange(client.id, 'inactive')}
+                              className="text-yellow-600"
+                            >
+                              <UserX className="w-4 h-4 mr-2" />
+                              Make Inactive
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem 
+                              onClick={() => handleStatusChange(client.id, 'active')}
+                              className="text-green-600"
+                            >
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              Make Active
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteClient(client.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Client
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {clients.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      No clients found. Invite your first client using the button above.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </ScrollArea>
 
           <Dialog open={!!selectedClientId} onOpenChange={() => setSelectedClientId(null)}>
@@ -159,7 +268,10 @@ const Clients = () => {
               {selectedClientId && (
                 <ClientProfileCard
                   clientId={selectedClientId}
-                  onUnsubscribe={handleUnsubscribe}
+                  onUnsubscribe={() => {
+                    setSelectedClientId(null);
+                    fetchClients();
+                  }}
                 />
               )}
             </DialogContent>
