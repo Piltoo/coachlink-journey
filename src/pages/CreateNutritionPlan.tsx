@@ -79,6 +79,23 @@ export default function CreateNutritionPlan() {
     }
   };
 
+  const parseNutritionValue = (value: string | number | null): number => {
+    if (value === null || value === undefined) return 0;
+    const parsed = typeof value === 'string' ? parseFloat(value) : value;
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const calculateNutrition = (ingredient: Ingredient, grams: number) => {
+    const multiplier = Math.max(0, grams) / 100;
+    return {
+      calories: parseNutritionValue(ingredient.calories_per_100g) * multiplier,
+      protein: parseNutritionValue(ingredient.protein_per_100g) * multiplier,
+      carbs: parseNutritionValue(ingredient.carbs_per_100g) * multiplier,
+      fats: parseNutritionValue(ingredient.fats_per_100g) * multiplier,
+      fiber: parseNutritionValue(ingredient.fiber_per_100g) * multiplier,
+    };
+  };
+
   const searchIngredients = async (mealId: string, term: string) => {
     setSearchTerms({ ...searchTerms, [mealId]: term });
 
@@ -101,12 +118,6 @@ export default function CreateNutritionPlan() {
       console.error('Error searching ingredients:', error1 || error2);
       return;
     }
-
-    const parseNutritionValue = (value: string | number | null): number => {
-      if (value === null || value === undefined) return 0;
-      const parsed = typeof value === 'string' ? parseFloat(value) : value;
-      return isNaN(parsed) ? 0 : parsed;
-    };
 
     const formattedAllIngredients = (allIngredients || []).map(ing => ({
       id: `all_${ing.name}`,
@@ -176,12 +187,13 @@ export default function CreateNutritionPlan() {
           ...meal,
           items: meal.items.map(item => {
             if (item.id === itemId) {
+              const currentNutrition = item.nutrition;
               const per100g = {
-                calories: (item.nutrition.calories * 100) / item.quantity || 0,
-                protein: (item.nutrition.protein * 100) / item.quantity || 0,
-                carbs: (item.nutrition.carbs * 100) / item.quantity || 0,
-                fats: (item.nutrition.fats * 100) / item.quantity || 0,
-                fiber: (item.nutrition.fiber * 100) / item.quantity || 0,
+                calories: (currentNutrition.calories * 100) / item.quantity,
+                protein: (currentNutrition.protein * 100) / item.quantity,
+                carbs: (currentNutrition.carbs * 100) / item.quantity,
+                fats: (currentNutrition.fats * 100) / item.quantity,
+                fiber: (currentNutrition.fiber * 100) / item.quantity,
               };
               
               const multiplier = newQuantity / 100;
@@ -189,11 +201,11 @@ export default function CreateNutritionPlan() {
                 ...item,
                 quantity: newQuantity,
                 nutrition: {
-                  calories: per100g.calories * multiplier || 0,
-                  protein: per100g.protein * multiplier || 0,
-                  carbs: per100g.carbs * multiplier || 0,
-                  fats: per100g.fats * multiplier || 0,
-                  fiber: per100g.fiber * multiplier || 0,
+                  calories: per100g.calories * multiplier,
+                  protein: per100g.protein * multiplier,
+                  carbs: per100g.carbs * multiplier,
+                  fats: per100g.fats * multiplier,
+                  fiber: per100g.fiber * multiplier,
                 },
               };
             }
