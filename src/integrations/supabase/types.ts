@@ -1054,7 +1054,6 @@ export type Database = {
       session_status: "pending" | "confirmed" | "completed" | "cancelled"
       subscription_status: "active" | "pending" | "cancelled" | "expired"
       user_role: "admin" | "coach" | "client"
-      user_role_new: "client" | "coach" | "trainer"
     }
     CompositeTypes: {
       [_ in never]: never
