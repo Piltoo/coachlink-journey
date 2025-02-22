@@ -56,22 +56,22 @@ export function WaitingList() {
   }, []);
 
   return (
-    <GlassCard className="p-4 border-2 border-[#ea384c]/20 bg-[#ea384c]/5 w-full md:w-[300px] h-[144px] flex flex-col">
+    <GlassCard className="p-4 bg-white/40 backdrop-blur-lg border border-green-100 w-full md:w-[300px] h-[144px] flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-[#ea384c]" />
-          <h2 className="text-sm font-semibold text-[#ea384c]">Waiting List</h2>
+          <Users className="h-4 w-4 text-primary/80" />
+          <h2 className="text-sm font-medium text-primary/80">Waiting List</h2>
         </div>
         <Link to="/waiting-list">
-          <Button variant="outline" size="sm" className="h-7 px-2 text-xs text-[#ea384c] hover:text-[#ea384c]/80 border-[#ea384c]/20 hover:bg-[#ea384c]/5">
+          <Button variant="outline" size="sm" className="h-7 px-2 text-xs border-primary/20 hover:bg-primary/5">
             View All
           </Button>
         </Link>
       </div>
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <span className="text-4xl font-bold text-[#ea384c]">{pendingClients.length}</span>
-          <p className="text-sm text-gray-500 mt-2">People in Queue</p>
+          <span className="text-2xl font-bold text-primary">{pendingClients.length}</span>
+          <p className="text-xs text-primary/60 mt-1">People in Queue</p>
         </div>
       </div>
     </GlassCard>
