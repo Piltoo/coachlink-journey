@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { X, Plus, Trash2, Search } from "lucide-react";
 import type { PartialMeal, Ingredient, MealNutrition } from "@/components/nutrition-training/types";
+import { useState as useDebounceState } from "react";
 
 export default function CreateNutritionPlan() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export default function CreateNutritionPlan() {
   const [quantity, setQuantity] = useState<string>("");
   const [currentMealIndex, setCurrentMealIndex] = useState<number | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: ingredients = [] } = useQuery({
     queryKey: ["ingredients"],
@@ -35,16 +37,31 @@ export default function CreateNutritionPlan() {
     },
   });
 
-  const { data: allCoachesIngredients = [] } = useQuery({
-    queryKey: ["ingredients_all_coaches"],
+  const { data: searchResults = [] } = useQuery({
+    queryKey: ["ingredients_search", searchQuery],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!searchQuery) return [];
+
+      // Search in personal ingredients
+      const { data: personalData, error: personalError } = await supabase
+        .from("ingredients")
+        .select("*")
+        .ilike("name", `%${searchQuery}%`)
+        .limit(50);
+
+      if (personalError) throw personalError;
+
+      // Search in all_coaches ingredients
+      const { data: sharedData, error: sharedError } = await supabase
         .from("ingredients_all_coaches")
         .select("*")
-        .order("name");
-      if (error) throw error;
-      
-      return data?.map((item: any) => ({
+        .ilike("name", `%${searchQuery}%`)
+        .limit(50);
+
+      if (sharedError) throw sharedError;
+
+      // Transform shared ingredients data
+      const transformedSharedData = (sharedData || []).map((item: any) => ({
         id: `shared_${item.name.toLowerCase().replace(/\s+/g, '_')}`,
         name: item.name || '',
         calories_per_100g: Number(item.calories_per_100g) || 0,
@@ -53,8 +70,11 @@ export default function CreateNutritionPlan() {
         fats_per_100g: Number(item.fats_per_100g) || 0,
         fiber_per_100g: Number(item.fibers_per_100g) || 0,
         group_name: item.grop || null
-      })) as Ingredient[];
+      }));
+
+      return [...personalData, ...transformedSharedData] as Ingredient[];
     },
+    enabled: searchQuery.length > 0,
   });
 
   const addNewMeal = () => {
@@ -76,7 +96,7 @@ export default function CreateNutritionPlan() {
   const addIngredientToMeal = (mealIndex: number) => {
     if (!selectedIngredient || !quantity) return;
 
-    const ingredient = [...ingredients, ...allCoachesIngredients].find(
+    const ingredient = searchResults.find(
       (i) => i.id === selectedIngredient
     );
     if (!ingredient) return;
@@ -91,6 +111,7 @@ export default function CreateNutritionPlan() {
     setSelectedIngredient("");
     setQuantity("");
     setSearchOpen(false);
+    setSearchQuery("");
   };
 
   const removeIngredient = (mealIndex: number, ingredientIndex: number) => {
@@ -212,18 +233,22 @@ export default function CreateNutritionPlan() {
                             className="w-[300px] justify-between"
                           >
                             {selectedIngredient ? 
-                              [...ingredients, ...allCoachesIngredients].find((item) => item.id === selectedIngredient)?.name :
+                              searchResults.find((item) => item.id === selectedIngredient)?.name :
                               "Search ingredient..."}
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[300px] p-0">
                           <Command>
-                            <CommandInput placeholder="Search ingredient..." />
+                            <CommandInput 
+                              placeholder="Search ingredient..." 
+                              value={searchQuery}
+                              onValueChange={setSearchQuery}
+                            />
                             <CommandEmpty>No ingredient found.</CommandEmpty>
                             <CommandList>
                               <CommandGroup>
-                                {[...ingredients, ...allCoachesIngredients].map((ingredient) => (
+                                {searchResults.map((ingredient) => (
                                   <CommandItem
                                     key={ingredient.id}
                                     value={ingredient.id}
