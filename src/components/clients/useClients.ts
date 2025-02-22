@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,7 +22,7 @@ export const useClients = () => {
   const [serviceFilter, setServiceFilter] = useState<string>("all");
   const { toast } = useToast();
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -30,6 +30,8 @@ export const useClients = () => {
         console.log("No user found - user is not authenticated");
         return;
       }
+
+      console.log("Fetching clients for coach:", user.id);
 
       const { data: activeRelationships, error: relationshipsError } = await supabase
         .from('coach_clients')
@@ -52,6 +54,8 @@ export const useClients = () => {
 
       if (coachRelError) throw coachRelError;
 
+      console.log("Found coach relationships:", coachRelationships?.length);
+
       const coachRelationshipMap = new Map(
         coachRelationships?.map(rel => [rel.client_id, rel.status]) || []
       );
@@ -63,6 +67,8 @@ export const useClients = () => {
         .in('id', coachRelationships?.map(rel => rel.client_id) || []);
 
       if (profilesError) throw profilesError;
+
+      console.log("Found client profiles:", clientProfiles?.length);
 
       if (clientProfiles) {
         const availableClients = clientProfiles.filter(
@@ -103,6 +109,7 @@ export const useClients = () => {
         });
 
         const formattedClients = await Promise.all(clientPromises);
+        console.log("Formatted clients:", formattedClients.length);
         setClients(formattedClients);
       }
     } catch (error: any) {
@@ -113,11 +120,11 @@ export const useClients = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, [fetchClients]);
 
   return {
     clients,

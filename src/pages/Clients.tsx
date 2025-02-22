@@ -38,6 +38,11 @@ const Clients = () => {
     return matchesSearch && matchesStatus && matchesService;
   });
 
+  const handleClientAdded = useCallback(() => {
+    console.log("Refreshing clients list after adding new client");
+    fetchClients();
+  }, [fetchClients]);
+
   const handleProfileClose = useCallback(() => {
     setSelectedClientId(null);
     fetchClients();
@@ -52,7 +57,7 @@ const Clients = () => {
               <Users className="w-8 h-8 text-primary" />
               <h1 className="text-3xl font-bold text-primary">My Clients</h1>
             </div>
-            <InviteClientDialog onClientAdded={fetchClients} />
+            <InviteClientDialog onClientAdded={handleClientAdded} />
           </div>
 
           <ClientFilters
@@ -78,3 +83,4 @@ const Clients = () => {
 };
 
 export default Clients;
+
