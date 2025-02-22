@@ -8,11 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { X, Plus, Trash2, Search } from "lucide-react";
+import { X, Plus, Trash2, Search, Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import type { PartialMeal, Ingredient, MealNutrition } from "@/components/nutrition-training/types";
-import { useState as useDebounceState } from "react";
 
 export default function CreateNutritionPlan() {
   const navigate = useNavigate();
@@ -42,7 +42,6 @@ export default function CreateNutritionPlan() {
     queryFn: async () => {
       if (!searchQuery) return [];
 
-      // Search in personal ingredients
       const { data: personalData, error: personalError } = await supabase
         .from("ingredients")
         .select("*")
@@ -51,7 +50,6 @@ export default function CreateNutritionPlan() {
 
       if (personalError) throw personalError;
 
-      // Search in all_coaches ingredients
       const { data: sharedData, error: sharedError } = await supabase
         .from("ingredients_all_coaches")
         .select("*")
@@ -60,7 +58,6 @@ export default function CreateNutritionPlan() {
 
       if (sharedError) throw sharedError;
 
-      // Transform shared ingredients data with proper number conversion
       const transformedSharedData = (sharedData || []).map((item: any) => ({
         id: `shared_${item.name.toLowerCase().replace(/\s+/g, '_')}`,
         name: item.name,
@@ -72,7 +69,6 @@ export default function CreateNutritionPlan() {
         group_name: item.grop || null
       }));
 
-      // Ensure personal data values are numbers
       const transformedPersonalData = (personalData || []).map(item => ({
         ...item,
         calories_per_100g: Number(item.calories_per_100g) || 0,
@@ -87,6 +83,53 @@ export default function CreateNutritionPlan() {
       return results as Ingredient[];
     },
     enabled: searchQuery.length > 0,
+  });
+
+  const { toast } = useToast();
+
+  const saveMealPlanMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from('nutrition_plan_templates')
+        .insert([
+          {
+            coach_id: user.id,
+            title,
+            description,
+            meals: meals.map(meal => ({
+              name: meal.name,
+              ingredients: meal.ingredients.map(ing => ({
+                ingredient_id: ing.ingredient_id,
+                ingredient: ing.ingredient,
+                quantity_grams: ing.quantity_grams
+              }))
+            }))
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Meal plan template saved successfully",
+      });
+      navigate("/nutrition-training");
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save meal plan template",
+        variant: "destructive",
+      });
+      console.error("Error saving meal plan:", error);
+    }
   });
 
   const addNewMeal = () => {
@@ -153,7 +196,6 @@ export default function CreateNutritionPlan() {
       (acc, { ingredient, quantity_grams }) => {
         const multiplier = quantity_grams / 100;
         
-        // Log raw values before calculation
         console.log('Raw ingredient values:', {
           name: ingredient.name,
           carbs: ingredient.carbs_per_100g,
@@ -161,7 +203,6 @@ export default function CreateNutritionPlan() {
           quantity: quantity_grams
         });
 
-        // Calculate each value directly as numbers
         const calculatedCarbs = ingredient.carbs_per_100g * multiplier;
         const calculatedFiber = ingredient.fiber_per_100g * multiplier;
         
@@ -205,7 +246,27 @@ export default function CreateNutritionPlan() {
     return totalNutrition;
   };
 
-  console.log('Search results:', searchResults);
+  const handleSaveMealPlan = () => {
+    if (!title) {
+      toast({
+        title: "Error",
+        description: "Please enter a title for the meal plan",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (meals.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please add at least one meal to the plan",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    saveMealPlanMutation.mutate();
+  };
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -402,10 +463,20 @@ export default function CreateNutritionPlan() {
             </Card>
           )}
 
-          <Button onClick={addNewMeal} className="w-full">
-            <Plus className="h-4 w-4 mr-2" />
-            Add New Meal
-          </Button>
+          <div className="flex gap-4 mt-6">
+            <Button onClick={addNewMeal} className="flex-1">
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Meal
+            </Button>
+            <Button 
+              onClick={handleSaveMealPlan} 
+              className="flex-1"
+              disabled={saveMealPlanMutation.isPending}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Meal Plan
+            </Button>
+          </div>
         </div>
       </div>
     </div>
