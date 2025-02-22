@@ -6,6 +6,15 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { Separator } from "@/components/ui/separator";
+
+type NutritionTotals = {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
+};
 
 export function NutritionPlansSection() {
   const navigate = useNavigate();
@@ -35,10 +44,34 @@ export function NutritionPlansSection() {
     }
   };
 
-  // Fetch nutrition plans when component mounts
   useEffect(() => {
     fetchNutritionPlans();
   }, []);
+
+  const calculateTotalNutrition = (meals: any[]): NutritionTotals => {
+    const totals = {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fats: 0,
+      fiber: 0,
+    };
+
+    meals?.forEach((meal) => {
+      meal.ingredients?.forEach((ingredient: any) => {
+        const quantity = ingredient.quantity || 0;
+        const multiplier = quantity / 100;
+
+        totals.calories += (ingredient.nutrition?.calories || 0) * multiplier;
+        totals.protein += (ingredient.nutrition?.protein || 0) * multiplier;
+        totals.carbs += (ingredient.nutrition?.carbs || 0) * multiplier;
+        totals.fats += (ingredient.nutrition?.fats || 0) * multiplier;
+        totals.fiber += (ingredient.nutrition?.fiber || 0) * multiplier;
+      });
+    });
+
+    return totals;
+  };
 
   const handleEditPlan = (planId: string) => {
     navigate(`/nutrition-and-training/create-nutrition-plan/${planId}`);
@@ -55,25 +88,52 @@ export function NutritionPlansSection() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {nutritionPlans.map((plan) => (
-          <Card 
-            key={plan.id} 
-            className="cursor-pointer hover:bg-accent/5 transition-colors"
-            onClick={() => handleEditPlan(plan.id)}
-          >
-            <CardHeader>
-              <CardTitle>{plan.title}</CardTitle>
-              <CardDescription>
-                Created on {new Date(plan.created_at).toLocaleDateString()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {plan.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {nutritionPlans.map((plan) => {
+          const totals = calculateTotalNutrition(plan.meals || []);
+          
+          return (
+            <Card 
+              key={plan.id} 
+              className="cursor-pointer hover:bg-accent/5 transition-colors"
+              onClick={() => handleEditPlan(plan.id)}
+            >
+              <CardHeader>
+                <CardTitle>{plan.title}</CardTitle>
+                <CardDescription>
+                  Created on {new Date(plan.created_at).toLocaleDateString()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                  {plan.description}
+                </p>
+                <Separator className="my-2" />
+                <div className="grid grid-cols-3 gap-2 text-sm mt-2">
+                  <div>
+                    <p className="font-medium">{Math.round(totals.calories)}</p>
+                    <p className="text-xs text-muted-foreground">Calories</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">{totals.protein.toFixed(1)}g</p>
+                    <p className="text-xs text-muted-foreground">Protein</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">{totals.carbs.toFixed(1)}g</p>
+                    <p className="text-xs text-muted-foreground">Carbs</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">{totals.fats.toFixed(1)}g</p>
+                    <p className="text-xs text-muted-foreground">Fats</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">{totals.fiber.toFixed(1)}g</p>
+                    <p className="text-xs text-muted-foreground">Fiber</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
