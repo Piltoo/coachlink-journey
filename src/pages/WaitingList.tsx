@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { UserCheck, UserX, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ClientProfileCard } from "@/components/dashboard/ClientProfileCard";
 
 type PendingClient = {
   id: string;
@@ -62,7 +61,7 @@ export default function WaitingList() {
     try {
       const { error } = await supabase
         .from('coach_clients')
-        .update({ status: approved ? 'active' : 'inactive' })
+        .update({ status: approved ? 'active' : 'rejected' })
         .eq('client_id', clientId);
 
       if (error) throw error;
@@ -89,7 +88,7 @@ export default function WaitingList() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link to="/" className="text-gray-600 hover:text-gray-900">
+              <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">
                 <ArrowLeft className="h-6 w-6" />
               </Link>
               <h1 className="text-2xl font-semibold text-primary">Waiting List</h1>
@@ -149,14 +148,6 @@ export default function WaitingList() {
               Review client information and manage their access.
             </DialogDescription>
           </DialogHeader>
-          {selectedClientId && (
-            <ClientProfileCard 
-              clientId={selectedClientId} 
-              onUnsubscribe={() => {
-                handleClientResponse(selectedClientId, false);
-              }} 
-            />
-          )}
         </DialogContent>
       </Dialog>
     </div>
