@@ -50,29 +50,43 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("No authenticated user found");
       }
 
-      // Create the new client using admin functions
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Create new user account
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: newClientEmail,
         password: newClientPassword,
-        email_confirm: true,
-        user_metadata: {
-          full_name: newClientName,
+        options: {
+          data: {
+            full_name: newClientName,
+            role: 'client'
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
-      if (authError) throw authError;
+      if (signUpError) throw signUpError;
 
-      if (authData.user) {
+      if (signUpData.user) {
         // Create the coach-client relationship
         const { error: relationError } = await supabase
           .from('coach_clients')
           .insert({
             coach_id: currentUser.id,
-            client_id: authData.user.id,
+            client_id: signUpData.user.id,
             status: 'active'
           });
 
         if (relationError) throw relationError;
+
+        // Update the profile with additional details
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            full_name: newClientName,
+            role: 'client'
+          })
+          .eq('id', signUpData.user.id);
+
+        if (profileError) throw profileError;
 
         toast({
           title: "Success",
