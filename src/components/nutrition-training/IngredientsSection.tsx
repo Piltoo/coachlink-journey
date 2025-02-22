@@ -33,7 +33,8 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
     setGroups(uniqueGroups);
   }, [ingredients]);
 
-  const handleIngredientClick = (ingredient: Ingredient) => {
+  const handleEditClick = (ingredient: Ingredient, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
     setSelectedIngredient(ingredient);
     setShowEditIngredient(true);
   };
@@ -98,8 +99,8 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
                     </p>
                     <Button 
                       variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleIngredientClick(ingredient)}
+                      size="sm"
+                      onClick={(e) => handleEditClick(ingredient, e)}
                       className="ml-2"
                     >
                       <Pencil className="h-4 w-4" />
@@ -117,13 +118,15 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
         </div>
       </div>
 
-      <EditIngredientDialog
-        isOpen={showEditIngredient}
-        onClose={handleCloseDialog}
-        ingredient={selectedIngredient}
-        onIngredientUpdated={handleCloseDialog}
-        groups={groups}
-      />
+      {selectedIngredient && (
+        <EditIngredientDialog
+          isOpen={showEditIngredient}
+          onClose={handleCloseDialog}
+          ingredient={selectedIngredient}
+          onIngredientUpdated={handleCloseDialog}
+          groups={groups}
+        />
+      )}
     </div>
   );
 }
