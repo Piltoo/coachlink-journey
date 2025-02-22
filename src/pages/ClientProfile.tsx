@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { ClientProfileCard } from "@/components/dashboard/ClientProfileCard";
 import { ChevronLeft } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const ClientProfile = () => {
   const { id } = useParams();
@@ -19,6 +20,15 @@ const ClientProfile = () => {
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back to Clients
         </Button>
+
+        <Tabs defaultValue="profile" className="mb-6">
+          <TabsList className="bg-white/50 backdrop-blur-sm border">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="nutrition">Nutrition Plans</TabsTrigger>
+            <TabsTrigger value="workout">Workout Plans</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="bg-white rounded-lg shadow-sm">
           {id && (
