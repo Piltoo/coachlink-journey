@@ -7,7 +7,6 @@ import { IngredientsSection } from "@/components/nutrition-training/IngredientsS
 import { ExercisesSection } from "@/components/nutrition-training/ExercisesSection";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 type Ingredient = {
   id: string;
@@ -32,116 +31,84 @@ type Exercise = {
 };
 
 export default function NutritionAndTraining() {
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const checkAuthAndFetchData = async () => {
+    const fetchUserRole = async () => {
       try {
-        setLoading(true);
-        
-        // Get current user
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-          console.error("Auth error:", authError);
-          navigate('/auth');
-          return;
-        }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-        // Get user profile and role
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('user_role')
+          .select('role')
           .eq('id', user.id)
           .single();
 
-        if (profileError || !profile) {
-          console.error("Profile error:", profileError);
-          navigate('/auth');
+        if (error) {
+          console.error("Error fetching profile:", error);
           return;
         }
 
-        if (profile.user_role !== 'coach') {
-          navigate('/dashboard');
-          return;
-        }
-
-        // Fetch data for coaches
-        const [ingredientsResponse, exercisesResponse] = await Promise.all([
-          supabase.from('ingredients').select('*').order('name'),
-          supabase.from('exercises').select('*').order('name')
-        ]);
-
-        if (ingredientsResponse.error) {
-          throw new Error(`Ingredients error: ${ingredientsResponse.error.message}`);
-        }
-
-        if (exercisesResponse.error) {
-          throw new Error(`Exercises error: ${exercisesResponse.error.message}`);
-        }
-
-        setIngredients(ingredientsResponse.data || []);
-        setExercises(exercisesResponse.data || []);
-
+        setUserRole(profile?.role);
       } catch (error) {
-        console.error('Error:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load data. Please try again.",
-          variant: "destructive",
-        });
-        navigate('/dashboard');
-      } finally {
-        setLoading(false);
+        console.error("Error in fetchUserRole:", error);
       }
     };
 
-    checkAuthAndFetchData();
-  }, [navigate, toast]);
+    fetchUserRole();
+    fetchIngredients();
+    fetchExercises();
+  }, []);
 
-  const handleIngredientAdded = async () => {
-    const { data, error } = await supabase
-      .from('ingredients')
-      .select('*')
-      .order('name');
+  const fetchIngredients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('ingredients')
+        .select('*')
+        .order('name');
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to refresh ingredients",
-        variant: "destructive",
-      });
-      return;
+      if (error) {
+        toast({
+          title: "Error fetching ingredients",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
+      setIngredients(data || []);
+    } catch (error) {
+      console.error("Error fetching ingredients:", error);
     }
-
-    setIngredients(data || []);
   };
 
-  const handleExerciseChange = async () => {
-    const { data, error } = await supabase
-      .from('exercises')
-      .select('*')
-      .order('name');
+  const fetchExercises = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .order('name');
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to refresh exercises",
-        variant: "destructive",
-      });
-      return;
+      if (error) throw error;
+      setExercises(data);
+    } catch (error) {
+      console.error("Error fetching exercises:", error);
     }
-
-    setExercises(data || []);
   };
 
-  if (loading) {
+  if (userRole !== 'coach') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      <div className="min-h-screen bg-background pt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-red-100">
+            <p className="text-center text-red-600">
+              You don't have permission to access this page.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -190,14 +157,14 @@ export default function NutritionAndTraining() {
           <TabsContent value="ingredients" className="mt-6">
             <IngredientsSection 
               ingredients={ingredients} 
-              onIngredientAdded={handleIngredientAdded}
+              onIngredientAdded={fetchIngredients}
             />
           </TabsContent>
 
           <TabsContent value="exercises" className="mt-6">
             <ExercisesSection 
               exercises={exercises}
-              onExerciseChange={handleExerciseChange}
+              onExerciseChange={fetchExercises}
             />
           </TabsContent>
         </Tabs>

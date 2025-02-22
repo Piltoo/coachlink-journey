@@ -24,25 +24,22 @@ const Dashboard = () => {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('user_role, first_name')
+          .select('role, first_name')
           .eq('id', user.id)
-          .maybeSingle(); // Changed from .single() to .maybeSingle()
+          .single();
 
         if (profileError) {
           console.error("Error fetching profile:", profileError);
           return;
         }
 
-        if (profile) {
-          setUserRole(profile.user_role as UserRole);
-          setFirstName(profile.first_name || "");
-        } else {
+        if (!profile) {
           console.log("No profile found");
-          toast({
-            title: "Welcome!",
-            description: "Please complete your profile setup.",
-          });
+          return;
         }
+        
+        setUserRole(profile.role);
+        setFirstName(profile.first_name || "");
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({

@@ -2,10 +2,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { UserCheck, UserX, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { PendingClientCard } from "@/components/waiting-list/PendingClientCard";
+import { Badge } from "@/components/ui/badge";
 
 type PendingClient = {
   id: string;
@@ -27,32 +28,43 @@ export default function WaitingList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: pendingUsers, error } = await supabase
+      console.log("Current user ID:", user.id); // Debug log
+
+      // Updated query with correct foreign key reference
+      const { data, error } = await supabase
         .from('coach_clients')
         .select(`
           client_id,
-          status,
-          profiles!coach_clients_client_id_fkey (
+          requested_services,
+          client:client_id (
             id,
             full_name,
-            email,
-            raw_user_meta_data
+            email
           )
         `)
         .eq('coach_id', user.id)
         .eq('status', 'pending');
 
-      if (error) throw error;
+      console.log("Query response:", { data, error }); // Debug log
 
-      if (pendingUsers) {
-        const formattedClients = pendingUsers
-          .filter(relation => relation.profiles) // Filter out any null profiles
-          .map(relation => ({
-            id: relation.profiles.id,
-            full_name: relation.profiles.full_name,
-            email: relation.profiles.email,
-            requested_services: (relation.profiles.raw_user_meta_data as any)?.requested_services || []
-          }));
+      if (error) {
+        console.error("Error fetching clients:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch pending clients",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data) {
+        const formattedClients = data.map(client => ({
+          id: client.client.id,
+          full_name: client.client.full_name,
+          email: client.client.email,
+          requested_services: client.requested_services || []
+        }));
+        console.log("Formatted clients:", formattedClients); // Debug log
         setPendingClients(formattedClients);
       }
     } catch (error) {
@@ -65,81 +77,26 @@ export default function WaitingList() {
     }
   };
 
-  const handleApprove = async (clientId: string) => {
+  const handleClientResponse = async (clientId: string, approved: boolean) => {
     try {
-      const { data: { user: coach } } = await supabase.auth.getUser();
-      if (!coach) throw new Error("Coach not authenticated");
-
-      // Update the coach-client relationship status
-      const { error: relationError } = await supabase
+      const { error } = await supabase
         .from('coach_clients')
-        .update({ status: 'active' })
-        .eq('coach_id', coach.id)
+        .update({ status: approved ? 'active' : 'rejected' })
         .eq('client_id', clientId);
 
-      if (relationError) throw relationError;
-
-      // Update the user's registration status
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ registration_status: 'approved' })
-        .eq('id', clientId);
-
-      if (updateError) throw updateError;
+      if (error) throw error;
 
       setPendingClients(prev => prev.filter(client => client.id !== clientId));
       
       toast({
         title: "Success",
-        description: "Client approved successfully",
+        description: `Client ${approved ? 'approved' : 'rejected'} successfully`,
       });
-
-      // Refresh the clients list after approval
-      fetchPendingClients();
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Error updating client status:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to approve client",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleReject = async (clientId: string) => {
-    try {
-      const { data: { user: coach } } = await supabase.auth.getUser();
-      if (!coach) throw new Error("Coach not authenticated");
-
-      // Delete the coach-client relationship
-      const { error: relationError } = await supabase
-        .from('coach_clients')
-        .delete()
-        .eq('coach_id', coach.id)
-        .eq('client_id', clientId);
-
-      if (relationError) throw relationError;
-
-      // Update the user's registration status
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ registration_status: 'rejected' })
-        .eq('id', clientId);
-
-      if (updateError) throw updateError;
-
-      setPendingClients(prev => prev.filter(client => client.id !== clientId));
-      
-      toast({
-        title: "Success",
-        description: "Client rejected successfully",
-      });
-
-      // Refresh the clients list after rejection
-      fetchPendingClients();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to reject client",
+        description: "Failed to update client status",
         variant: "destructive",
       });
     }
@@ -163,12 +120,54 @@ export default function WaitingList() {
 
           <div className="grid gap-4">
             {pendingClients.map((client) => (
-              <PendingClientCard
-                key={client.id}
-                client={client}
-                onApprove={handleApprove}
-                onReject={handleReject}
-              />
+              <Card key={client.id} className="overflow-hidden">
+                <CardHeader className="bg-white/50">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {client.full_name || 'Unnamed Client'}
+                      </h3>
+                      <p className="text-sm text-gray-500">{client.email}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
+                        onClick={() => handleClientResponse(client.id, true)}
+                      >
+                        <UserCheck className="w-4 h-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                        onClick={() => handleClientResponse(client.id, false)}
+                      >
+                        <UserX className="w-4 h-4 mr-1" />
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="bg-white/30">
+                  <div className="mt-2">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Requested Services:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {client.requested_services && client.requested_services.length > 0 ? (
+                        client.requested_services.map((service, index) => (
+                          <Badge key={index} variant="secondary" className="bg-green-100/50">
+                            {service}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-500">No specific services requested</span>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
             {pendingClients.length === 0 && (
               <Card className="p-6">

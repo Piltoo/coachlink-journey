@@ -563,11 +563,8 @@ export type Database = {
           full_name: string | null
           id: string
           last_name: string | null
-          raw_user_meta_data: Json | null
-          registration_status: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
-          user_role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
           created_at?: string
@@ -576,11 +573,8 @@ export type Database = {
           full_name?: string | null
           id: string
           last_name?: string | null
-          raw_user_meta_data?: Json | null
-          registration_status?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
-          user_role?: Database["public"]["Enums"]["user_role"]
         }
         Update: {
           created_at?: string
@@ -589,11 +583,8 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_name?: string | null
-          raw_user_meta_data?: Json | null
-          registration_status?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
-          user_role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: []
       }
