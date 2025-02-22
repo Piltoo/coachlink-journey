@@ -70,14 +70,12 @@ export default function WaitingList() {
       const { data: { user: coach } } = await supabase.auth.getUser();
       if (!coach) throw new Error("Coach not authenticated");
 
-      // Create the coach-client relationship
+      // Update the coach-client relationship status
       const { error: relationError } = await supabase
         .from('coach_clients')
-        .insert([{
-          client_id: clientId,
-          coach_id: coach.id,
-          status: 'active'
-        }]);
+        .update({ status: 'active' })
+        .eq('coach_id', coach.id)
+        .eq('client_id', clientId);
 
       if (relationError) throw relationError;
 
@@ -106,12 +104,25 @@ export default function WaitingList() {
 
   const handleReject = async (clientId: string) => {
     try {
-      const { error } = await supabase
+      const { data: { user: coach } } = await supabase.auth.getUser();
+      if (!coach) throw new Error("Coach not authenticated");
+
+      // Delete the coach-client relationship
+      const { error: relationError } = await supabase
+        .from('coach_clients')
+        .delete()
+        .eq('coach_id', coach.id)
+        .eq('client_id', clientId);
+
+      if (relationError) throw relationError;
+
+      // Update the user's registration status
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({ registration_status: 'rejected' })
         .eq('id', clientId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
       setPendingClients(prev => prev.filter(client => client.id !== clientId));
       
