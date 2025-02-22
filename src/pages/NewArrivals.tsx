@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { NewArrivalsHeader } from "@/components/new-arrivals/NewArrivalsHeader";
 import { ClientsTable } from "@/components/new-arrivals/ClientsTable";
 import { Client } from "@/components/new-arrivals/types";
+import { InviteClientDialog } from "@/components/dashboard/InviteClientDialog";
+import { Users } from "lucide-react";
 
 const NewArrivals = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -24,7 +25,6 @@ const NewArrivals = () => {
         return;
       }
 
-      // Get all coach-client relationships where the status is not_connected
       const { data: notConnectedClients, error: relationshipsError } = await supabase
         .from('coach_clients')
         .select('client_id, status')
@@ -159,14 +159,9 @@ const NewArrivals = () => {
     }
   };
 
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = (
-      (client.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    
-    return matchesSearch;
-  });
+  const handleClientAdded = () => {
+    fetchClients();
+  };
 
   useEffect(() => {
     fetchClients();
@@ -176,6 +171,14 @@ const NewArrivals = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Users className="w-8 h-8 text-primary" />
+              <h1 className="text-3xl font-bold text-primary">New Arrivals</h1>
+            </div>
+            <InviteClientDialog onClientAdded={handleClientAdded} />
+          </div>
+
           <NewArrivalsHeader 
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -183,7 +186,10 @@ const NewArrivals = () => {
 
           <ScrollArea className="h-[calc(100vh-12rem)] w-full">
             <ClientsTable
-              clients={filteredClients}
+              clients={clients.filter(client => 
+                (client.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                client.email.toLowerCase().includes(searchTerm.toLowerCase())
+              )}
               onViewProfile={setSelectedClientId}
               onAddClient={(clientId) => handleStatusChange(clientId, 'active')}
               onDeleteClient={handleDeleteClient}
