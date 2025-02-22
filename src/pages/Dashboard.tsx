@@ -26,20 +26,23 @@ const Dashboard = () => {
           .from('profiles')
           .select('user_role, first_name')
           .eq('id', user.id)
-          .single();
+          .maybeSingle(); // Changed from .single() to .maybeSingle()
 
         if (profileError) {
           console.error("Error fetching profile:", profileError);
           return;
         }
 
-        if (!profile) {
+        if (profile) {
+          setUserRole(profile.user_role as UserRole);
+          setFirstName(profile.first_name || "");
+        } else {
           console.log("No profile found");
-          return;
+          toast({
+            title: "Welcome!",
+            description: "Please complete your profile setup.",
+          });
         }
-        
-        setUserRole(profile.user_role as UserRole);
-        setFirstName(profile.first_name || "");
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({
