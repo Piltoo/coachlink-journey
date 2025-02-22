@@ -14,7 +14,6 @@ import Messages from "@/pages/Messages";
 import NotFound from "@/pages/NotFound";
 import NutritionAndTraining from "@/pages/NutritionAndTraining";
 import Program from "@/pages/Program";
-import WaitingList from "@/pages/WaitingList";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +36,6 @@ function App() {
               <Route path="/nutrition-and-training" element={<NutritionAndTraining />} />
               <Route path="/nutrition-training" element={<Navigate to="/nutrition-and-training" replace />} />
               <Route path="/program/:programId" element={<Program />} />
-              <Route path="/waiting-list" element={<WaitingList />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
