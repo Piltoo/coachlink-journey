@@ -32,7 +32,6 @@ type Exercise = {
 };
 
 export default function NutritionAndTraining() {
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,102 +39,103 @@ export default function NutritionAndTraining() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const checkAuthAndFetchData = async () => {
       try {
         setLoading(true);
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (authError) {
+        // Get current user
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
           console.error("Auth error:", authError);
           navigate('/auth');
           return;
         }
 
-        if (!user) {
-          console.log("No user found");
+        // Get user profile and role
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_role')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error("Profile error:", profileError);
           navigate('/auth');
           return;
         }
 
-        console.log("Current user ID:", user.id);
-
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('user_role, first_name')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
-          return;
-        }
-
-        if (!profile) {
-          console.log("No profile found");
-          return;
-        }
-        
-        console.log("User role from profile:", profile.user_role);
-        setUserRole(profile.user_role);
-
-        if (profile.user_role === 'coach') {
-          try {
-            await Promise.all([fetchIngredients(), fetchExercises()]);
-          } catch (error) {
-            console.error("Error fetching data:", error);
-          }
-        } else {
-          console.log("User is not a coach");
+        if (profile.user_role !== 'coach') {
           navigate('/dashboard');
+          return;
         }
+
+        // Fetch data for coaches
+        const [ingredientsResponse, exercisesResponse] = await Promise.all([
+          supabase.from('ingredients').select('*').order('name'),
+          supabase.from('exercises').select('*').order('name')
+        ]);
+
+        if (ingredientsResponse.error) {
+          throw new Error(`Ingredients error: ${ingredientsResponse.error.message}`);
+        }
+
+        if (exercisesResponse.error) {
+          throw new Error(`Exercises error: ${exercisesResponse.error.message}`);
+        }
+
+        setIngredients(ingredientsResponse.data || []);
+        setExercises(exercisesResponse.data || []);
+
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Error:', error);
         toast({
           title: "Error",
-          description: "Failed to load dashboard data",
+          description: "Failed to load data. Please try again.",
           variant: "destructive",
         });
+        navigate('/dashboard');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserRole();
+    checkAuthAndFetchData();
   }, [navigate, toast]);
 
-  const fetchIngredients = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('ingredients')
-        .select('*')
-        .order('name');
+  const handleIngredientAdded = async () => {
+    const { data, error } = await supabase
+      .from('ingredients')
+      .select('*')
+      .order('name');
 
-      if (error) {
-        toast({
-          title: "Error fetching ingredients",
-          description: error.message,
-          variant: "destructive",
-        });
-        throw error;
-      }
-      setIngredients(data || []);
-    } catch (error) {
-      console.error("Error fetching ingredients:", error);
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh ingredients",
+        variant: "destructive",
+      });
+      return;
     }
+
+    setIngredients(data || []);
   };
 
-  const fetchExercises = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('*')
-        .order('name');
+  const handleExerciseChange = async () => {
+    const { data, error } = await supabase
+      .from('exercises')
+      .select('*')
+      .order('name');
 
-      if (error) throw error;
-      setExercises(data || []);
-    } catch (error) {
-      console.error("Error fetching exercises:", error);
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh exercises",
+        variant: "destructive",
+      });
+      return;
     }
+
+    setExercises(data || []);
   };
 
   if (loading) {
@@ -144,15 +144,6 @@ export default function NutritionAndTraining() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     );
-  }
-
-  if (!userRole) {
-    return null;
-  }
-
-  if (userRole !== 'coach') {
-    navigate('/dashboard');
-    return null;
   }
 
   return (
@@ -199,14 +190,14 @@ export default function NutritionAndTraining() {
           <TabsContent value="ingredients" className="mt-6">
             <IngredientsSection 
               ingredients={ingredients} 
-              onIngredientAdded={fetchIngredients}
+              onIngredientAdded={handleIngredientAdded}
             />
           </TabsContent>
 
           <TabsContent value="exercises" className="mt-6">
             <ExercisesSection 
               exercises={exercises}
-              onExerciseChange={fetchExercises}
+              onExerciseChange={handleExerciseChange}
             />
           </TabsContent>
         </Tabs>
