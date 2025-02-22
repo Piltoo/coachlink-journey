@@ -19,12 +19,19 @@ export const useStats = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // First get the user
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Get role from user metadata
-        const role = user.raw_user_meta_data?.role || null;
-        console.log("User role from metadata:", role); // Debug log
+        // Then get the profile to check the role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        const role = profile?.role || null;
+        console.log("User role from profile:", role); // Debug log
         setUserRole(role);
 
         if (role === 'coach') {
