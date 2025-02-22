@@ -56,35 +56,44 @@ export function WaitingList() {
     fetchPendingClients();
   }, []);
 
-  if (pendingClients.length === 0) return null;
+  // Remove this condition so the card is always visible for coaches
+  // if (pendingClients.length === 0) return null;
 
   return (
-    <GlassCard className="p-6">
+    <GlassCard className="p-6 border-2 border-[#ea384c]/20 bg-[#ea384c]/5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <Users className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-primary">Waiting List</h2>
+          <Users className="h-5 w-5 text-[#ea384c]" />
+          <h2 className="text-lg font-semibold text-[#ea384c]">Waiting List</h2>
         </div>
         <Link to="/waiting-list">
-          <Button variant="outline" size="sm" className="text-primary">
+          <Button variant="outline" size="sm" className="text-[#ea384c] hover:text-[#ea384c]/80 border-[#ea384c]/20 hover:bg-[#ea384c]/5">
             View All ({pendingClients.length})
           </Button>
         </Link>
       </div>
       <ScrollArea className="h-[200px]">
         <div className="space-y-4">
-          {pendingClients.slice(0, 3).map((client) => (
-            <div key={client.id} className="flex items-center justify-between p-4 bg-white/50 rounded-lg">
-              <div>
-                <h3 className="font-medium text-gray-900">{client.full_name || 'Unnamed Client'}</h3>
-                <p className="text-sm text-gray-500">{client.email}</p>
-              </div>
+          {pendingClients.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              No pending clients in the queue
             </div>
-          ))}
-          {pendingClients.length > 3 && (
-            <div className="text-center text-sm text-gray-500 pt-2">
-              And {pendingClients.length - 3} more...
-            </div>
+          ) : (
+            <>
+              {pendingClients.slice(0, 3).map((client) => (
+                <div key={client.id} className="flex items-center justify-between p-4 bg-white/50 rounded-lg border border-[#ea384c]/10">
+                  <div>
+                    <h3 className="font-medium text-gray-900">{client.full_name || 'Unnamed Client'}</h3>
+                    <p className="text-sm text-gray-500">{client.email}</p>
+                  </div>
+                </div>
+              ))}
+              {pendingClients.length > 3 && (
+                <div className="text-center text-sm text-gray-500 pt-2">
+                  And {pendingClients.length - 3} more...
+                </div>
+              )}
+            </>
           )}
         </div>
       </ScrollArea>
