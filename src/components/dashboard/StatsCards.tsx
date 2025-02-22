@@ -1,9 +1,11 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { GlassCard } from "@/components/ui/glass-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
+import { WaitingList } from "./WaitingList";
 
 type Stats = {
   activeClients: { value: number; description: string };
@@ -126,8 +128,9 @@ export function StatsCards() {
   if (userRole !== 'coach') return null;
 
   return (
-    <div className="grid grid-cols-1 gap-4">
-      <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-3 gap-4">
+      {/* Left Column - Stats Cards */}
+      <div className="space-y-4">
         <GlassCard className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Active Clients</h3>
           <p className="text-4xl font-bold text-[#1B4332]">{stats.activeClients.value}</p>
@@ -151,9 +154,7 @@ export function StatsCards() {
           <p className="text-4xl font-bold text-[#1B4332]">{stats.unreadMessages.value}</p>
           <p className="text-xs text-gray-500 mt-1">{stats.unreadMessages.description}</p>
         </GlassCard>
-      </div>
 
-      <div className="grid grid-cols-4 gap-4">
         <GlassCard className="p-4">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Upcoming Payments</h3>
           <p className="text-4xl font-bold text-[#1B4332]">0</p>
@@ -166,17 +167,28 @@ export function StatsCards() {
           <p className="text-xs text-red-500 mt-1">0 kr overdue</p>
         </GlassCard>
 
-        <GlassCard className="col-span-2 p-4">
+        <WaitingList />
+      </div>
+
+      {/* Right Column - Today's Assignments */}
+      <div className="col-span-2">
+        <GlassCard className="p-4 h-full">
           <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
           {todaySessions.length > 0 ? (
             <>
-              <p className="text-2xl font-bold text-[#1B4332] mb-2">{todaySessions.length} sessions</p>
-              <ScrollArea className="h-[120px] w-full">
-                <div className="space-y-2">
+              <p className="text-2xl font-bold text-[#1B4332] mb-4">{todaySessions.length} sessions today</p>
+              <ScrollArea className="h-[calc(100vh-280px)] w-full pr-4">
+                <div className="space-y-3">
                   {todaySessions.map((session, index) => (
-                    <div key={index} className="flex justify-between items-center text-sm">
-                      <span className="text-gray-700">{session.client.full_name || session.client.email}</span>
-                      <span className="text-gray-500">
+                    <div 
+                      key={index} 
+                      className="flex justify-between items-center p-4 bg-white/60 rounded-lg border border-green-100"
+                    >
+                      <div>
+                        <h4 className="font-medium text-gray-900">{session.client.full_name || session.client.email}</h4>
+                        <p className="text-sm text-gray-500">Session</p>
+                      </div>
+                      <span className="text-sm font-medium text-primary">
                         {format(new Date(session.start_time), 'HH:mm')}
                       </span>
                     </div>
@@ -185,10 +197,12 @@ export function StatsCards() {
               </ScrollArea>
             </>
           ) : (
-            <>
-              <p className="text-4xl font-bold text-[#1B4332]">0</p>
-              <p className="text-xs text-gray-500 mt-1">No sessions today</p>
-            </>
+            <div className="h-[calc(100vh-280px)] flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-[#1B4332]">No sessions today</p>
+                <p className="text-sm text-gray-500 mt-2">Enjoy your free time!</p>
+              </div>
+            </div>
           )}
         </GlassCard>
       </div>
