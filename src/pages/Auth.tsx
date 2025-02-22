@@ -1,12 +1,11 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 type ServiceOption = {
   id: string;
@@ -28,8 +27,18 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (showConfirmation) {
+      const timer = setTimeout(() => {
+        navigate("/");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showConfirmation, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,10 +64,7 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        toast({
-          title: "Check your email",
-          description: "We sent you a verification link to complete your registration.",
-        });
+        setShowConfirmation(true);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -77,6 +83,22 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
+  if (showConfirmation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100/30 to-green-50 flex items-center justify-center px-4">
+        <GlassCard className="w-full max-w-md p-8 bg-white/40 backdrop-blur-lg text-center">
+          <h2 className="text-2xl font-bold text-primary mb-4">Thank you for your request!</h2>
+          <p className="text-gray-600">
+            We will send you an email with the confirmation when your account is approved.
+          </p>
+          <p className="text-sm text-gray-500 mt-4">
+            Redirecting to home page in a few seconds...
+          </p>
+        </GlassCard>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100/30 to-green-50 flex items-center justify-center px-4">

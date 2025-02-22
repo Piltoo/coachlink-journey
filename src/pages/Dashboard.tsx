@@ -1,41 +1,27 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { ClientProgress } from "@/components/dashboard/ClientProgress";
 import { useNavigate } from "react-router-dom";
+import { GlassCard } from "@/components/ui/glass-card";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { UserCheck, UserX } from "lucide-react";
 
 type UserRole = 'client' | 'coach' | 'admin';
 
-type SessionRequest = {
+type PendingClient = {
   id: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  client: {
-    full_name: string | null;
-    email: string;
-  };
-};
-
-type CheckIn = {
-  id: string;
-  created_at: string;
-  client: {
-    full_name: string | null;
-    email: string;
-  };
-  weight_kg: number;
-  measurements: {
-    waist_cm: number | null;
-    chest_cm: number | null;
-  }[];
+  full_name: string | null;
+  email: string;
+  requested_services: string[];
 };
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([]);
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [pendingClients, setPendingClients] = useState<PendingClient[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -55,45 +41,29 @@ const Dashboard = () => {
         setUserRole(profile.role);
 
         if (profile.role === 'coach') {
-          // Fetch session requests
-          const { data: sessions } = await supabase
-            .from('workout_sessions')
+          // Fetch pending client requests
+          const { data: clients } = await supabase
+            .from('coach_clients')
             .select(`
-              id,
-              start_time,
-              end_time,
-              status,
-              client:profiles!workout_sessions_client_id_fkey (
+              client_id,
+              profiles!coach_clients_client_id_fkey (
+                id,
                 full_name,
                 email
               )
             `)
-            .eq('status', 'pending')
-            .eq('coach_id', user.id);
+            .eq('coach_id', user.id)
+            .eq('status', 'pending');
 
-          if (sessions) setSessionRequests(sessions);
-
-          // Fetch check-ins
-          const { data: checkInsData } = await supabase
-            .from('weekly_checkins')
-            .select(`
-              id,
-              created_at,
-              weight_kg,
-              client:profiles!weekly_checkins_client_id_fkey (
-                full_name,
-                email
-              ),
-              measurements (
-                waist_cm,
-                chest_cm
-              )
-            `)
-            .eq('status', 'pending')
-            .order('created_at', { ascending: false })
-            .limit(3);
-
-          if (checkInsData) setCheckIns(checkInsData);
+          if (clients) {
+            const formattedClients = clients.map(c => ({
+              id: c.profiles.id,
+              full_name: c.profiles.full_name,
+              email: c.profiles.email,
+              requested_services: [] // You might want to fetch this from user metadata
+            }));
+            setPendingClients(formattedClients);
+          }
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -108,33 +78,28 @@ const Dashboard = () => {
     fetchData();
   }, [toast]);
 
-  const handleSessionResponse = async (sessionId: string, approved: boolean) => {
+  const handleClientResponse = async (clientId: string, approved: boolean) => {
     try {
       const { error } = await supabase
-        .from('workout_sessions')
-        .update({ status: approved ? 'confirmed' : 'cancelled' })
-        .eq('id', sessionId);
+        .from('coach_clients')
+        .update({ status: approved ? 'active' : 'inactive' })
+        .eq('client_id', clientId);
 
       if (error) throw error;
 
-      setSessionRequests(prev => prev.filter(session => session.id !== sessionId));
+      setPendingClients(prev => prev.filter(client => client.id !== clientId));
       
       toast({
         title: "Success",
-        description: `Session ${approved ? 'confirmed' : 'cancelled'} successfully`,
+        description: `Client ${approved ? 'approved' : 'rejected'} successfully`,
       });
-    } catch (error) {
-      console.error('Error updating session:', error);
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to update session",
+        description: "Failed to update client status",
         variant: "destructive",
       });
     }
-  };
-
-  const handleReviewCheckIn = (checkInId: string) => {
-    navigate(`/check-ins/${checkInId}`);
   };
 
   return (
@@ -154,6 +119,44 @@ const Dashboard = () => {
           </div>
 
           <StatsCards />
+          
+          {userRole === 'coach' && pendingClients.length > 0 && (
+            <GlassCard className="p-6">
+              <h2 className="text-lg font-semibold text-primary mb-4">Waiting List ({pendingClients.length})</h2>
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-4">
+                  {pendingClients.map((client) => (
+                    <div key={client.id} className="flex items-center justify-between p-4 bg-white/50 rounded-lg">
+                      <div>
+                        <h3 className="font-medium text-gray-900">{client.full_name || 'Unnamed Client'}</h3>
+                        <p className="text-sm text-gray-500">{client.email}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 hover:text-green-700"
+                          onClick={() => handleClientResponse(client.id, true)}
+                        >
+                          <UserCheck className="w-4 h-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleClientResponse(client.id, false)}
+                        >
+                          <UserX className="w-4 h-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </GlassCard>
+          )}
           
           {userRole === 'client' && (
             <ClientProgress />
