@@ -9,7 +9,8 @@ export const useStats = () => {
     activeClients: { value: 0, description: "+0 new this week" },
     pendingCheckins: { value: 0, description: "Requires review" },
     unreadMessages: { value: 0, description: "New messages" },
-    newArrivals: { value: 0, description: "New potential clients" }
+    newArrivals: { value: 0, description: "New potential clients" },
+    totalSales: { value: 0, description: "This week" }
   });
   const [todaySessions, setTodaySessions] = useState<TodaySession[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -32,6 +33,16 @@ export const useStats = () => {
         setUserRole(profile.role);
 
         if (profile.role === 'coach') {
+          // Get start and end of current week
+          const now = new Date();
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - now.getDay());
+          startOfWeek.setHours(0, 0, 0, 0);
+          
+          const endOfWeek = new Date(now);
+          endOfWeek.setDate(startOfWeek.getDate() + 7);
+          endOfWeek.setHours(23, 59, 59, 999);
+
           // Fetch today's sessions
           const today = new Date();
           today.setHours(0, 0, 0, 0);
@@ -69,6 +80,16 @@ export const useStats = () => {
             .eq('role', 'client')
             .not(connectedClients?.length ? 'id' : 'id', 'in', 
               `(${(connectedClients || []).map(c => c.client_id).join(',')})`)
+
+          // Fetch this week's total sales from payments
+          const { data: weeklyPayments } = await supabase
+            .from('payments')
+            .select('amount')
+            .eq('status', 'paid')
+            .gte('paid_at', startOfWeek.toISOString())
+            .lte('paid_at', endOfWeek.toISOString());
+
+          const totalWeeklySales = weeklyPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
 
           // Fetch other stats
           const [activeClientsData, newClientsData, checkinsData, messagesData] = await Promise.all([
@@ -110,6 +131,10 @@ export const useStats = () => {
             newArrivals: {
               value: newArrivalsCount || 0,
               description: "New potential clients"
+            },
+            totalSales: {
+              value: totalWeeklySales,
+              description: "This week"
             }
           });
         }

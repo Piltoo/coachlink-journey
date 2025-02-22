@@ -4,6 +4,7 @@ export type Stats = {
   pendingCheckins: { value: number; description: string };
   unreadMessages: { value: number; description: string };
   newArrivals: { value: number; description: string };
+  totalSales: { value: number; description: string };
 };
 
 export type TodaySession = {

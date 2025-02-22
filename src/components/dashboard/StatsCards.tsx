@@ -30,9 +30,10 @@ export function StatsCards() {
           description={stats.pendingCheckins.description}
         />
         <StatCard
-          title="Pending Sessions"
-          value={0}
-          description="No pending sessions"
+          title="Total Sales"
+          value={stats.totalSales.value}
+          description={stats.totalSales.description}
+          prefix="$"
         />
       </div>
 
