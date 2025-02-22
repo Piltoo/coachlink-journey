@@ -24,16 +24,14 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Button
                 asChild
-                size="lg"
-                className="bg-accent hover:bg-accent/90 text-white rounded-lg text-base font-medium"
+                className="bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium"
               >
                 <Link to="/auth">Launch Platform</Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
-                size="lg"
-                className="border-accent text-accent hover:bg-accent hover:text-white rounded-lg text-base font-medium"
+                className="border-[#a7cca4] text-[#a7cca4] hover:bg-[#a7cca4]/10"
               >
                 <Link to="/auth">View Features</Link>
               </Button>
