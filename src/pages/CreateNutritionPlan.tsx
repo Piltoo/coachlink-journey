@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,7 @@ type MealItem = {
   name: string;
   quantity: number;
   unit: string;
+  optional: boolean;
   nutrition: {
     calories: number;
     protein: number;
@@ -46,6 +48,7 @@ export default function CreateNutritionPlan() {
   const [searchTerms, setSearchTerms] = useState<{ [key: string]: string }>({});
   const [searchResults, setSearchResults] = useState<{ [key: string]: Ingredient[] }>({});
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+  const [isOptional, setIsOptional] = useState<{ [key: string]: boolean }>({});
 
   const calculateNutrition = (ingredient: Ingredient, grams: number) => {
     const multiplier = grams / 100;
@@ -97,6 +100,7 @@ export default function CreateNutritionPlan() {
 
   const addIngredientToMeal = (mealId: string, ingredient: Ingredient) => {
     const quantity = quantities[mealId] || 100;
+    const optional = isOptional[mealId] || false;
     const nutrition = calculateNutrition(ingredient, quantity);
     
     setMeals(meals.map(meal => {
@@ -108,6 +112,7 @@ export default function CreateNutritionPlan() {
             name: ingredient.name,
             quantity: quantity,
             unit: 'g',
+            optional: optional,
             nutrition,
           }]
         };
@@ -115,9 +120,28 @@ export default function CreateNutritionPlan() {
       return meal;
     }));
 
+    // Reset search and form for this meal
     setSearchTerms({ ...searchTerms, [mealId]: '' });
     setSearchResults({ ...searchResults, [mealId]: [] });
     setQuantities({ ...quantities, [mealId]: 100 });
+    setIsOptional({ ...isOptional, [mealId]: false });
+  };
+
+  const toggleItemOptional = (mealId: string, itemId: string) => {
+    setMeals(meals.map(meal => {
+      if (meal.id === mealId) {
+        return {
+          ...meal,
+          items: meal.items.map(item => {
+            if (item.id === itemId) {
+              return { ...item, optional: !item.optional };
+            }
+            return item;
+          })
+        };
+      }
+      return meal;
+    }));
   };
 
   const calculateTotalNutrition = () => {
@@ -266,7 +290,19 @@ export default function CreateNutritionPlan() {
                     {meal.items.map((item) => (
                       <div key={item.id} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">{item.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{item.name}</span>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`optional-${item.id}`}
+                                checked={item.optional}
+                                onCheckedChange={() => toggleItemOptional(meal.id, item.id)}
+                              />
+                              <Label htmlFor={`optional-${item.id}`} className="text-sm text-muted-foreground">
+                                Optional
+                              </Label>
+                            </div>
+                          </div>
                           <span>{item.quantity}g</span>
                         </div>
                         <div className="text-sm text-muted-foreground grid grid-cols-5 gap-2">
@@ -307,6 +343,20 @@ export default function CreateNutritionPlan() {
                             min="0"
                           />
                         </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`optional-new-${meal.id}`}
+                          checked={isOptional[meal.id] || false}
+                          onCheckedChange={(checked) => {
+                            setIsOptional({
+                              ...isOptional,
+                              [meal.id]: checked === true
+                            });
+                          }}
+                        />
+                        <Label htmlFor={`optional-new-${meal.id}`}>Mark as optional ingredient</Label>
                       </div>
                       
                       {(searchResults[meal.id] || []).length > 0 && (
