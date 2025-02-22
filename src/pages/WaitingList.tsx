@@ -28,20 +28,31 @@ export default function WaitingList() {
       if (!user) return;
 
       const { data: pendingUsers, error } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, raw_user_meta_data')
-        .eq('registration_status', 'pending')
-        .eq('role', 'client'); // Only fetch clients
+        .from('coach_clients')
+        .select(`
+          client_id,
+          status,
+          profiles!coach_clients_client_id_fkey (
+            id,
+            full_name,
+            email,
+            raw_user_meta_data
+          )
+        `)
+        .eq('coach_id', user.id)
+        .eq('status', 'pending');
 
       if (error) throw error;
 
       if (pendingUsers) {
-        const formattedClients = pendingUsers.map(user => ({
-          id: user.id,
-          full_name: user.full_name,
-          email: user.email,
-          requested_services: (user.raw_user_meta_data as any)?.requested_services || []
-        }));
+        const formattedClients = pendingUsers
+          .filter(relation => relation.profiles) // Filter out any null profiles
+          .map(relation => ({
+            id: relation.profiles.id,
+            full_name: relation.profiles.full_name,
+            email: relation.profiles.email,
+            requested_services: (relation.profiles.raw_user_meta_data as any)?.requested_services || []
+          }));
         setPendingClients(formattedClients);
       }
     } catch (error) {
