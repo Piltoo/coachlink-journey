@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -78,7 +79,8 @@ const Clients = () => {
       const { data: coachRelationships, error: coachRelError } = await supabase
         .from('coach_clients')
         .select('client_id, status')
-        .eq('coach_id', user.id);
+        .eq('coach_id', user.id)
+        .neq('status', 'not_connected'); // Add this line to filter out not_connected status
 
       if (coachRelError) {
         throw coachRelError;
@@ -91,7 +93,8 @@ const Clients = () => {
       const { data: clientProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
-        .eq('role', 'client');
+        .eq('role', 'client')
+        .in('id', coachRelationships?.map(rel => rel.client_id) || []); // Only get profiles for connected clients
 
       if (profilesError) {
         throw profilesError;
