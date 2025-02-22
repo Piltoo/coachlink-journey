@@ -29,6 +29,8 @@ export default function WaitingList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log("Fetching clients for coach:", user.id);
+
       const { data, error } = await supabase
         .from('coach_clients')
         .select(`
@@ -54,6 +56,8 @@ export default function WaitingList() {
         return;
       }
 
+      console.log("Received data:", data);
+
       if (data) {
         const formattedClients = data.map(record => ({
           id: record.profiles.id,
@@ -62,6 +66,7 @@ export default function WaitingList() {
           requested_services: record.requested_services || [],
           registration_status: record.profiles.registration_status
         }));
+        console.log("Formatted clients:", formattedClients);
         setPendingClients(formattedClients);
       }
     } catch (error) {
@@ -79,6 +84,8 @@ export default function WaitingList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log("Activating client:", clientId);
+
       // Update the coach-client relationship status to active
       const { error: relationshipError } = await supabase
         .from('coach_clients')
@@ -86,7 +93,10 @@ export default function WaitingList() {
         .eq('client_id', clientId)
         .eq('coach_id', user.id);
 
-      if (relationshipError) throw relationshipError;
+      if (relationshipError) {
+        console.error("Relationship error:", relationshipError);
+        throw relationshipError;
+      }
 
       // Update the client's registration status to approved
       const { error: profileError } = await supabase
@@ -94,7 +104,10 @@ export default function WaitingList() {
         .update({ registration_status: 'approved' })
         .eq('id', clientId);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Profile error:", profileError);
+        throw profileError;
+      }
 
       setPendingClients(prev => prev.filter(client => client.id !== clientId));
       
