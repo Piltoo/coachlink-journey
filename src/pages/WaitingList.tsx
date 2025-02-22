@@ -51,26 +51,12 @@ export default function WaitingList() {
 
       console.log("Fetching clients for coach:", user.id);
 
-      // First, let's check if there are any coach_client relationships
-      const { data: relationshipCheck, error: relationshipError } = await supabase
-        .from('coach_clients')
-        .select('client_id')
-        .eq('coach_id', user.id)
-        .eq('status', 'not_connected');
-
-      if (relationshipError) {
-        console.error("Error checking relationships:", relationshipError);
-        return;
-      }
-
-      console.log("Found relationships:", relationshipCheck);
-
-      const { data, error } = await supabase
+      const { data: clients, error } = await supabase
         .from('coach_clients')
         .select(`
           client_id,
           requested_services,
-          profiles:client_id (
+          client:client_id (
             id,
             full_name,
             email,
@@ -90,12 +76,12 @@ export default function WaitingList() {
         return;
       }
 
-      console.log("Received data:", data);
+      console.log("Received data:", clients);
 
-      if (data) {
-        const clientPromises = data.map(async (record) => {
-          if (!record.profiles) {
-            console.log("No profile found for record:", record);
+      if (clients) {
+        const clientPromises = clients.map(async (record) => {
+          if (!record.client) {
+            console.log("No client found for record:", record);
             return null;
           }
 
@@ -118,11 +104,11 @@ export default function WaitingList() {
           ]);
 
           return {
-            id: record.profiles.id,
-            full_name: record.profiles.full_name,
-            email: record.profiles.email,
+            id: record.client.id,
+            full_name: record.client.full_name,
+            email: record.client.email,
             requested_services: record.requested_services || [],
-            registration_status: record.profiles.registration_status,
+            registration_status: record.client.registration_status,
             hasNutritionPlan: !!nutritionPlans.data,
             hasWorkoutPlan: !!workoutPlans.data,
             hasPersonalTraining: !!workoutSessions.data,
