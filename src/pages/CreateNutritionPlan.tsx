@@ -150,38 +150,37 @@ export default function CreateNutritionPlan() {
     const mealNutrition = meals[mealIndex].ingredients.reduce(
       (acc, { ingredient, quantity_grams }) => {
         const multiplier = quantity_grams / 100;
-        console.log('Calculating nutrition for ingredient:', {
+        
+        const calculatedValues = {
+          calories: Number(ingredient.calories_per_100g) * multiplier,
+          protein: Number(ingredient.protein_per_100g) * multiplier,
+          carbs: Number(ingredient.carbs_per_100g) * multiplier,
+          fats: Number(ingredient.fats_per_100g) * multiplier,
+          fiber: Number(ingredient.fiber_per_100g) * multiplier,
+        };
+
+        console.log('Ingredient calculation:', {
           name: ingredient.name,
           quantity: quantity_grams,
-          multiplier,
           originalValues: {
-            calories: ingredient.calories_per_100g,
-            protein: ingredient.protein_per_100g,
             carbs: ingredient.carbs_per_100g,
-            fats: ingredient.fats_per_100g,
             fiber: ingredient.fiber_per_100g
           },
-          calculatedValues: {
-            calories: ingredient.calories_per_100g * multiplier,
-            protein: ingredient.protein_per_100g * multiplier,
-            carbs: ingredient.carbs_per_100g * multiplier,
-            fats: ingredient.fats_per_100g * multiplier,
-            fiber: ingredient.fiber_per_100g * multiplier
-          }
+          calculated: calculatedValues
         });
-        
+
         return {
-          calories: acc.calories + (ingredient.calories_per_100g * multiplier),
-          protein: acc.protein + (ingredient.protein_per_100g * multiplier),
-          carbs: acc.carbs + (ingredient.carbs_per_100g * multiplier),
-          fats: acc.fats + (ingredient.fats_per_100g * multiplier),
-          fiber: acc.fiber + (ingredient.fiber_per_100g * multiplier),
+          calories: acc.calories + calculatedValues.calories,
+          protein: acc.protein + calculatedValues.protein,
+          carbs: acc.carbs + calculatedValues.carbs,
+          fats: acc.fats + calculatedValues.fats,
+          fiber: acc.fiber + calculatedValues.fiber,
         };
       },
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
     );
-    
-    console.log('Meal nutrition result:', mealNutrition);
+
+    console.log('Meal nutrition:', mealNutrition);
     return mealNutrition;
   };
 
