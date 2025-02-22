@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,28 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MealCard } from '@/components/nutrition-training/create-plan/MealCard';
 import { TotalNutrition } from '@/components/nutrition-training/create-plan/TotalNutrition';
-import { Ingredient, MealItem, Meal } from '@/components/nutrition-training/types/nutrition-training';
+import { Ingredient } from '@/components/nutrition-training/types';
+
+type MealItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  optional: boolean;
+  nutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+    fiber: number;
+  };
+};
+
+type Meal = {
+  id: string;
+  name: string;
+  items: MealItem[];
+};
 
 export default function CreateNutritionPlan() {
   const navigate = useNavigate();

@@ -50,3 +50,4 @@ export type MealNutrition = {
   fats: number;
   fiber: number;
 };
+

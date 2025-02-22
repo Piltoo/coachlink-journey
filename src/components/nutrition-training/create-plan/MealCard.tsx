@@ -4,14 +4,30 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { MealItem } from './MealItem';
 import { IngredientSearch } from './IngredientSearch';
-import { Ingredient, MealItem as MealItemType } from '../types/nutrition-training';
+import { Ingredient } from '../types';
+
+type MealItemType = {
+  id: string;
+  name: string;
+  quantity: number;
+  optional: boolean;
+  nutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+    fiber: number;
+  };
+};
+
+type MealType = {
+  id: string;
+  name: string;
+  items: MealItemType[];
+};
 
 type MealCardProps = {
-  meal: {
-    id: string;
-    name: string;
-    items: MealItemType[];
-  };
+  meal: MealType;
   searchTerm: string;
   searchResults: Ingredient[];
   quantity: number;
