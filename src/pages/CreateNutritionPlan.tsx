@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Plus, Search } from 'lucide-react';
@@ -120,7 +120,6 @@ export default function CreateNutritionPlan() {
       return meal;
     }));
 
-    // Reset search and form for this meal
     setSearchTerms({ ...searchTerms, [mealId]: '' });
     setSearchResults({ ...searchResults, [mealId]: [] });
     setQuantities({ ...quantities, [mealId]: 100 });
@@ -135,6 +134,34 @@ export default function CreateNutritionPlan() {
           items: meal.items.map(item => {
             if (item.id === itemId) {
               return { ...item, optional: !item.optional };
+            }
+            return item;
+          })
+        };
+      }
+      return meal;
+    }));
+  };
+
+  const updateItemQuantity = (mealId: string, itemId: string, newQuantity: number) => {
+    setMeals(meals.map(meal => {
+      if (meal.id === mealId) {
+        return {
+          ...meal,
+          items: meal.items.map(item => {
+            if (item.id === itemId) {
+              const gramsMultiplier = newQuantity / item.quantity;
+              return {
+                ...item,
+                quantity: newQuantity,
+                nutrition: {
+                  calories: item.nutrition.calories * gramsMultiplier,
+                  protein: item.nutrition.protein * gramsMultiplier,
+                  carbs: item.nutrition.carbs * gramsMultiplier,
+                  fats: item.nutrition.fats * gramsMultiplier,
+                  fiber: item.nutrition.fiber * gramsMultiplier,
+                }
+              };
             }
             return item;
           })
@@ -303,7 +330,16 @@ export default function CreateNutritionPlan() {
                               </Label>
                             </div>
                           </div>
-                          <span>{item.quantity}g</span>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updateItemQuantity(meal.id, item.id, Number(e.target.value))}
+                              className="w-20"
+                              min="0"
+                            />
+                            <span className="text-sm text-muted-foreground">g</span>
+                          </div>
                         </div>
                         <div className="text-sm text-muted-foreground grid grid-cols-5 gap-2">
                           <div>Calories: {item.nutrition.calories.toFixed(1)}</div>
