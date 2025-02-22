@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, Search } from 'lucide-react';
+import { ArrowLeft, Plus, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -216,6 +216,18 @@ export default function CreateNutritionPlan() {
     ));
   };
 
+  const removeIngredient = (mealId: string, itemId: string) => {
+    setMeals(meals.map(meal => {
+      if (meal.id === mealId) {
+        return {
+          ...meal,
+          items: meal.items.filter(item => item.id !== itemId)
+        };
+      }
+      return meal;
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -349,6 +361,15 @@ export default function CreateNutritionPlan() {
                               min="0"
                             />
                             <span className="text-sm text-muted-foreground">g</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => removeIngredient(meal.id, item.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                         <div className="text-sm text-muted-foreground grid grid-cols-5 gap-2">
