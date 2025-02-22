@@ -6,6 +6,7 @@ import { NutritionPlansSection } from "@/components/nutrition-training/Nutrition
 import { IngredientsSection } from "@/components/nutrition-training/IngredientsSection";
 import { ExercisesSection } from "@/components/nutrition-training/ExercisesSection";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 type Ingredient = {
   id: string;
@@ -33,6 +34,7 @@ export default function NutritionAndTraining() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -69,8 +71,15 @@ export default function NutritionAndTraining() {
         .select('*')
         .order('name');
 
-      if (error) throw error;
-      setIngredients(data);
+      if (error) {
+        toast({
+          title: "Error fetching ingredients",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
+      setIngredients(data || []);
     } catch (error) {
       console.error("Error fetching ingredients:", error);
     }

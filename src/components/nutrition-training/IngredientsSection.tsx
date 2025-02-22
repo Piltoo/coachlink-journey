@@ -20,7 +20,6 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
   const [groups, setGroups] = useState<string[]>([]);
 
   useEffect(() => {
-    // Get unique groups from the user's ingredients
     const uniqueGroups = Array.from(new Set(
       ingredients
         .map(ingredient => ingredient.group_name)
@@ -35,6 +34,12 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
   const handleIngredientClick = (ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);
     setShowEditIngredient(true);
+  };
+
+  const handleCloseDialog = () => {
+    setShowEditIngredient(false);
+    setSelectedIngredient(null);
+    onIngredientAdded(); // Refresh the list after closing dialog
   };
 
   const filteredIngredients = ingredients.filter(ingredient => {
@@ -102,9 +107,9 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
 
       <EditIngredientDialog
         isOpen={showEditIngredient}
-        onClose={() => setShowEditIngredient(false)}
+        onClose={handleCloseDialog}
         ingredient={selectedIngredient}
-        onIngredientUpdated={onIngredientAdded}
+        onIngredientUpdated={handleCloseDialog}
         groups={groups}
       />
     </div>
