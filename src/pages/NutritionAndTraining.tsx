@@ -31,7 +31,7 @@ type Exercise = {
 };
 
 export default function NutritionAndTraining() {
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const { toast } = useToast();
@@ -40,22 +40,28 @@ export default function NutritionAndTraining() {
     const fetchUserRole = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setHasAccess(false);
+          return;
+        }
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('user_role')
+          .select('user_role, role')
           .eq('id', user.id)
           .single();
 
         if (error) {
           console.error("Error fetching profile:", error);
+          setHasAccess(false);
           return;
         }
 
-        setUserRole(profile?.user_role);
+        // Check both user_role and role fields for 'coach'
+        setHasAccess(profile?.user_role === 'coach' || profile?.role === 'coach');
       } catch (error) {
         console.error("Error in fetchUserRole:", error);
+        setHasAccess(false);
       }
     };
 
@@ -99,7 +105,7 @@ export default function NutritionAndTraining() {
     }
   };
 
-  if (userRole !== 'coach') {
+  if (!hasAccess) {
     return (
       <div className="min-h-screen bg-background pt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
