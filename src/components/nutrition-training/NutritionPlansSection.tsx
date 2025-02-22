@@ -26,14 +26,22 @@ export function NutritionPlansSection() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
+      // First get the templates
+      const { data: templates, error } = await supabase
         .from('nutrition_plan_templates')
         .select('*')
         .eq('coach_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setNutritionPlans(data || []);
+
+      // For each template, parse the meals JSON data
+      const plansWithMeals = templates.map(template => ({
+        ...template,
+        meals: template.meals || []
+      }));
+
+      setNutritionPlans(plansWithMeals);
     } catch (error) {
       console.error('Error fetching nutrition plans:', error);
       toast({
@@ -61,12 +69,13 @@ export function NutritionPlansSection() {
       meal.ingredients?.forEach((ingredient: any) => {
         const quantity = ingredient.quantity || 0;
         const multiplier = quantity / 100;
+        const nutrition = ingredient.nutrition || {};
 
-        totals.calories += (ingredient.nutrition?.calories || 0) * multiplier;
-        totals.protein += (ingredient.nutrition?.protein || 0) * multiplier;
-        totals.carbs += (ingredient.nutrition?.carbs || 0) * multiplier;
-        totals.fats += (ingredient.nutrition?.fats || 0) * multiplier;
-        totals.fiber += (ingredient.nutrition?.fiber || 0) * multiplier;
+        totals.calories += (nutrition.calories || 0) * multiplier;
+        totals.protein += (nutrition.protein || 0) * multiplier;
+        totals.carbs += (nutrition.carbs || 0) * multiplier;
+        totals.fats += (nutrition.fats || 0) * multiplier;
+        totals.fiber += (nutrition.fiber || 0) * multiplier;
       });
     });
 
