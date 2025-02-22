@@ -13,16 +13,7 @@ type PendingClient = {
   full_name: string | null;
   email: string;
   requested_services: string[];
-};
-
-type CoachClientRecord = {
-  client_id: string;
-  requested_services: string[] | null;
-  client: {
-    id: string;
-    full_name: string | null;
-    email: string;
-  };
+  registration_status: string | null;
 };
 
 export default function WaitingList() {
@@ -38,23 +29,22 @@ export default function WaitingList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log("Current user ID:", user.id); // Debug log
+      console.log("Current user ID:", user.id);
 
       const { data, error } = await supabase
         .from('coach_clients')
         .select(`
           client_id,
           requested_services,
-          client:profiles!coach_clients_client_id_fkey (
+          profiles!coach_clients_client_id_fkey (
             id,
             full_name,
-            email
+            email,
+            registration_status
           )
         `)
         .eq('coach_id', user.id)
         .eq('status', 'pending');
-
-      console.log("Query response:", { data, error }); // Debug log
 
       if (error) {
         console.error("Error fetching clients:", error);
@@ -67,13 +57,14 @@ export default function WaitingList() {
       }
 
       if (data) {
-        const formattedClients = (data as CoachClientRecord[]).map(record => ({
-          id: record.client.id,
-          full_name: record.client.full_name,
-          email: record.client.email,
-          requested_services: record.requested_services || []
+        const formattedClients = data.map(record => ({
+          id: record.profiles.id,
+          full_name: record.profiles.full_name,
+          email: record.profiles.email,
+          requested_services: record.requested_services || [],
+          registration_status: record.profiles.registration_status
         }));
-        console.log("Formatted clients:", formattedClients); // Debug log
+        console.log("Formatted clients:", formattedClients);
         setPendingClients(formattedClients);
       }
     } catch (error) {
@@ -88,12 +79,25 @@ export default function WaitingList() {
 
   const handleClientResponse = async (clientId: string, approved: boolean) => {
     try {
-      const { error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Update the coach_clients relationship status
+      const { error: relationshipError } = await supabase
         .from('coach_clients')
         .update({ status: approved ? 'active' : 'rejected' })
-        .eq('client_id', clientId);
+        .eq('client_id', clientId)
+        .eq('coach_id', user.id);
 
-      if (error) throw error;
+      if (relationshipError) throw relationshipError;
+
+      // Update the client's registration status
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ registration_status: approved ? 'approved' : 'rejected' })
+        .eq('id', clientId);
+
+      if (profileError) throw profileError;
 
       setPendingClients(prev => prev.filter(client => client.id !== clientId));
       

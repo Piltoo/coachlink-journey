@@ -12,6 +12,7 @@ type PendingClient = {
   full_name: string | null;
   email: string;
   requested_services: string[];
+  registration_status: string | null;
 };
 
 export function WaitingList() {
@@ -19,41 +20,61 @@ export function WaitingList() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchPendingClients = async () => {
+    fetchPendingClients();
+  }, []);
+
+  const fetchPendingClients = async () => {
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: clients, error: clientsError } = await supabase
+      console.log("Current user ID:", user.id);
+
+      const { data, error } = await supabase
         .from('coach_clients')
         .select(`
           client_id,
+          requested_services,
           profiles!coach_clients_client_id_fkey (
             id,
             full_name,
-            email
+            email,
+            registration_status
           )
         `)
         .eq('coach_id', user.id)
         .eq('status', 'pending');
 
-      if (clientsError) {
-        console.error("Error fetching clients:", clientsError);
+      if (error) {
+        console.error("Error fetching clients:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch pending clients",
+          variant: "destructive",
+        });
         return;
       }
 
-      if (clients) {
-        const formattedClients = clients.map(c => ({
-          id: c.profiles.id,
-          full_name: c.profiles.full_name,
-          email: c.profiles.email,
-          requested_services: []
+      if (data) {
+        const formattedClients = data.map(record => ({
+          id: record.profiles.id,
+          full_name: record.profiles.full_name,
+          email: record.profiles.email,
+          requested_services: record.requested_services || [],
+          registration_status: record.profiles.registration_status
         }));
+        console.log("Formatted clients:", formattedClients);
         setPendingClients(formattedClients);
       }
-    };
-
-    fetchPendingClients();
-  }, []);
+    } catch (error) {
+      console.error("Error in fetchPendingClients:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch pending clients",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <GlassCard className="p-4 bg-white/40 backdrop-blur-lg border border-green-100 w-full md:w-[300px] h-[144px] flex flex-col">
