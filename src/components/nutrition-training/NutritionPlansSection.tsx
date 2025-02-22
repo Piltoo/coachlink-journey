@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Send, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit, Send, ChevronDown, ChevronUp, Copy, Trash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { CreateNutritionPlanDialog } from "./CreateNutritionPlanDialog";
@@ -134,6 +133,66 @@ export function NutritionPlansSection() {
     }));
   };
 
+  const handleCopyTemplate = async (template: Template) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const newTitle = `${template.title} (Copy)`;
+      const { error } = await supabase
+        .from('nutrition_plan_templates')
+        .insert([
+          {
+            title: newTitle,
+            description: template.description,
+            meals: template.meals,
+            coach_id: user.id,
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Template copied successfully",
+      });
+
+      refetch();
+    } catch (error) {
+      console.error('Error copying template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy template",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      const { error } = await supabase
+        .from('nutrition_plan_templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Template deleted successfully",
+      });
+
+      refetch();
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete template",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -158,17 +217,35 @@ export function NutritionPlansSection() {
                 {template.description}
               </p>
               <div className="space-y-4">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setSelectedTemplate(template);
-                    setIsCreateDialogOpen(true);
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Template
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setSelectedTemplate(template);
+                      setIsCreateDialogOpen(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleCopyTemplate(template)}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleDeleteTemplate(template.id)}
+                  >
+                    <Trash className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
                 <div className="space-y-2">
                   <Button
                     variant="outline"
