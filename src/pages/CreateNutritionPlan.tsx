@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
@@ -49,7 +48,17 @@ export default function CreateNutritionPlan() {
         .select("*")
         .order("name");
       if (error) throw error;
-      return data as Ingredient[];
+      
+      return data?.map((item: any) => ({
+        id: `shared_${item.name.toLowerCase().replace(/\s+/g, '_')}`,
+        name: item.name || '',
+        calories_per_100g: Number(item.calories_per_100g) || 0,
+        protein_per_100g: Number(item.protein_per_100g) || 0,
+        carbs_per_100g: Number(item.carbs_per_100g) || 0,
+        fats_per_100g: Number(item.fats_per_100g) || 0,
+        fiber_per_100g: Number(item.fibers_per_100g) || 0,
+        group_name: item.grop || null
+      })) as Ingredient[];
     },
   });
 
