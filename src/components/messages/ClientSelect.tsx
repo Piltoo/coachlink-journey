@@ -14,7 +14,7 @@ interface ClientSelectProps {
   disabled?: boolean;
 }
 
-export function ClientSelect({ clients, selectedClient, onSelect, disabled }: ClientSelectProps) {
+export function ClientSelect({ clients = [], selectedClient, onSelect, disabled }: ClientSelectProps) {
   return (
     <div className="space-y-4">
       <h2 className="font-semibold">Your Clients</h2>
@@ -22,7 +22,7 @@ export function ClientSelect({ clients, selectedClient, onSelect, disabled }: Cl
         <CommandInput placeholder="Search clients..." disabled={disabled} />
         <CommandEmpty>No clients found.</CommandEmpty>
         <CommandGroup>
-          {clients.map((client) => (
+          {(clients || []).map((client) => (
             <CommandItem
               key={client.id}
               onSelect={() => onSelect(client)}
