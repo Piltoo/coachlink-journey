@@ -10,6 +10,7 @@ import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import Settings from "@/pages/Settings";
 import Clients from "@/pages/Clients";
+import ClientProfile from "@/pages/ClientProfile";
 import Messages from "@/pages/Messages";
 import NotFound from "@/pages/NotFound";
 import NutritionAndTraining from "@/pages/NutritionAndTraining";
@@ -33,6 +34,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/settings/*" element={<Settings />} />
               <Route path="/clients" element={<Clients />} />
+              <Route path="/clients/:id" element={<ClientProfile />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/new-arrivals" element={<NewArrivals />} />
               <Route path="/nutrition-and-training/*" element={<NutritionAndTraining />} />

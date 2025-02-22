@@ -63,8 +63,8 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
   };
 
   const handleDeleteClient = async (clientId: string) => {
-    // Prompt for password confirmation using a dialog
-    const { value: passwordConfirmation } = await prompt('Please enter your password to confirm deletion:');
+    // Prompt for password confirmation using window.prompt
+    const passwordConfirmation = window.prompt('Please enter your password to confirm deletion:');
     
     if (!passwordConfirmation) {
       return;
