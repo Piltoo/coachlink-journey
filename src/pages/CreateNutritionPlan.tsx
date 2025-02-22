@@ -92,6 +92,24 @@ export default function CreateNutritionPlan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      const mealsData = meals.map(meal => ({
+        name: meal.name,
+        ingredients: meal.ingredients.map(ing => ({
+          ingredient_id: ing.ingredient_id,
+          ingredient: {
+            ...ing.ingredient,
+            calories_per_100g: Number(ing.ingredient.calories_per_100g),
+            protein_per_100g: Number(ing.ingredient.protein_per_100g),
+            carbs_per_100g: Number(ing.ingredient.carbs_per_100g),
+            fats_per_100g: Number(ing.ingredient.fats_per_100g),
+            fiber_per_100g: Number(ing.ingredient.fiber_per_100g)
+          },
+          quantity_grams: Number(ing.quantity_grams)
+        }))
+      }));
+
+      console.log('Saving meal plan with data:', mealsData);
+
       const { data, error } = await supabase
         .from('nutrition_plan_templates')
         .insert([
@@ -99,14 +117,7 @@ export default function CreateNutritionPlan() {
             coach_id: user.id,
             title,
             description,
-            meals: meals.map(meal => ({
-              name: meal.name,
-              ingredients: meal.ingredients.map(ing => ({
-                ingredient_id: ing.ingredient_id,
-                ingredient: ing.ingredient,
-                quantity_grams: ing.quantity_grams
-              }))
-            }))
+            meals: mealsData
           }
         ])
         .select()
@@ -156,28 +167,24 @@ export default function CreateNutritionPlan() {
     );
     if (!ingredient) return;
 
-    console.log('Adding ingredient with nutrition values:', {
-      name: ingredient.name,
-      calories: ingredient.calories_per_100g,
-      protein: ingredient.protein_per_100g,
-      carbs: ingredient.carbs_per_100g,
-      fats: ingredient.fats_per_100g,
-      fiber: ingredient.fiber_per_100g
-    });
+    const processedIngredient = {
+      ...ingredient,
+      calories_per_100g: Number(ingredient.calories_per_100g),
+      protein_per_100g: Number(ingredient.protein_per_100g),
+      carbs_per_100g: Number(ingredient.carbs_per_100g),
+      fats_per_100g: Number(ingredient.fats_per_100g),
+      fiber_per_100g: Number(ingredient.fiber_per_100g)
+    };
+
+    console.log('Adding ingredient with processed values:', processedIngredient);
 
     const updatedMeals = [...meals];
     updatedMeals[mealIndex].ingredients.push({
       ingredient_id: ingredient.id,
-      ingredient: {
-        ...ingredient,
-        calories_per_100g: Number(ingredient.calories_per_100g),
-        protein_per_100g: Number(ingredient.protein_per_100g),
-        carbs_per_100g: Number(ingredient.carbs_per_100g),
-        fats_per_100g: Number(ingredient.fats_per_100g),
-        fiber_per_100g: Number(ingredient.fiber_per_100g),
-      },
-      quantity_grams: parseFloat(quantity),
+      ingredient: processedIngredient,
+      quantity_grams: Number(quantity)
     });
+
     setMeals(updatedMeals);
     setSelectedIngredient("");
     setQuantity("");
@@ -194,30 +201,30 @@ export default function CreateNutritionPlan() {
   const calculateMealNutrition = (mealIndex: number): MealNutrition => {
     const mealNutrition = meals[mealIndex].ingredients.reduce(
       (acc, { ingredient, quantity_grams }) => {
-        const multiplier = quantity_grams / 100;
+        const multiplier = Number(quantity_grams) / 100;
         
-        console.log('Raw ingredient values:', {
-          name: ingredient.name,
-          carbs: ingredient.carbs_per_100g,
-          fiber: ingredient.fiber_per_100g,
-          quantity: quantity_grams
-        });
+        const calories = Number(ingredient.calories_per_100g) * multiplier;
+        const protein = Number(ingredient.protein_per_100g) * multiplier;
+        const carbs = Number(ingredient.carbs_per_100g) * multiplier;
+        const fats = Number(ingredient.fats_per_100g) * multiplier;
+        const fiber = Number(ingredient.fiber_per_100g) * multiplier;
 
-        const calculatedCarbs = ingredient.carbs_per_100g * multiplier;
-        const calculatedFiber = ingredient.fiber_per_100g * multiplier;
-        
-        console.log('Calculated values:', {
-          name: ingredient.name,
-          carbs: calculatedCarbs,
-          fiber: calculatedFiber
+        console.log('Calculating nutrition for:', {
+          ingredient: ingredient.name,
+          quantity_grams,
+          calories,
+          protein,
+          carbs,
+          fats,
+          fiber
         });
 
         return {
-          calories: acc.calories + (ingredient.calories_per_100g * multiplier),
-          protein: acc.protein + (ingredient.protein_per_100g * multiplier),
-          carbs: acc.carbs + calculatedCarbs,
-          fats: acc.fats + (ingredient.fats_per_100g * multiplier),
-          fiber: acc.fiber + calculatedFiber,
+          calories: acc.calories + calories,
+          protein: acc.protein + protein,
+          carbs: acc.carbs + carbs,
+          fats: acc.fats + fats,
+          fiber: acc.fiber + fiber
         };
       },
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
@@ -267,6 +274,38 @@ export default function CreateNutritionPlan() {
 
     saveMealPlanMutation.mutate();
   };
+
+  const loadTemplateData = async (templateId: string) => {
+    const { data, error } = await supabase
+      .from('nutrition_plan_templates')
+      .select('*')
+      .eq('id', templateId)
+      .single();
+
+    if (error) {
+      console.error('Error loading template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load meal plan template",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data) {
+      setTitle(data.title);
+      setDescription(data.description || '');
+      setMeals(data.meals || []);
+    }
+  };
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const templateId = params.get('template');
+    if (templateId) {
+      loadTemplateData(templateId);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background py-8">

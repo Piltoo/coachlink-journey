@@ -21,7 +21,35 @@ export function NutritionPlansSection() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Process the templates to calculate totals
+      return data.map(template => {
+        const totalNutrition = (template.meals || []).reduce((acc, meal) => {
+          const mealNutrition = (meal.ingredients || []).reduce((mealAcc, { ingredient, quantity_grams }) => {
+            const multiplier = Number(quantity_grams) / 100;
+            return {
+              calories: mealAcc.calories + (Number(ingredient.calories_per_100g) * multiplier),
+              protein: mealAcc.protein + (Number(ingredient.protein_per_100g) * multiplier),
+              carbs: mealAcc.carbs + (Number(ingredient.carbs_per_100g) * multiplier),
+              fats: mealAcc.fats + (Number(ingredient.fats_per_100g) * multiplier),
+              fiber: mealAcc.fiber + (Number(ingredient.fiber_per_100g) * multiplier)
+            };
+          }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
+
+          return {
+            calories: acc.calories + mealNutrition.calories,
+            protein: acc.protein + mealNutrition.protein,
+            carbs: acc.carbs + mealNutrition.carbs,
+            fats: acc.fats + mealNutrition.fats,
+            fiber: acc.fiber + mealNutrition.fiber
+          };
+        }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
+
+        return {
+          ...template,
+          totalNutrition
+        };
+      });
     }
   });
 
@@ -55,6 +83,12 @@ export function NutritionPlansSection() {
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {template.description || "No description provided"}
               </p>
+              <div className="mt-4 space-y-1 text-sm text-muted-foreground">
+                <p>Total Calories: {template.totalNutrition.calories.toFixed(0)} kcal</p>
+                <p>Protein: {template.totalNutrition.protein.toFixed(1)}g</p>
+                <p>Carbs: {template.totalNutrition.carbs.toFixed(1)}g</p>
+                <p>Fats: {template.totalNutrition.fats.toFixed(1)}g</p>
+              </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
