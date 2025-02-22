@@ -56,7 +56,7 @@ export default function WaitingList() {
         .select(`
           client_id,
           requested_services,
-          profiles!coach_clients_client_id_fkey (
+          profiles!inner (
             id,
             full_name,
             email,
@@ -84,17 +84,17 @@ export default function WaitingList() {
             supabase
               .from('nutrition_plans')
               .select('id')
-              .eq('client_id', record.profiles.id)
+              .eq('client_id', record.client_id)
               .maybeSingle(),
             supabase
               .from('workout_plans')
               .select('id')
-              .eq('client_id', record.profiles.id)
+              .eq('client_id', record.client_id)
               .maybeSingle(),
             supabase
               .from('workout_sessions')
               .select('id')
-              .eq('client_id', record.profiles.id)
+              .eq('client_id', record.client_id)
               .maybeSingle(),
           ]);
 
