@@ -63,8 +63,8 @@ export default function CreateNutritionPlan() {
 
       if (plan) {
         setTitle(plan.title);
-        if (plan.meals) {
-          const loadedMeals: Meal[] = plan.meals.map((meal: any) => ({
+        if (plan.meals && Array.isArray(plan.meals)) {
+          const loadedMeals: Meal[] = (plan.meals as any[]).map((meal) => ({
             id: meal.id || Math.random().toString(),
             name: meal.name,
             items: meal.items.map((item: any) => ({
