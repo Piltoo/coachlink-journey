@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { AddIngredientDialog } from "./AddIngredientDialog";
 import { EditIngredientDialog } from "./EditIngredientDialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Ingredient } from "./types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Pencil } from "lucide-react";
 
 type IngredientsSectionProps = {
   ingredients: Ingredient[];
@@ -82,18 +84,28 @@ export function IngredientsSection({ ingredients, onIngredientAdded }: Ingredien
             filteredIngredients.map((ingredient) => (
               <div 
                 key={ingredient.id} 
-                className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out cursor-pointer hover:bg-white/80"
-                onClick={() => handleIngredientClick(ingredient)}
+                className="p-4 bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-lg transition-all duration-200 ease-in-out hover:bg-white/80"
               >
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className="font-medium">{ingredient.name}</h3>
                     <p className="text-sm text-gray-500">{ingredient.group_name}</p>
                   </div>
-                  <p className="text-sm text-gray-500">
-                    Per 100g: {ingredient.calories_per_100g} cal | P: {ingredient.protein_per_100g}g | 
-                    C: {ingredient.carbs_per_100g}g | F: {ingredient.fats_per_100g}g | Fiber: {ingredient.fiber_per_100g}g
-                  </p>
+                  <div className="flex items-center gap-4">
+                    <p className="text-sm text-gray-500">
+                      Per 100g: {ingredient.calories_per_100g} cal | P: {ingredient.protein_per_100g}g | 
+                      C: {ingredient.carbs_per_100g}g | F: {ingredient.fats_per_100g}g | Fiber: {ingredient.fiber_per_100g}g
+                    </p>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleIngredientClick(ingredient)}
+                      className="ml-2"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      <span className="sr-only">Edit {ingredient.name}</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))
