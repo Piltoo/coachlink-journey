@@ -70,7 +70,7 @@ export default function WaitingList() {
         .select(`
           client_id,
           requested_services,
-          profiles (
+          profiles:client_id (
             id,
             full_name,
             email,
