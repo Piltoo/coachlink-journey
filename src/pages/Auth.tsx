@@ -77,6 +77,7 @@ const Auth = () => {
       // Generate a temporary password
       const tempPassword = Math.random().toString(36).slice(-8);
 
+      console.log("Starting sign up process...");
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: tempPassword,
@@ -87,29 +88,44 @@ const Auth = () => {
         },
       });
 
-      if (signUpError) throw signUpError;
-      if (!signUpData.user) throw new Error("Failed to create user");
+      if (signUpError) {
+        console.error("Sign up error:", signUpError);
+        throw signUpError;
+      }
+      
+      if (!signUpData.user) {
+        console.error("No user data returned");
+        throw new Error("Failed to create user");
+      }
 
+      console.log("User created successfully:", signUpData.user.id);
+
+      // Create the coach-client relationship
       const { error: relationError } = await supabase
         .from('coach_clients')
-        .insert({
+        .insert([{
           client_id: signUpData.user.id,
-          coach_id: process.env.VITE_DEFAULT_COACH_ID,
+          coach_id: import.meta.env.VITE_DEFAULT_COACH_ID, // Note: Changed from process.env to import.meta.env
           status: 'pending',
           requested_services: selectedServices
-        });
+        }]);
 
-      if (relationError) throw relationError;
+      if (relationError) {
+        console.error("Relation error:", relationError);
+        throw relationError;
+      }
 
+      console.log("Coach-client relationship created successfully");
       setShowConfirmation(true);
       setTimeout(() => {
         navigate("/");
       }, 5000);
 
     } catch (error: any) {
+      console.error("Full error:", error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
