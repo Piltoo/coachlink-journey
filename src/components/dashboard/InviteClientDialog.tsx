@@ -42,67 +42,29 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
     setIsInviting(true);
 
     try {
-      // First get the current coach's ID
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) throw userError;
-      if (!currentUser) {
-        throw new Error("No authenticated user found");
-      }
-
-      // Create new user account
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: newClientEmail,
-        password: newClientPassword,
-        options: {
-          data: {
-            full_name: newClientName,
-            role: 'client'
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      if (signUpError) throw signUpError;
-
-      if (signUpData.user) {
-        // Create the coach-client relationship
-        const { error: relationError } = await supabase
-          .from('coach_clients')
-          .insert({
-            coach_id: currentUser.id,
-            client_id: signUpData.user.id,
-            status: 'active'
-          });
-
-        if (relationError) throw relationError;
-
-        // Update the profile with additional details
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            full_name: newClientName,
-            role: 'client'
-          })
-          .eq('id', signUpData.user.id);
-
-        if (profileError) throw profileError;
-
-        toast({
-          title: "Success",
-          description: "Client account created successfully",
+      const { data, error } = await supabase
+        .rpc('invite_client', {
+          client_email: newClientEmail,
+          client_name: newClientName,
+          client_password: newClientPassword
         });
 
-        // Reset form and close dialog
-        setNewClientEmail("");
-        setNewClientName("");
-        setNewClientPassword("");
-        setIsOpen(false);
+      if (error) throw error;
 
-        // Call the callback to refresh the client list if provided
-        if (onClientAdded) {
-          onClientAdded();
-        }
+      toast({
+        title: "Success",
+        description: "Client account created successfully",
+      });
+
+      // Reset form and close dialog
+      setNewClientEmail("");
+      setNewClientName("");
+      setNewClientPassword("");
+      setIsOpen(false);
+
+      // Call the callback to refresh the client list if provided
+      if (onClientAdded) {
+        onClientAdded();
       }
     } catch (error: any) {
       toast({
