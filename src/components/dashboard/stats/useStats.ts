@@ -70,18 +70,14 @@ export const useStats = () => {
             setTodaySessions(sessions);
           }
 
-          // Get all client IDs that are already connected to coaches
-          const { data: connectedClients } = await supabase
+          // Get count of not connected clients (new arrivals)
+          const { data: notConnectedClients, error: notConnectedError } = await supabase
             .from('coach_clients')
-            .select('client_id');
-          
-          // Get count of unconnected clients (new arrivals)
-          const { count: newArrivalsCount } = await supabase
-            .from('profiles')
-            .select('id', { count: 'exact', head: true })
-            .eq('role', 'client')
-            .not(connectedClients?.length ? 'id' : 'id', 'in', 
-              `(${(connectedClients || []).map(c => c.client_id).join(',')})`)
+            .select('client_id', { count: 'exact' })
+            .eq('coach_id', user.id)
+            .eq('status', 'not_connected');
+
+          if (notConnectedError) throw notConnectedError;
 
           // Fetch this week's total sales from payments
           const { data: weeklyPayments } = await supabase
@@ -131,7 +127,7 @@ export const useStats = () => {
               description: "New messages"
             },
             newArrivals: {
-              value: newArrivalsCount || 0,
+              value: notConnectedClients?.length || 0,
               description: "New potential clients"
             },
             totalSales: {
