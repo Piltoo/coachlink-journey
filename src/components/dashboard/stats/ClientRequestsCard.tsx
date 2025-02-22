@@ -1,106 +1,66 @@
 
 import { useEffect, useState } from "react";
+import { Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { GlassCard } from "@/components/ui/glass-card";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-
-type ClientRequest = {
-  id: string;
-  client: {
-    id: string;
-    full_name: string | null;
-    email: string;
-  };
-  status: string;
-};
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const ClientRequestsCard = () => {
-  const [requests, setRequests] = useState<ClientRequest[]>([]);
+  const [requestCount, setRequestCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchRequests();
-  }, []);
+    const fetchNewArrivalsCount = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-  const fetchRequests = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+        const { data: notConnectedClients, error } = await supabase
+          .from('coach_clients')
+          .select('client_id', { count: 'exact' })
+          .eq('coach_id', user.id)
+          .eq('status', 'not_connected');
 
-    const { data } = await supabase
-      .from('coach_clients')
-      .select(`
-        id,
-        status,
-        client:profiles!coach_clients_client_id_fkey (
-          id,
-          full_name,
-          email
-        )
-      `)
-      .eq('coach_id', user.id)
-      .eq('status', 'pending');
+        if (error) throw error;
 
-    if (data) {
-      setRequests(data);
-    }
-  };
+        setRequestCount(notConnectedClients?.length || 0);
+      } catch (error: any) {
+        console.error("Error fetching new arrivals count:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load new arrivals count",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handleRequest = async (requestId: string, clientId: string, approved: boolean) => {
-    const { error } = await supabase
-      .from('coach_clients')
-      .update({ status: approved ? 'active' : 'rejected' })
-      .eq('id', requestId);
+    fetchNewArrivalsCount();
+  }, [toast]);
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update request status",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Success",
-      description: `Client request ${approved ? 'approved' : 'rejected'} successfully`,
-    });
-    fetchRequests();
-  };
+  if (isLoading) {
+    return (
+      <GlassCard className="p-6">
+        <Skeleton className="h-12 w-12 rounded-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[100px]" />
+          <Skeleton className="h-8 w-[60px]" />
+        </div>
+      </GlassCard>
+    );
+  }
 
   return (
-    <GlassCard className="col-span-2 bg-white/40 backdrop-blur-lg border border-green-100">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-sm font-medium text-primary/80">Client Requests</h2>
-        <span className="text-xs text-accent">{requests.length} pending</span>
+    <GlassCard className="p-6">
+      <div className="rounded-full bg-orange-100 p-3 w-fit">
+        <Users className="w-6 h-6 text-orange-600" />
       </div>
-      <div className="space-y-3">
-        {requests.length > 0 ? (
-          requests.map((request) => (
-            <div key={request.id} className="flex justify-between items-center p-2 bg-white/50 rounded-lg">
-              <p className="font-medium">{request.client.full_name || request.client.email}</p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleRequest(request.id, request.client.id, true)}
-                  className="h-8 px-3 text-xs bg-green-500 hover:bg-green-600 text-white"
-                >
-                  Accept
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleRequest(request.id, request.client.id, false)}
-                  className="h-8 px-3 text-xs"
-                >
-                  Decline
-                </Button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-sm text-muted-foreground">No pending client requests</p>
-        )}
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">New Arrivals</p>
+        <p className="text-2xl font-bold">{requestCount}</p>
       </div>
     </GlassCard>
   );
