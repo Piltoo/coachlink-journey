@@ -76,7 +76,7 @@ const Auth = () => {
           </div>
           <Button
             type="submit"
-            className="w-full bg-accent hover:bg-accent/90"
+            className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium"
             disabled={isLoading}
           >
             {isLoading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
@@ -85,7 +85,7 @@ const Auth = () => {
         <div className="mt-4 text-center">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-accent hover:underline"
+            className="text-[#a7cca4] hover:underline"
           >
             {isSignUp
               ? "Already have an account? Sign in"
