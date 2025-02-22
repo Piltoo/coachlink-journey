@@ -24,41 +24,50 @@ export default function WaitingList() {
   }, []);
 
   const fetchPendingClients = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data: clients, error: clientsError } = await supabase
-      .from('coach_clients')
-      .select(`
-        client_id,
-        requested_services,
-        profiles!coach_clients_client_id_fkey (
-          id,
-          full_name,
-          email
-        )
-      `)
-      .eq('coach_id', user.id)
-      .eq('status', 'pending');
+      const { data, error } = await supabase
+        .from('coach_clients')
+        .select(`
+          client_id,
+          requested_services,
+          profiles:client_id (
+            id,
+            full_name,
+            email
+          )
+        `)
+        .eq('coach_id', user.id)
+        .eq('status', 'pending');
 
-    if (clientsError) {
-      console.error("Error fetching clients:", clientsError);
+      if (error) {
+        console.error("Error fetching clients:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch pending clients",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data) {
+        const formattedClients = data.map(client => ({
+          id: client.profiles.id,
+          full_name: client.profiles.full_name,
+          email: client.profiles.email,
+          requested_services: client.requested_services || []
+        }));
+        setPendingClients(formattedClients);
+      }
+    } catch (error) {
+      console.error("Error in fetchPendingClients:", error);
       toast({
         title: "Error",
         description: "Failed to fetch pending clients",
         variant: "destructive",
       });
-      return;
-    }
-
-    if (clients) {
-      const formattedClients = clients.map(c => ({
-        id: c.profiles.id,
-        full_name: c.profiles.full_name,
-        email: c.profiles.email,
-        requested_services: c.requested_services || []
-      }));
-      setPendingClients(formattedClients);
     }
   };
 
@@ -77,7 +86,8 @@ export default function WaitingList() {
         title: "Success",
         description: `Client ${approved ? 'approved' : 'rejected'} successfully`,
       });
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Error updating client status:", error);
       toast({
         title: "Error",
         description: "Failed to update client status",
