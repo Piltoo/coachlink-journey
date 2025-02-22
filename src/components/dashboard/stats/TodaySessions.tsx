@@ -3,15 +3,43 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { GlassCard } from "@/components/ui/glass-card";
 import { format } from "date-fns";
 import { TodaySession } from "./types";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 
 interface TodaySessionsProps {
   sessions: TodaySession[];
 }
 
 export function TodaySessions({ sessions }: TodaySessionsProps) {
+  const { data: pendingRequests = 0 } = useQuery({
+    queryKey: ["pending_sessions"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+
+      const { count, error } = await supabase
+        .from('workout_sessions')
+        .select('*', { count: 'exact', head: true })
+        .eq('coach_id', user.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
   return (
     <GlassCard className="p-4 h-full">
-      <h3 className="text-sm font-medium text-gray-600 mb-2">Today's Assignments</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-sm font-medium text-gray-600">Today's Assignments</h3>
+        {pendingRequests > 0 && (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+            {pendingRequests} pending request{pendingRequests !== 1 ? 's' : ''}
+          </Badge>
+        )}
+      </div>
+
       {sessions.length > 0 ? (
         <>
           <p className="text-2xl font-bold text-[#1B4332] mb-4">{sessions.length} sessions today</p>
