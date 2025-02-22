@@ -105,7 +105,7 @@ const Auth = () => {
         .from('coach_clients')
         .insert([{
           client_id: signUpData.user.id,
-          coach_id: import.meta.env.VITE_DEFAULT_COACH_ID, // Note: Changed from process.env to import.meta.env
+          coach_id: "00000000-0000-0000-0000-000000000000", // This is a temporary UUID for testing
           status: 'pending',
           requested_services: selectedServices
         }]);
