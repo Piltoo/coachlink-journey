@@ -1,14 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { TrainingPlanDetails } from "./TrainingPlanDetails";
 import { useNavigate } from "react-router-dom";
@@ -29,13 +24,7 @@ type Exercise = {
 export function TrainingPlansSection() {
   const navigate = useNavigate();
   const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [planName, setPlanName] = useState("");
-  const [planDescription, setPlanDescription] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -65,77 +54,11 @@ export function TrainingPlansSection() {
     }
   };
 
-  const handleCreatePlan = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
-      const { error } = await supabase
-        .from('training_plan_templates')
-        .insert([
-          {
-            coach_id: user.id,
-            name: planName,
-            description: planDescription,
-            exercises: selectedExercises.map(e => e.id),
-          }
-        ]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Training plan created successfully",
-      });
-
-      setPlanName("");
-      setPlanDescription("");
-      setSelectedExercises([]);
-      setShowCreateDialog(false);
-      fetchTrainingPlans();
-    } catch (error) {
-      console.error('Error creating training plan:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create training plan",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const searchExercises = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('*')
-        .ilike('name', `%${searchTerm}%`)
-        .limit(5);
-
-      if (error) throw error;
-      setExercises(data || []);
-    } catch (error) {
-      console.error('Error searching exercises:', error);
-      toast({
-        title: "Error",
-        description: "Failed to search exercises",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const toggleExerciseSelection = (exercise: Exercise) => {
-    if (selectedExercises.find(e => e.id === exercise.id)) {
-      setSelectedExercises(selectedExercises.filter(e => e.id !== exercise.id));
-    } else {
-      setSelectedExercises([...selectedExercises, exercise]);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Training Plans</h2>
-        <Button onClick={() => navigate("/nutrition-and-training/create-plan")}>
+        <Button onClick={() => navigate("/nutrition-and-training/create-training-plan")}>
           <Plus className="w-4 h-4 mr-2" />
           Create Plan
         </Button>
