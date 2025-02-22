@@ -28,8 +28,6 @@ export function WaitingList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log("Current user ID:", user.id);
-
       const { data, error } = await supabase
         .from('coach_clients')
         .select(`
@@ -43,7 +41,7 @@ export function WaitingList() {
           )
         `)
         .eq('coach_id', user.id)
-        .eq('status', 'pending');
+        .eq('status', 'not_connected');
 
       if (error) {
         console.error("Error fetching clients:", error);
@@ -63,7 +61,6 @@ export function WaitingList() {
           requested_services: record.requested_services || [],
           registration_status: record.profiles.registration_status
         }));
-        console.log("Formatted clients:", formattedClients);
         setPendingClients(formattedClients);
       }
     } catch (error) {
@@ -81,7 +78,7 @@ export function WaitingList() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-primary/80" />
-          <h2 className="text-sm font-medium text-primary/80">Waiting List</h2>
+          <h2 className="text-sm font-medium text-primary/80">Available Clients</h2>
         </div>
         <Link to="/waiting-list">
           <Button variant="outline" size="sm" className="h-7 px-2 text-xs border-primary/20 hover:bg-primary/5">
@@ -92,7 +89,7 @@ export function WaitingList() {
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <span className="text-2xl font-bold text-primary">{pendingClients.length}</span>
-          <p className="text-xs text-primary/60 mt-1">People in Queue</p>
+          <p className="text-xs text-primary/60 mt-1">People Available</p>
         </div>
       </div>
     </GlassCard>

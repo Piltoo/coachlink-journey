@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { UserCheck, UserX, ArrowLeft } from "lucide-react";
+import { UserCheck, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 
@@ -29,8 +29,6 @@ export default function WaitingList() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log("Current user ID:", user.id);
-
       const { data, error } = await supabase
         .from('coach_clients')
         .select(`
@@ -44,13 +42,13 @@ export default function WaitingList() {
           )
         `)
         .eq('coach_id', user.id)
-        .eq('status', 'pending');
+        .eq('status', 'not_connected');
 
       if (error) {
         console.error("Error fetching clients:", error);
         toast({
           title: "Error",
-          description: "Failed to fetch pending clients",
+          description: "Failed to fetch available clients",
           variant: "destructive",
         });
         return;
@@ -64,37 +62,36 @@ export default function WaitingList() {
           requested_services: record.requested_services || [],
           registration_status: record.profiles.registration_status
         }));
-        console.log("Formatted clients:", formattedClients);
         setPendingClients(formattedClients);
       }
     } catch (error) {
       console.error("Error in fetchPendingClients:", error);
       toast({
         title: "Error",
-        description: "Failed to fetch pending clients",
+        description: "Failed to fetch available clients",
         variant: "destructive",
       });
     }
   };
 
-  const handleClientResponse = async (clientId: string, approved: boolean) => {
+  const handleClientResponse = async (clientId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Update the coach_clients relationship status
+      // Update the coach-client relationship status to active
       const { error: relationshipError } = await supabase
         .from('coach_clients')
-        .update({ status: approved ? 'active' : 'rejected' })
+        .update({ status: 'active' })
         .eq('client_id', clientId)
         .eq('coach_id', user.id);
 
       if (relationshipError) throw relationshipError;
 
-      // Update the client's registration status
+      // Update the client's registration status to approved
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ registration_status: approved ? 'approved' : 'rejected' })
+        .update({ registration_status: 'approved' })
         .eq('id', clientId);
 
       if (profileError) throw profileError;
@@ -103,13 +100,13 @@ export default function WaitingList() {
       
       toast({
         title: "Success",
-        description: `Client ${approved ? 'approved' : 'rejected'} successfully`,
+        description: "Client activated successfully",
       });
     } catch (error) {
       console.error("Error updating client status:", error);
       toast({
         title: "Error",
-        description: "Failed to update client status",
+        description: "Failed to activate client",
         variant: "destructive",
       });
     }
@@ -124,10 +121,10 @@ export default function WaitingList() {
               <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">
                 <ArrowLeft className="h-6 w-6" />
               </Link>
-              <h1 className="text-2xl font-semibold text-primary">Waiting List</h1>
+              <h1 className="text-2xl font-semibold text-primary">Available Clients</h1>
             </div>
             <div className="text-sm text-gray-600">
-              {pendingClients.length} client{pendingClients.length !== 1 ? 's' : ''} waiting
+              {pendingClients.length} client{pendingClients.length !== 1 ? 's' : ''} available
             </div>
           </div>
 
@@ -142,24 +139,15 @@ export default function WaitingList() {
                       </h3>
                       <p className="text-sm text-gray-500">{client.email}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div>
                       <Button
                         variant="outline"
                         size="sm"
                         className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
-                        onClick={() => handleClientResponse(client.id, true)}
+                        onClick={() => handleClientResponse(client.id)}
                       >
                         <UserCheck className="w-4 h-4 mr-1" />
-                        Approve
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
-                        onClick={() => handleClientResponse(client.id, false)}
-                      >
-                        <UserX className="w-4 h-4 mr-1" />
-                        Reject
+                        Activate
                       </Button>
                     </div>
                   </div>
@@ -184,7 +172,7 @@ export default function WaitingList() {
             ))}
             {pendingClients.length === 0 && (
               <Card className="p-6">
-                <p className="text-center text-gray-500">No pending clients</p>
+                <p className="text-center text-gray-500">No available clients</p>
               </Card>
             )}
           </div>
