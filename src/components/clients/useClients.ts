@@ -35,8 +35,7 @@ export const useClients = () => {
 
       const { data: activeRelationships, error: relationshipsError } = await supabase
         .from('coach_clients')
-        .select('client_id, status, coach_id')
-        .eq('status', 'active');
+        .select('client_id, status, coach_id');  // Removed the status filter
 
       if (relationshipsError) throw relationshipsError;
 
@@ -49,8 +48,7 @@ export const useClients = () => {
       const { data: coachRelationships, error: coachRelError } = await supabase
         .from('coach_clients')
         .select('client_id, status')
-        .eq('coach_id', user.id)
-        .neq('status', 'not_connected');
+        .eq('coach_id', user.id);  // Removed the status filter
 
       if (coachRelError) throw coachRelError;
 
