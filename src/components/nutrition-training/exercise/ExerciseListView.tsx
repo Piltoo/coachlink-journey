@@ -4,32 +4,44 @@ import { Exercise } from "../types/exercise";
 interface ExerciseListViewProps {
   exercises: Exercise[];
   onExerciseClick: (exercise: Exercise) => void;
+  selectedExerciseIds?: string[];
 }
 
-export function ExerciseListView({ exercises, onExerciseClick }: ExerciseListViewProps) {
+export function ExerciseListView({ exercises, onExerciseClick, selectedExerciseIds = [] }: ExerciseListViewProps) {
+  if (!exercises.length) {
+    return (
+      <div className="text-center py-4 text-muted-foreground">
+        No exercises found
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-2">
-      {exercises.map((exercise) => (
-        <div
-          key={exercise.id}
-          onClick={() => onExerciseClick(exercise)}
-          className="p-4 bg-white/60 hover:bg-white/80 cursor-pointer border-b border-gray-200/50 transition-colors duration-200 flex justify-between items-center"
-        >
-          <div className="flex-1">
+    <div className="divide-y divide-border">
+      {exercises.map((exercise) => {
+        const isSelected = selectedExerciseIds.includes(exercise.id);
+        return (
+          <div
+            key={exercise.id}
+            onClick={() => onExerciseClick(exercise)}
+            className={`py-3 px-4 cursor-pointer hover:bg-accent/50 transition-colors ${
+              isSelected ? 'bg-accent' : ''
+            }`}
+          >
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">{exercise.name}</h3>
-                {exercise.equipment_needed && (
-                  <p className="text-sm text-gray-600 mt-0.5">
-                    Equipment: {exercise.equipment_needed}
-                  </p>
-                )}
+              <div className="flex-1">
+                <h4 className="font-medium text-sm">{exercise.name}</h4>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {exercise.equipment_needed}
+                </p>
               </div>
-              <span className="text-sm text-gray-500">{exercise.muscle_group}</span>
+              <div className="text-sm text-muted-foreground">
+                {exercise.muscle_group}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
