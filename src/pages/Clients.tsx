@@ -63,22 +63,11 @@ const Clients = () => {
 
       const { data: activeRelationships, error: relationshipsError } = await supabase
         .from('coach_clients')
-        .select('client_id, status')
+        .select('client_id, status, coach_id')
         .eq('status', 'active');
 
       if (relationshipsError) {
         throw relationshipsError;
-      }
-
-      const activeClientIds = [...new Set(activeRelationships?.map(rel => rel.client_id) || [])];
-
-      const { data: clientProfiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .eq('role', 'client');
-
-      if (profilesError) {
-        throw profilesError;
       }
 
       const { data: coachRelationships, error: coachRelError } = await supabase
@@ -94,10 +83,23 @@ const Clients = () => {
         coachRelationships?.map(rel => [rel.client_id, rel.status]) || []
       );
 
+      const { data: clientProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('role', 'client');
+
+      if (profilesError) {
+        throw profilesError;
+      }
+
       if (clientProfiles) {
         const clientPromises = clientProfiles.map(async (profile) => {
-          const isActiveClient = activeClientIds.includes(profile.id);
-          
+          const isActiveWithOtherCoach = activeRelationships?.some(rel => 
+            rel.client_id === profile.id && 
+            rel.coach_id !== user.id && 
+            rel.status === 'active'
+          ) ?? false;
+
           const relationshipStatus = coachRelationshipMap.get(profile.id) || 'not_connected';
 
           const [nutritionPlans, workoutPlans, workoutSessions] = await Promise.all([
@@ -123,7 +125,7 @@ const Clients = () => {
             full_name: profile.full_name,
             email: profile.email,
             status: relationshipStatus,
-            isActiveWithOtherCoach: isActiveClient && relationshipStatus === 'not_connected',
+            isActiveWithOtherCoach,
             hasNutritionPlan: !!nutritionPlans.data,
             hasWorkoutPlan: !!workoutPlans.data,
             hasPersonalTraining: !!workoutSessions.data,
