@@ -60,10 +60,10 @@ export default function CreateNutritionPlan() {
 
       if (sharedError) throw sharedError;
 
-      // Transform shared ingredients data
+      // Transform shared ingredients data with proper number conversion
       const transformedSharedData = (sharedData || []).map((item: any) => ({
         id: `shared_${item.name.toLowerCase().replace(/\s+/g, '_')}`,
-        name: item.name || '',
+        name: item.name,
         calories_per_100g: Number(item.calories_per_100g) || 0,
         protein_per_100g: Number(item.protein_per_100g) || 0,
         carbs_per_100g: Number(item.carbs_per_100g) || 0,
@@ -72,7 +72,17 @@ export default function CreateNutritionPlan() {
         group_name: item.grop || null
       }));
 
-      return [...personalData, ...transformedSharedData] as Ingredient[];
+      // Ensure personal data values are numbers
+      const transformedPersonalData = (personalData || []).map(item => ({
+        ...item,
+        calories_per_100g: Number(item.calories_per_100g) || 0,
+        protein_per_100g: Number(item.protein_per_100g) || 0,
+        carbs_per_100g: Number(item.carbs_per_100g) || 0,
+        fats_per_100g: Number(item.fats_per_100g) || 0,
+        fiber_per_100g: Number(item.fiber_per_100g) || 0,
+      }));
+
+      return [...transformedPersonalData, ...transformedSharedData] as Ingredient[];
     },
     enabled: searchQuery.length > 0,
   });
@@ -113,7 +123,14 @@ export default function CreateNutritionPlan() {
     const updatedMeals = [...meals];
     updatedMeals[mealIndex].ingredients.push({
       ingredient_id: ingredient.id,
-      ingredient,
+      ingredient: {
+        ...ingredient,
+        calories_per_100g: Number(ingredient.calories_per_100g),
+        protein_per_100g: Number(ingredient.protein_per_100g),
+        carbs_per_100g: Number(ingredient.carbs_per_100g),
+        fats_per_100g: Number(ingredient.fats_per_100g),
+        fiber_per_100g: Number(ingredient.fiber_per_100g),
+      },
       quantity_grams: parseFloat(quantity),
     });
     setMeals(updatedMeals);
