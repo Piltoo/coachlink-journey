@@ -6,6 +6,26 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
+type Template = {
+  id: string;
+  title: string;
+  description: string | null;
+  created_at: string;
+  meals: Array<{
+    name: string;
+    ingredients: Array<{
+      ingredient: {
+        calories_per_100g: number;
+        protein_per_100g: number;
+        carbs_per_100g: number;
+        fats_per_100g: number;
+        fiber_per_100g: number;
+      };
+      quantity_grams: number;
+    }>;
+  }>;
+};
+
 export function NutritionPlansSection() {
   const navigate = useNavigate();
 
@@ -23,7 +43,7 @@ export function NutritionPlansSection() {
       if (error) throw error;
 
       // Process the templates to calculate totals
-      return data.map(template => {
+      return (data as Template[]).map(template => {
         const totalNutrition = (template.meals || []).reduce((acc, meal) => {
           const mealNutrition = (meal.ingredients || []).reduce((mealAcc, { ingredient, quantity_grams }) => {
             const multiplier = Number(quantity_grams) / 100;

@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { Button } from "@/components/ui/button";
@@ -295,11 +296,14 @@ export default function CreateNutritionPlan() {
     if (data) {
       setTitle(data.title);
       setDescription(data.description || '');
-      setMeals(data.meals || []);
+      if (data.meals && Array.isArray(data.meals)) {
+        setMeals(data.meals as PartialMeal[]);
+      }
     }
   };
 
-  React.useEffect(() => {
+  // Load template data if template ID is provided in URL
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const templateId = params.get('template');
     if (templateId) {
