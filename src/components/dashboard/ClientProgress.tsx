@@ -55,7 +55,7 @@ export const ClientProgress = () => {
 
       const { data: healthData, error: healthError } = await supabase
         .from('client_health_assessments')
-        .select('target_weight, starting_weight, height_cm')
+        .select('target_weight, starting_weight, height_cm, gender')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -76,7 +76,7 @@ export const ClientProgress = () => {
           target_weight: healthData.target_weight,
           starting_weight: healthData.starting_weight,
           height_cm: healthData.height_cm || 180,
-          gender: 'male' // Default värde tills vi lägger till gender i databasen
+          gender: healthData.gender || 'male'
         });
       }
 

@@ -55,6 +55,7 @@ export type Database = {
           created_at: string | null
           current_activity_level: string | null
           dietary_restrictions: string | null
+          gender: string | null
           gym_equipment_access: string | null
           health_goals: string | null
           height_cm: number | null
@@ -72,6 +73,7 @@ export type Database = {
           created_at?: string | null
           current_activity_level?: string | null
           dietary_restrictions?: string | null
+          gender?: string | null
           gym_equipment_access?: string | null
           health_goals?: string | null
           height_cm?: number | null
@@ -89,6 +91,7 @@ export type Database = {
           created_at?: string | null
           current_activity_level?: string | null
           dietary_restrictions?: string | null
+          gender?: string | null
           gym_equipment_access?: string | null
           health_goals?: string | null
           height_cm?: number | null
