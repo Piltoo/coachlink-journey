@@ -115,18 +115,27 @@ export default function CreateTrainingPlan() {
         isCustom: true
       }));
 
-      const transformedGeneralExercises = (generalExercises || []).map((ex: any) => ({
-        id: `general_${ex.name?.replace(/\s+/g, '_')}`,
-        name: ex.name || '',
-        description: ex.description || '',
-        muscle_group: ex.muscle_group || '',
-        start_position_image: ex.start_position_image || null,
-        mid_position_image: ex.mid_posisiton_image || null,
-        difficulty_level: ex.difficulty_level || 'Beginner',
-        equipment_needed: ex.equitment_needed || null,
-        instructions: ex.description || '',
-        isCustom: false
-      }));
+      // Generate consistent UUIDs for general exercises based on their names
+      const transformedGeneralExercises = (generalExercises || []).map((ex: any) => {
+        // Create a UUID using a hash of the exercise name
+        const nameHash = Array.from(ex.name || '').reduce(
+          (hash, char) => ((hash << 5) - hash) + char.charCodeAt(0), 0
+        );
+        const uuid = `00000000-0000-4000-8000-${Math.abs(nameHash).toString(16).padStart(12, '0')}`;
+        
+        return {
+          id: uuid,
+          name: ex.name || '',
+          description: ex.description || '',
+          muscle_group: ex.muscle_group || '',
+          start_position_image: ex.start_position_image || null,
+          mid_position_image: ex.mid_posisiton_image || null,
+          difficulty_level: ex.difficulty_level || 'Beginner',
+          equipment_needed: ex.equitment_needed || null,
+          instructions: ex.description || '',
+          isCustom: false
+        };
+      });
 
       const allExercises = [...transformedCustomExercises, ...transformedGeneralExercises];
       console.log("All exercises after transformation:", allExercises);
@@ -149,7 +158,15 @@ export default function CreateTrainingPlan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      const exerciseDetailsForSaving = selectedExercises.map(({ isCustom, ...ex }) => ex);
+      // Clean up exercise details before saving
+      const exerciseDetailsForSaving = selectedExercises.map(({ isCustom, ...ex }) => ({
+        id: ex.id,
+        sets: ex.sets || 3,
+        reps: ex.reps || 12,
+        weight: ex.weight || 0,
+        notes: ex.notes || '',
+        name: ex.name
+      }));
 
       const { error } = await supabase
         .from('training_plan_templates')
