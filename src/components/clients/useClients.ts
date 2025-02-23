@@ -1,130 +1,104 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export type Client = {
-  id: string;
-  full_name: string | null;
-  email: string;
-  status: string;
-  hasNutritionPlan: boolean;
-  hasWorkoutPlan: boolean;
-  hasPersonalTraining: boolean;
-  requested_services: string[] | null;
-};
-
 export const useClients = () => {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [serviceFilter, setServiceFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [serviceFilter, setServiceFilter] = useState("all");
+  const [selectedClientId, setSelectedClientId] = useState(null);
   const { toast } = useToast();
 
-  const fetchClients = useCallback(async () => {
+  const fetchClients = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.log("No user found - user is not authenticated");
+      if (!user) return;
+
+      // Verify coach role
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      if (profile?.role !== 'coach') {
+        toast({
+          title: "Access Denied",
+          description: "Only coaches can access client management",
+          variant: "destructive",
+        });
         return;
       }
 
-      console.log("Fetching clients for coach:", user.id);
-
-      const { data: activeRelationships, error: relationshipsError } = await supabase
+      const { data: activeClients, error: clientsError } = await supabase
         .from('coach_clients')
-        .select('client_id, status, coach_id')
-        .neq('status', 'not_connected');  // Exclude not_connected status
-
-      if (relationshipsError) throw relationshipsError;
-
-      const clientsActiveWithOtherCoaches = new Set(
-        activeRelationships
-          ?.filter(rel => rel.coach_id !== user.id)
-          .map(rel => rel.client_id) || []
-      );
-
-      const { data: coachRelationships, error: coachRelError } = await supabase
-        .from('coach_clients')
-        .select('client_id, status')
+        .select(`
+          client_id,
+          status,
+          requested_services,
+          profiles:client_id (
+            id,
+            full_name,
+            email,
+            role
+          )
+        `)
         .eq('coach_id', user.id)
-        .neq('status', 'not_connected');  // Exclude not_connected status
+        .neq('status', 'not_connected');
 
-      if (coachRelError) throw coachRelError;
+      if (clientsError) throw clientsError;
 
-      console.log("Found coach relationships:", coachRelationships?.length);
-
-      const coachRelationshipMap = new Map(
-        coachRelationships?.map(rel => [rel.client_id, rel.status]) || []
-      );
-
-      const { data: clientProfiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, requested_services')
-        .eq('role', 'client')
-        .in('id', coachRelationships?.map(rel => rel.client_id) || []);
-
-      if (profilesError) throw profilesError;
-
-      console.log("Found client profiles:", clientProfiles?.length);
-
-      if (clientProfiles) {
-        const availableClients = clientProfiles.filter(
-          profile => !clientsActiveWithOtherCoaches.has(profile.id)
-        );
-
-        const clientPromises = availableClients.map(async (profile) => {
-          const relationshipStatus = coachRelationshipMap.get(profile.id) || 'not_connected';
-
-          const [nutritionPlans, workoutPlans, workoutSessions] = await Promise.all([
+      // Get additional plan information for each client
+      const clientsWithPlans = await Promise.all(
+        activeClients.map(async (client) => {
+          const [nutritionPlan, workoutPlan, workoutSession] = await Promise.all([
             supabase
               .from('nutrition_plans')
               .select('id')
-              .eq('client_id', profile.id)
+              .eq('client_id', client.client_id)
               .maybeSingle(),
             supabase
               .from('workout_plans')
               .select('id')
-              .eq('client_id', profile.id)
+              .eq('client_id', client.client_id)
               .maybeSingle(),
             supabase
               .from('workout_sessions')
               .select('id')
-              .eq('client_id', profile.id)
-              .maybeSingle(),
+              .eq('client_id', client.client_id)
+              .maybeSingle()
           ]);
 
           return {
-            id: profile.id,
-            full_name: profile.full_name,
-            email: profile.email,
-            status: relationshipStatus,
-            hasNutritionPlan: !!nutritionPlans.data,
-            hasWorkoutPlan: !!workoutPlans.data,
-            hasPersonalTraining: !!workoutSessions.data,
-            requested_services: profile.requested_services,
+            id: client.client_id,
+            full_name: client.profiles.full_name,
+            email: client.profiles.email,
+            status: client.status,
+            hasNutritionPlan: !!nutritionPlan.data,
+            hasWorkoutPlan: !!workoutPlan.data,
+            hasPersonalTraining: !!workoutSession.data,
+            requested_services: client.requested_services || []
           };
-        });
+        })
+      );
 
-        const formattedClients = await Promise.all(clientPromises);
-        console.log("Formatted clients:", formattedClients.length);
-        setClients(formattedClients);
-      }
-    } catch (error: any) {
-      console.error("Error in fetchClients:", error);
+      setClients(clientsWithPlans);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
       toast({
         title: "Error",
-        description: "Failed to load clients: " + error.message,
+        description: "Failed to load clients",
         variant: "destructive",
       });
     }
-  }, [toast]);
+  };
 
   useEffect(() => {
     fetchClients();
-  }, [fetchClients]);
+  }, []);
 
   return {
     clients,

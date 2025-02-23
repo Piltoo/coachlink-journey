@@ -5,6 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useClients } from "@/components/clients/useClients";
 import { ClientFilters } from "@/components/clients/ClientFilters";
 import { ClientTable } from "@/components/clients/ClientTable";
+import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
 const Clients = () => {
   const {
