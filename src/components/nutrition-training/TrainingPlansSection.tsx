@@ -54,6 +54,13 @@ export function TrainingPlansSection() {
     }
   };
 
+  const getExerciseCount = (plan: any) => {
+    if (plan.exercise_details && Array.isArray(plan.exercise_details)) {
+      return plan.exercise_details.length;
+    }
+    return 0;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -75,7 +82,7 @@ export function TrainingPlansSection() {
               <CardTitle className="flex justify-between items-center">
                 <span>{plan.name}</span>
                 <Badge variant="secondary">
-                  {plan.exercises?.length || 0} exercises
+                  {getExerciseCount(plan)} exercises
                 </Badge>
               </CardTitle>
               <CardDescription>
