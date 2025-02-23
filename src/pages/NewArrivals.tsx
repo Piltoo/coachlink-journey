@@ -10,12 +10,15 @@ import { ClientsTable } from "@/components/new-arrivals/ClientsTable";
 import { Client } from "@/components/new-arrivals/types";
 import { InviteClientDialog } from "@/components/dashboard/InviteClientDialog";
 import { Users } from "lucide-react";
+import { useCoachCheck } from "@/hooks/useCoachCheck";
+import { Card } from "@/components/ui/card";
 
 const NewArrivals = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const { isCoach, isLoading } = useCoachCheck();
 
   const fetchClients = async () => {
     try {
@@ -27,26 +30,6 @@ const NewArrivals = () => {
       }
 
       console.log("Fetching clients for coach:", user.id);
-
-      // First verify that the current user is a coach
-      const { data: coachProfile, error: coachError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle(); // Change from single() to maybeSingle()
-
-      if (coachError) throw coachError;
-      if (!coachProfile) {
-        toast({
-          title: "Error",
-          description: "Coach profile not found",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (coachProfile.role !== 'coach') {
-        throw new Error('Only coaches can view new arrivals');
-      }
 
       const { data: notConnectedClients, error: relationshipsError } = await supabase
         .from('coach_clients')
@@ -189,8 +172,31 @@ const NewArrivals = () => {
   };
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    if (isCoach) {
+      fetchClients();
+    }
+  }, [isCoach]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50 flex items-center justify-center">
+        <Card className="p-6 bg-white/40 backdrop-blur-lg">
+          <p className="text-muted-foreground">Loading...</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isCoach) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50 flex items-center justify-center">
+        <Card className="p-6 bg-white/40 backdrop-blur-lg border border-green-100">
+          <h2 className="text-xl font-semibold text-primary mb-2">Access Restricted</h2>
+          <p className="text-muted-foreground">Only coaches can access this page.</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">

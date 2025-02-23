@@ -1,6 +1,4 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import {
   Tabs,
@@ -12,30 +10,22 @@ import { Settings2, Building2, CreditCard, User } from "lucide-react";
 import { AccountSettings } from "./settings/AccountSettings";
 import { BrandingSettings } from "./settings/BrandingSettings";
 import { SubscriptionSettings } from "./settings/SubscriptionSettings";
+import { useCoachCheck } from "@/hooks/useCoachCheck";
 
 export default function Settings() {
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const { isCoach, isLoading } = useCoachCheck();
 
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50 flex items-center justify-center">
+        <Card className="p-6 bg-white/40 backdrop-blur-lg">
+          <p className="text-muted-foreground">Loading...</p>
+        </Card>
+      </div>
+    );
+  }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (profile) {
-        setUserRole(profile.role);
-      }
-    };
-
-    fetchUserRole();
-  }, []);
-
-  if (userRole !== 'coach') {
+  if (!isCoach) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50 flex items-center justify-center">
         <Card className="p-6 bg-white/40 backdrop-blur-lg border border-green-100">
