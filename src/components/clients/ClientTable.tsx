@@ -66,6 +66,7 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>
+          <TableHead>Email</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Services</TableHead>
           <TableHead>Requested Services</TableHead>
@@ -75,7 +76,7 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
       <TableBody>
         {clients.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
               No clients found.
             </TableCell>
           </TableRow>

@@ -24,6 +24,9 @@ export function ClientTableRow({
       <TableCell className="font-medium">
         {client.full_name || "Unnamed Client"}
       </TableCell>
+      <TableCell className="text-muted-foreground">
+        {client.email}
+      </TableCell>
       <TableCell>
         <StatusBadge status={client.status} />
       </TableCell>
