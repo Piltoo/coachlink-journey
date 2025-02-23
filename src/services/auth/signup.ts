@@ -15,7 +15,11 @@ export const signUpUser = async ({
   selectedServices,
 }: SignUpData) => {
   try {
-    console.log("Starting signup process...");
+    console.log("Starting signup process with data:", { 
+      email, 
+      fullName, 
+      selectedServices 
+    });
     
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -25,13 +29,14 @@ export const signUpUser = async ({
           full_name: fullName,
           role: "client",
           requested_services: selectedServices
-        }
+        },
+        emailRedirectTo: `${window.location.origin}/auth`
       }
     });
 
     if (signUpError) {
       console.error("Signup error:", signUpError);
-      throw signUpError;
+      throw new Error(signUpError.message);
     }
 
     if (!signUpData.user) {
@@ -39,7 +44,12 @@ export const signUpUser = async ({
       throw new Error("No user data returned from signup");
     }
 
-    console.log("Signup successful:", signUpData.user.id);
+    console.log("Signup successful:", {
+      userId: signUpData.user.id,
+      email: signUpData.user.email,
+      metadata: signUpData.user.user_metadata
+    });
+    
     return signUpData;
   } catch (error) {
     console.error("Error in signUpUser:", error);
