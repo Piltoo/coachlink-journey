@@ -96,6 +96,33 @@ export type Database = {
         }
         Relationships: []
       }
+      clients_not_connected: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+        }
+        Relationships: []
+      }
       coach_clients: {
         Row: {
           client_id: string

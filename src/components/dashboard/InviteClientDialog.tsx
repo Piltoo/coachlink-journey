@@ -38,22 +38,52 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("You must be logged in to create clients");
       }
 
-      // First, create entry in clients_not_connected
-      const { data: notConnectedClient, error: notConnectedError } = await supabase
+      // Create a random password for the user (they can reset it later)
+      const tempPassword = crypto.randomUUID();
+
+      // Try to create auth user first
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newClientEmail,
+        password: tempPassword,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
+      });
+
+      // If we successfully created an auth user
+      if (authData.user && !authError) {
+        // Create coach-client relationship
+        const { error: relationError } = await supabase
+          .from('coach_clients')
+          .insert({
+            coach_id: user.id,
+            client_id: authData.user.id,
+            status: 'not_connected'
+          });
+
+        if (relationError) {
+          console.error("Failed to create coach-client relationship:", relationError);
+          // Even if this fails, we continue to create the not_connected entry as backup
+        }
+      } else {
+        // If auth user creation failed, log it but continue
+        console.log("Could not create auth user:", authError);
+      }
+
+      // Always create entry in clients_not_connected as backup
+      const { error: notConnectedError } = await supabase
         .from('clients_not_connected')
         .insert({
           email: newClientEmail,
           first_name: firstName,
           last_name: lastName,
           coach_id: user.id
-        })
-        .select()
-        .single();
+        });
 
-      if (notConnectedError) {
-        if (notConnectedError.code === '23505') { // Unique violation
-          throw new Error("A client with this email already exists");
-        }
+      if (notConnectedError && notConnectedError.code !== '23505') { // Ignore unique violation
         throw notConnectedError;
       }
 
