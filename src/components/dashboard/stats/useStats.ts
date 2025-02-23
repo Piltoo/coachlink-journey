@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Stats, TodaySession } from "./types";
+import { addDays, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 
 export const useStats = () => {
   const [stats, setStats] = useState<Stats>({
@@ -26,21 +27,12 @@ export const useStats = () => {
           return;
         }
 
-        // Get start and end of current week
+        // Get date ranges using date-fns
         const now = new Date();
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        startOfWeek.setHours(0, 0, 0, 0);
-        
-        const endOfWeek = new Date(now);
-        endOfWeek.setDate(startOfWeek.getDate() + 7);
-        endOfWeek.setHours(23, 59, 59, 999);
-
-        // Fetch today's sessions
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        const weekStart = startOfWeek(now);
+        const weekEnd = endOfWeek(now);
+        const todayStart = startOfDay(now);
+        const todayEnd = endOfDay(now);
 
         const [
           { data: activeClients },
@@ -64,7 +56,8 @@ export const useStats = () => {
             .select('id')
             .eq('coach_id', user.id)
             .eq('status', 'active')
-            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+            .gte('created_at', weekStart.toISOString())
+            .lte('created_at', weekEnd.toISOString()),
           
           // Pending check-ins count
           supabase
@@ -91,8 +84,8 @@ export const useStats = () => {
             .from('payments')
             .select('amount')
             .eq('status', 'paid')
-            .gte('paid_at', startOfWeek.toISOString())
-            .lte('paid_at', endOfWeek.toISOString()),
+            .gte('paid_at', weekStart.toISOString())
+            .lte('paid_at', weekEnd.toISOString()),
           
           // Today's sessions
           supabase
@@ -108,8 +101,8 @@ export const useStats = () => {
             `)
             .eq('coach_id', user.id)
             .eq('status', 'confirmed')
-            .gte('start_time', today.toISOString())
-            .lt('start_time', tomorrow.toISOString())
+            .gte('start_time', todayStart.toISOString())
+            .lt('start_time', todayEnd.toISOString())
             .order('start_time')
         ]);
 
