@@ -21,6 +21,23 @@ type ExerciseWithDetails = Exercise & {
   isCustom?: boolean;
 };
 
+// Function to generate a deterministic UUID v4 from a string
+function generateUUID(str: string): string {
+  // Create a hash of the string
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Convert to hex and ensure it's exactly 12 characters
+  const hashHex = Math.abs(hash).toString(16).padStart(12, '0').slice(0, 12);
+  
+  // Format as UUID v4 (with first part being zeros and second part being the hash)
+  return `00000000-0000-4000-8000-${hashHex}`;
+}
+
 export default function CreateTrainingPlan() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -115,13 +132,9 @@ export default function CreateTrainingPlan() {
         isCustom: true
       }));
 
-      // Generate consistent UUIDs for general exercises based on their names
       const transformedGeneralExercises = (generalExercises || []).map((ex: any) => {
-        // Create a UUID using a hash of the exercise name
-        const nameHash = Array.from(ex.name || '').reduce(
-          (hash, char) => ((hash << 5) - hash) + char.charCodeAt(0), 0
-        );
-        const uuid = `00000000-0000-4000-8000-${Math.abs(nameHash).toString(16).padStart(12, '0')}`;
+        // Generate a deterministic UUID based on the exercise name
+        const uuid = generateUUID(ex.name || 'unnamed_exercise');
         
         return {
           id: uuid,
@@ -167,6 +180,8 @@ export default function CreateTrainingPlan() {
         notes: ex.notes || '',
         name: ex.name
       }));
+
+      console.log("Saving exercise details:", exerciseDetailsForSaving);
 
       const { error } = await supabase
         .from('training_plan_templates')
