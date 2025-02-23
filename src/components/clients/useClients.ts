@@ -27,37 +27,11 @@ export const useClients = () => {
         throw new Error("No authenticated user");
       }
 
-      console.log("Getting user profile...");
-      // First check if the user is a coach by checking their profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_profile')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-        throw profileError;
-      }
-
-      console.log("User profile:", profile);
-      
-      if (!profile || profile.user_profile !== 'coach') {
-        console.error("User is not a coach. Profile type:", profile?.user_profile);
-        toast({
-          title: "Access Denied",
-          description: "Only coaches can access client management",
-          variant: "destructive",
-        });
-        return;
-      }
-
       console.log("Fetching client relationships...");
-      // Get all active client relationships
+      // Get all active client relationships - RLS will automatically filter by coach_id
       const { data: clientRelationships, error: clientsError } = await supabase
         .from('coach_clients')
         .select('client_id, status, requested_services')
-        .eq('coach_id', user.id)
         .neq('status', 'not_connected');
 
       if (clientsError) {
