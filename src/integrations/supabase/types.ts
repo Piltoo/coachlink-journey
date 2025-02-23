@@ -624,6 +624,8 @@ export type Database = {
           email: string
           first_name: string | null
           full_name: string | null
+          has_changed_password: boolean | null
+          has_completed_assessment: boolean | null
           id: string
           last_name: string | null
           raw_user_meta_data: Json | null
@@ -638,6 +640,8 @@ export type Database = {
           email: string
           first_name?: string | null
           full_name?: string | null
+          has_changed_password?: boolean | null
+          has_completed_assessment?: boolean | null
           id: string
           last_name?: string | null
           raw_user_meta_data?: Json | null
@@ -652,6 +656,8 @@ export type Database = {
           email?: string
           first_name?: string | null
           full_name?: string | null
+          has_changed_password?: boolean | null
+          has_completed_assessment?: boolean | null
           id?: string
           last_name?: string | null
           raw_user_meta_data?: Json | null
