@@ -42,57 +42,74 @@ export const useStats = () => {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        const { data: activeClientsData } = await supabase
-          .from('coach_clients')
-          .select('id')
-          .eq('coach_id', user.id)
-          .eq('status', 'active');
-
-        const { data: newClientsData } = await supabase
-          .from('coach_clients')
-          .select('id')
-          .eq('coach_id', user.id)
-          .eq('status', 'active')
-          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-
-        const { data: checkinsData } = await supabase
-          .from('weekly_checkins')
-          .select('id')
-          .eq('status', 'pending');
-
-        const { data: messagesData } = await supabase
-          .from('messages')
-          .select('id')
-          .eq('receiver_id', user.id)
-          .eq('status', 'sent');
-
-        const { data: notConnectedCount } = await supabase
-          .from('coach_clients')
-          .select('id', { count: 'exact' })
-          .eq('coach_id', user.id)
-          .eq('status', 'not_connected');
-
-        const { data: weeklyPayments } = await supabase
-          .from('payments')
-          .select('amount')
-          .eq('status', 'paid')
-          .gte('paid_at', startOfWeek.toISOString())
-          .lte('paid_at', endOfWeek.toISOString());
-
-        const { data: sessions } = await supabase
-          .from('workout_sessions')
-          .select(`
-            start_time,
-            client:profiles!workout_sessions_client_id_fkey (
-              full_name,
-              email
-            )
-          `)
-          .eq('coach_id', user.id)
-          .eq('status', 'confirmed')
-          .gte('start_time', today.toISOString())
-          .lt('start_time', tomorrow.toISOString())
-          .order('start_time');
+        const [
+          { count: activeClientsCount },
+          { count: newClientsCount },
+          { count: pendingCheckinsCount },
+          { count: unreadMessagesCount },
+          { count: notConnectedCount },
+          { data: weeklyPayments },
+          { data: sessions }
+        ] = await Promise.all([
+          // Active clients count
+          supabase
+            .from('coach_clients')
+            .select('*', { count: 'exact', head: true })
+            .eq('coach_id', user.id)
+            .eq('status', 'active'),
+          
+          // New clients this week count
+          supabase
+            .from('coach_clients')
+            .select('*', { count: 'exact', head: true })
+            .eq('coach_id', user.id)
+            .eq('status', 'active')
+            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+          
+          // Pending check-ins count
+          supabase
+            .from('weekly_checkins')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending'),
+          
+          // Unread messages count
+          supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('receiver_id', user.id)
+            .eq('status', 'sent'),
+          
+          // New arrivals count
+          supabase
+            .from('coach_clients')
+            .select('*', { count: 'exact', head: true })
+            .eq('coach_id', user.id)
+            .eq('status', 'not_connected'),
+          
+          // Weekly payments
+          supabase
+            .from('payments')
+            .select('amount')
+            .eq('status', 'paid')
+            .gte('paid_at', startOfWeek.toISOString())
+            .lte('paid_at', endOfWeek.toISOString()),
+          
+          // Today's sessions
+          supabase
+            .from('workout_sessions')
+            .select(`
+              start_time,
+              client:profiles!workout_sessions_client_id_fkey (
+                full_name,
+                email
+              )
+            `)
+            .eq('coach_id', user.id)
+            .eq('status', 'confirmed')
+            .gte('start_time', today.toISOString())
+            .lt('start_time', tomorrow.toISOString())
+            .order('start_time')
+        ]);
 
         if (sessions) {
           setTodaySessions(sessions);
@@ -102,19 +119,19 @@ export const useStats = () => {
 
         setStats({
           activeClients: {
-            value: activeClientsData?.length || 0,
-            description: `+${newClientsData?.length || 0} new this week`
+            value: activeClientsCount || 0,
+            description: `+${newClientsCount || 0} new this week`
           },
           pendingCheckins: {
-            value: checkinsData?.length || 0,
+            value: pendingCheckinsCount || 0,
             description: "Requires review"
           },
           unreadMessages: {
-            value: messagesData?.length || 0,
+            value: unreadMessagesCount || 0,
             description: "New messages"
           },
           newArrivals: {
-            value: notConnectedCount?.length || 0,
+            value: notConnectedCount || 0,
             description: "New potential clients"
           },
           totalSales: {
