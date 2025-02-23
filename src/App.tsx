@@ -18,6 +18,7 @@ import Program from "@/pages/Program";
 import NewArrivals from "@/pages/NewArrivals";
 import CreateNutritionPlan from "@/pages/CreateNutritionPlan";
 import CreateTrainingPlan from "@/pages/CreateTrainingPlan";
+import HealthAssessment from "@/pages/HealthAssessment";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ function App() {
               <Route path="/nutrition-and-training/create-training-plan" element={<CreateTrainingPlan />} />
               <Route path="/nutrition-training/*" element={<Navigate to="/nutrition-and-training" replace />} />
               <Route path="/program/:programId" element={<Program />} />
+              <Route path="/health-assessment" element={<HealthAssessment />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
