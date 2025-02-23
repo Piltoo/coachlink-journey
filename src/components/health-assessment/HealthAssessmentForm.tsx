@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -133,7 +132,7 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
             <FormItem>
               <FormLabel>Medicinska tillstånd</FormLabel>
               <FormControl>
-                <Textarea {...field} placeholder="Lista eventuella medicinska tillstånd eller skador" />
+                <Textarea {...field} placeholder="Lista eventuella medicinska tillstånd, skador eller mediciner du tar regelbundet" />
               </FormControl>
               <FormMessage />
             </FormItem>
