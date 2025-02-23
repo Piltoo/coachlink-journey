@@ -30,11 +30,14 @@ export const SignInForm = ({ onPasswordReset, onToggleMode, onSignInSuccess }: S
       if (error) throw error;
 
       if (data.user) {
-        const { data: profileData } = await supabase
+        // Updated to match the profiles table structure
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role, registration_status')
           .eq('id', data.user.id)
           .single();
+
+        if (profileError) throw profileError;
 
         if (profileData?.role === 'client' && profileData?.registration_status === 'pending') {
           onPasswordReset();
