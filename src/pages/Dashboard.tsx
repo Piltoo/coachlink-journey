@@ -41,7 +41,7 @@ const Dashboard = () => {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('first_name, role, email')
+          .select('first_name, user_profile, email')
           .eq('id', user.id)
           .single();
 
@@ -65,9 +65,9 @@ const Dashboard = () => {
           return;
         }
 
-        console.log("Profile loaded:", { role: profile.role, firstName: profile.first_name });
+        console.log("Profile loaded:", { userProfile: profile.user_profile, firstName: profile.first_name });
         
-        setIsCoach(profile.role === 'coach');
+        setIsCoach(profile.user_profile === 'coach');
         setFirstName(profile.first_name || "");
       } catch (error) {
         console.error('Error fetching dashboard data:', error);

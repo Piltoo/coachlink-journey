@@ -604,6 +604,7 @@ export type Database = {
           requested_services: string[] | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
+          user_profile: Database["public"]["Enums"]["user_profile_type"]
         }
         Insert: {
           created_at?: string
@@ -617,6 +618,7 @@ export type Database = {
           requested_services?: string[] | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          user_profile?: Database["public"]["Enums"]["user_profile_type"]
         }
         Update: {
           created_at?: string
@@ -630,6 +632,7 @@ export type Database = {
           requested_services?: string[] | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          user_profile?: Database["public"]["Enums"]["user_profile_type"]
         }
         Relationships: []
       }
@@ -1084,6 +1087,7 @@ export type Database = {
       message_status: "sent" | "delivered" | "read"
       session_status: "pending" | "confirmed" | "completed" | "cancelled"
       subscription_status: "active" | "pending" | "cancelled" | "expired"
+      user_profile_type: "client" | "coach" | "operator" | "therapist"
       user_role: "admin" | "coach" | "client"
     }
     CompositeTypes: {
