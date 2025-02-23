@@ -71,11 +71,12 @@ export const ClientProgress = () => {
       }
 
       if (healthData) {
+        const gender = healthData.gender === 'female' ? 'female' : 'male';
         setHealthAssessment({
           target_weight: healthData.target_weight,
           starting_weight: healthData.starting_weight,
           height_cm: healthData.height_cm || 180,
-          gender: healthData.gender || 'male'
+          gender: gender
         });
       }
 
