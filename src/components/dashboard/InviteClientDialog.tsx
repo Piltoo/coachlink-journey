@@ -40,52 +40,17 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
     setIsInviting(true);
 
     try {
-      // Get current coach
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("You must be logged in to invite clients");
-      }
-
-      // First create the auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newClientEmail,
-        password: newClientPassword,
-        options: {
-          data: {
-            full_name: newClientName,
-            role: 'client'
-          }
-        }
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user account");
-
-      const newClientId = authData.user.id;
-
-      // Then create the profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: newClientId,
-          email: newClientEmail,
-          full_name: newClientName,
-          role: 'client',
-          registration_status: 'pending'
+      // Use the invite_client function
+      const { data, error } = await supabase
+        .rpc('invite_client', {
+          client_email: newClientEmail,
+          client_name: newClientName,
+          client_password: newClientPassword
         });
 
-      if (profileError) throw profileError;
+      if (error) throw error;
 
-      // Finally create the coach-client relationship
-      const { error: relationshipError } = await supabase
-        .from('coach_clients')
-        .insert({
-          coach_id: user.id,
-          client_id: newClientId,
-          status: 'not_connected'
-        });
-
-      if (relationshipError) throw relationshipError;
+      console.log("Client invited successfully:", data);
 
       toast({
         title: "Success",
