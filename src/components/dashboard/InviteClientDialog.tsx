@@ -15,12 +15,13 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
+  const [tempPassword, setTempPassword] = useState("");
   const [isInviting, setIsInviting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleInviteClient = async () => {
-    if (!newClientEmail || !firstName || !lastName) {
+    if (!newClientEmail || !firstName || !lastName || !tempPassword) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -37,9 +38,6 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
       if (!user) {
         throw new Error("You must be logged in to create clients");
       }
-
-      // Create a random password for the user (they can reset it later)
-      const tempPassword = crypto.randomUUID();
 
       // Try to create auth user first
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -89,13 +87,15 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
 
       toast({
         title: "Success",
-        description: "Client has been added to your pending list",
+        description: `Client has been added. Their temporary password is: ${tempPassword}`,
+        duration: 10000, // Show for 10 seconds so coach has time to copy
       });
 
       // Reset form and close dialog
       setFirstName("");
       setLastName("");
       setNewClientEmail("");
+      setTempPassword("");
       setIsOpen(false);
 
       // Call the callback to refresh the client list if provided
@@ -152,6 +152,17 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
               value={newClientEmail}
               onChange={(e) => setNewClientEmail(e.target.value)}
               placeholder="Enter client's email"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tempPassword">Temporary Password *</Label>
+            <Input
+              id="tempPassword"
+              type="text"
+              value={tempPassword}
+              onChange={(e) => setTempPassword(e.target.value)}
+              placeholder="Set a temporary password"
               required
             />
           </div>
