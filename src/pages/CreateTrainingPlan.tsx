@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -99,7 +100,7 @@ export default function CreateTrainingPlan() {
         .select('*');
       
       if (searchQuery) {
-        generalExercisesQuery.ilike('Name', `%${searchQuery}%`);
+        generalExercisesQuery.ilike('name', `%${searchQuery}%`);
       }
 
       const { data: generalExercises, error: generalError } = await generalExercisesQuery;
@@ -115,8 +116,8 @@ export default function CreateTrainingPlan() {
       }));
 
       const transformedGeneralExercises = (generalExercises || []).map((ex: any) => ({
-        id: `general_${ex.Name?.replace(/\s+/g, '_')}`,
-        name: ex.Name || '',
+        id: `general_${ex.name?.replace(/\s+/g, '_')}`,
+        name: ex.name || '',
         description: ex.description || '',
         muscle_group: ex.muscle_group || '',
         start_position_image: ex.start_position_image || null,
