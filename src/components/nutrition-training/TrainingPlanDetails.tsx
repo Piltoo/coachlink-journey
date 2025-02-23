@@ -48,27 +48,9 @@ interface TrainingPlanDetailsProps {
   onUpdate?: () => void;
 }
 
-interface TrainingPlanTemplate {
-  id: string;
-  name: string;
-  description: string;
-  exercises: string[];
-  exercise_details?: Array<{
-    exercise_id: string;
-    sets: number;
-    reps: number;
-    weight: number;
-    notes: string;
-    order_index: number;
-    description: string;
-    muscle_group: string;
-    equipment_needed: string;
-    difficulty_level: string;
-    instructions: string;
-  }>;
-  coach_id: string;
-  created_at: string;
-  updated_at: string;
+interface SelectedReplacement {
+  index: number;
+  exercise: Exercise | null;
 }
 
 export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: TrainingPlanDetailsProps) {
@@ -78,6 +60,10 @@ export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: Trainin
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
+  const [selectedReplacement, setSelectedReplacement] = useState<SelectedReplacement>({
+    index: -1,
+    exercise: null
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -124,57 +110,6 @@ export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: Trainin
       setAvailableExercises(exercisesWithOrder);
     } catch (error) {
       console.error('Error fetching all exercises:', error);
-    }
-  };
-
-  const fetchExercises = async () => {
-    if (!plan.exercises?.length) return;
-    
-    try {
-      const { data: templateData, error: templateError } = await supabase
-        .from('training_plan_templates')
-        .select('*')
-        .eq('id', plan.id)
-        .single();
-
-      if (templateError) throw templateError;
-
-      const template = templateData as TrainingPlanTemplate;
-
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('id, name, description, muscle_group')
-        .in('id', plan.exercises);
-
-      if (error) throw error;
-
-      const orderedExercises = plan.exercises.map((exerciseId, index) => {
-        const exerciseData = data.find(e => e.id === exerciseId);
-        const savedDetails = template.exercise_details?.find(
-          d => d.exercise_id === exerciseId
-        );
-        
-        if (exerciseData) {
-          return {
-            ...exerciseData,
-            sets: savedDetails?.sets || 3,
-            reps: savedDetails?.reps || 12,
-            weight: savedDetails?.weight || 0,
-            order_index: savedDetails?.order_index ?? index
-          };
-        }
-        return null;
-      }).filter(e => e !== null) as Exercise[];
-
-      orderedExercises.sort((a, b) => a.order_index - b.order_index);
-      setExercises(orderedExercises);
-    } catch (error) {
-      console.error('Error in fetchExercises:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch exercises",
-        variant: "destructive",
-      });
     }
   };
 
@@ -238,7 +173,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: Trainin
     const newExercises = [...exercises];
     newExercises[index] = {
       ...newExercises[index],
-      [field]: numValue
+      [field]: field === 'notes' ? value : numValue
     };
     setExercises(newExercises);
   };
