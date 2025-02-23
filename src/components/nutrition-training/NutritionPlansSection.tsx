@@ -23,19 +23,50 @@ export function NutritionPlansSection() {
 
   const fetchNutritionPlans = async () => {
     try {
+      console.log("Starting to fetch nutrition plans...");
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error("No authenticated user found");
+        return;
+      }
 
-      // First get the templates
+      // Verify coach role
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching user profile:", profileError);
+        throw profileError;
+      }
+
+      if (!userProfile || userProfile.role !== 'coach') {
+        console.error("Access denied: User is not a coach");
+        toast({
+          title: "Access Denied",
+          description: "Only coaches can access nutrition plan templates",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get nutrition plan templates
       const { data: templates, error } = await supabase
         .from('nutrition_plan_templates')
         .select('*')
         .eq('coach_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching nutrition plans:", error);
+        throw error;
+      }
 
-      // For each template, parse the meals JSON data
+      console.log("Fetched nutrition plans:", templates);
+      
+      // Parse the meals JSON data
       const plansWithMeals = templates.map(template => ({
         ...template,
         meals: template.meals || []
