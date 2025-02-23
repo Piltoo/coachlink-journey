@@ -63,13 +63,22 @@ export default function WeeklyCheckIns() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      // Först skapar vi weekly checkin
+      // Hämta current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('Kunde inte verifiera användaren');
+      }
+
+      // Skapa weekly checkin med client_id
       const { data: checkinData, error: checkinError } = await supabase
         .from('weekly_checkins')
         .insert([
           {
             weight_kg: data.weight_kg,
             check_in_date: new Date().toISOString(),
+            client_id: user.id, // Lägger till client_id här
+            status: 'pending' as const
           }
         ])
         .select()
