@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -59,15 +60,19 @@ export default function WeeklyCheckIns() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data, error } = await supabase
-        .rpc('can_create_checkin', { user_id: user.id });
+      const { data: canCreate, error } = await supabase
+        .from('weekly_checkins')
+        .select('created_at')
+        .eq('client_id', user.id)
+        .gt('created_at', new Date(Date.now() - 60000).toISOString())
+        .maybeSingle();
 
       if (error) {
         console.error('Error checking check-in status:', error);
         return;
       }
 
-      if (!data) {
+      if (canCreate) {
         toast({
           title: "Tidslås aktivt",
           description: "Du måste vänta 1 minut innan du kan göra en ny check-in.",
@@ -111,10 +116,17 @@ export default function WeeklyCheckIns() {
         throw new Error('Kunde inte verifiera användaren');
       }
 
-      const { data: canCreate, error: checkError } = await supabase
-        .rpc('can_create_checkin', { user_id: user.id });
+      // Kontrollera om användaren kan göra en ny check-in
+      const { data: existingCheckIn, error: checkError } = await supabase
+        .from('weekly_checkins')
+        .select('created_at')
+        .eq('client_id', user.id)
+        .gt('created_at', new Date(Date.now() - 60000).toISOString())
+        .maybeSingle();
 
-      if (checkError || !canCreate) {
+      if (checkError) throw checkError;
+
+      if (existingCheckIn) {
         toast({
           title: "Tidslås aktivt",
           description: "Du måste vänta 1 minut innan du kan göra en ny check-in.",
@@ -184,7 +196,7 @@ export default function WeeklyCheckIns() {
     <div className="container mx-auto py-6 max-w-3xl">
       <Card>
         <CardHeader>
-          <CardTitle>Vecka Check-in</CardTitle>
+          <CardTitle>Vecko Check-in</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>

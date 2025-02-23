@@ -1112,6 +1112,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      can_create_checkin: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
       invite_client: {
         Args: {
           client_email: string
