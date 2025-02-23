@@ -24,6 +24,14 @@ interface CheckInQuestion {
 interface FormData {
   weight_kg: number;
   answers: Record<string, string>;
+  measurements: {
+    neck_cm: number;
+    chest_cm: number;
+    arm_cm: number;
+    waist_cm: number;
+    hips_cm: number;
+    thigh_cm: number;
+  };
 }
 
 export default function WeeklyCheckIns() {
@@ -34,6 +42,14 @@ export default function WeeklyCheckIns() {
     defaultValues: {
       weight_kg: 0,
       answers: {},
+      measurements: {
+        neck_cm: 0,
+        chest_cm: 0,
+        arm_cm: 0,
+        waist_cm: 0,
+        hips_cm: 0,
+        thigh_cm: 0,
+      },
     },
   });
 
@@ -77,7 +93,7 @@ export default function WeeklyCheckIns() {
           {
             weight_kg: data.weight_kg,
             check_in_date: new Date().toISOString(),
-            client_id: user.id, // Lägger till client_id här
+            client_id: user.id,
             status: 'pending' as const
           }
         ])
@@ -85,6 +101,19 @@ export default function WeeklyCheckIns() {
         .single();
 
       if (checkinError) throw checkinError;
+
+      // Spara mätningar
+      const { error: measurementsError } = await supabase
+        .from('measurements')
+        .insert([
+          {
+            ...data.measurements,
+            checkin_id: checkinData.id,
+            weight_kg: data.weight_kg,
+          }
+        ]);
+
+      if (measurementsError) throw measurementsError;
 
       // Sen sparar vi svaren
       const answers = questions.map(q => ({
@@ -126,41 +155,163 @@ export default function WeeklyCheckIns() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="weight_kg"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Vikt (kg)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        {...field}
-                        onChange={e => field.onChange(parseFloat(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {questions.map((question) => (
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Vikt och Mått</h3>
                 <FormField
-                  key={question.id}
                   control={form.control}
-                  name={`answers.${question.id}`}
+                  name="weight_kg"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{question.question}</FormLabel>
+                      <FormLabel>Vikt (kg)</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          {...field}
+                          onChange={e => field.onChange(parseFloat(e.target.value))}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              ))}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="measurements.neck_cm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Hals (cm)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            {...field}
+                            onChange={e => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="measurements.chest_cm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bröst (cm)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            {...field}
+                            onChange={e => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="measurements.arm_cm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Arm (cm)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            {...field}
+                            onChange={e => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="measurements.waist_cm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Midja (cm)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            {...field}
+                            onChange={e => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="measurements.hips_cm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Höfter (cm)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            {...field}
+                            onChange={e => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="measurements.thigh_cm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Lår (cm)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            {...field}
+                            onChange={e => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Frågor</h3>
+                {questions.map((question) => (
+                  <FormField
+                    key={question.id}
+                    control={form.control}
+                    name={`answers.${question.id}`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{question.question}</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ))}
+              </div>
 
               <Button 
                 type="submit" 
