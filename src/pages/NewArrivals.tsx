@@ -28,6 +28,18 @@ const NewArrivals = () => {
 
       console.log("Fetching clients for coach:", user.id);
 
+      // First verify that the current user is a coach
+      const { data: coachProfile, error: coachError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (coachError) throw coachError;
+      if (coachProfile.role !== 'coach') {
+        throw new Error('Only coaches can view new arrivals');
+      }
+
       const { data: notConnectedClients, error: relationshipsError } = await supabase
         .from('coach_clients')
         .select('client_id, status, requested_services')
@@ -46,7 +58,8 @@ const NewArrivals = () => {
       const { data: clientProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
-        .in('id', clientIds);
+        .in('id', clientIds)
+        .eq('role', 'client');
 
       if (profilesError) throw profilesError;
 

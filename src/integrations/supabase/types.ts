@@ -604,7 +604,6 @@ export type Database = {
           requested_services: string[] | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
-          user_role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
           created_at?: string
@@ -618,7 +617,6 @@ export type Database = {
           requested_services?: string[] | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
-          user_role?: Database["public"]["Enums"]["user_role"]
         }
         Update: {
           created_at?: string
@@ -632,7 +630,6 @@ export type Database = {
           requested_services?: string[] | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
-          user_role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: []
       }
