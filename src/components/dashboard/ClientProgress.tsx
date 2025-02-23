@@ -25,6 +25,13 @@ type HealthAssessment = {
   gender?: 'male' | 'female';
 };
 
+type MeasurementCard = {
+  title: string;
+  key: keyof Omit<Measurement, 'created_at'>;
+  unit: string;
+  color: string;
+};
+
 const measurementCards: MeasurementCard[] = [
   { title: "Midjemått", key: "waist_cm", unit: "cm", color: "#10B981" },
   { title: "Bröstkorg", key: "chest_cm", unit: "cm", color: "#3B82F6" },
@@ -48,11 +55,11 @@ export const ClientProgress = () => {
 
       const { data: healthData, error: healthError } = await supabase
         .from('client_health_assessments')
-        .select('target_weight, starting_weight, height_cm, gender')
+        .select('target_weight, starting_weight, height_cm')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (healthError) {
         console.error("Error fetching health assessment:", healthError);
@@ -69,7 +76,7 @@ export const ClientProgress = () => {
           target_weight: healthData.target_weight,
           starting_weight: healthData.starting_weight,
           height_cm: healthData.height_cm || 180,
-          gender: healthData.gender || 'male'
+          gender: 'male' // Default värde tills vi lägger till gender i databasen
         });
       }
 
