@@ -43,64 +43,62 @@ export default function CreateTrainingPlan() {
         return;
       }
 
-      console.log("Starting to fetch exercises for coach:", user.id);
-
-      // Fetch coach's custom exercises
-      const customExercisesResult = await supabase
+      // Fetch coach's custom exercises with name filter if search query exists
+      const customExercisesQuery = supabase
         .from('exercises')
         .select('*')
         .eq('coach_id', user.id);
-
-      if (customExercisesResult.error) {
-        console.error("Error fetching custom exercises:", customExercisesResult.error);
-        throw customExercisesResult.error;
+      
+      if (searchQuery) {
+        customExercisesQuery.ilike('name', `%${searchQuery}%`);
       }
 
-      console.log("Custom exercises raw data:", customExercisesResult.data);
+      const { data: customExercises, error: customError } = await customExercisesQuery;
 
-      // Fetch exercises from the general database
-      const generalExercisesResult = await supabase
+      if (customError) {
+        console.error("Error fetching custom exercises:", customError);
+        throw customError;
+      }
+
+      // Fetch general exercises with name filter if search query exists
+      const generalExercisesQuery = supabase
         .from('exercise_datab_all_coaches')
         .select('*');
-
-      if (generalExercisesResult.error) {
-        console.error("Error fetching general exercises:", generalExercisesResult.error);
-        throw generalExercisesResult.error;
+      
+      if (searchQuery) {
+        generalExercisesQuery.ilike('Name', `%${searchQuery}%`);
       }
 
-      console.log("General exercises raw data:", generalExercisesResult.data);
+      const { data: generalExercises, error: generalError } = await generalExercisesQuery;
 
-      // Transform general exercises to match Exercise type and add isCustom flag
-      const transformedGeneralExercises = (generalExercisesResult.data || []).map((ex: any) => {
-        const transformed = {
-          id: `general_${ex.Name?.replace(/\s+/g, '_')}`,
-          name: ex.Name || '',
-          description: ex.description || '',
-          muscle_group: ex.muscle_group || '',
-          start_position_image: ex.start_position_image || null,
-          mid_position_image: ex.mid_posisiton_image || null,
-          difficulty_level: ex.difficulty_level || 'Beginner',
-          equipment_needed: ex.equitment_needed || null,
-          instructions: ex.description || '',
-          isCustom: false
-        };
-        console.log("Transformed general exercise:", transformed);
-        return transformed;
-      });
+      if (generalError) {
+        console.error("Error fetching general exercises:", generalError);
+        throw generalError;
+      }
 
-      // Add isCustom flag to custom exercises
-      const transformedCustomExercises = (customExercisesResult.data || []).map(ex => {
-        const transformed = {
-          ...ex,
-          isCustom: true
-        };
-        console.log("Transformed custom exercise:", transformed);
-        return transformed;
-      });
+      // Transform custom exercises
+      const transformedCustomExercises = (customExercises || []).map(ex => ({
+        ...ex,
+        isCustom: true
+      }));
+
+      // Transform general exercises
+      const transformedGeneralExercises = (generalExercises || []).map((ex: any) => ({
+        id: `general_${ex.Name?.replace(/\s+/g, '_')}`,
+        name: ex.Name || '',
+        description: ex.description || '',
+        muscle_group: ex.muscle_group || '',
+        start_position_image: ex.start_position_image || null,
+        mid_position_image: ex.mid_posisiton_image || null,
+        difficulty_level: ex.difficulty_level || 'Beginner',
+        equipment_needed: ex.equitment_needed || null,
+        instructions: ex.description || '',
+        isCustom: false
+      }));
 
       // Combine both sets of exercises
       const allExercises = [...transformedCustomExercises, ...transformedGeneralExercises];
-      console.log("Final combined exercises array:", allExercises);
+      console.log("All exercises after transformation:", allExercises);
       setAvailableExercises(allExercises);
 
     } catch (error) {
@@ -120,7 +118,6 @@ export default function CreateTrainingPlan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Filter out the isCustom property before saving
       const exerciseDetailsForSaving = selectedExercises.map(({ isCustom, ...ex }) => ex);
 
       const { error } = await supabase
@@ -174,23 +171,17 @@ export default function CreateTrainingPlan() {
   const hasActiveFilters = muscleGroupFilter !== 'All' || searchQuery.trim() !== '';
 
   const filteredExercises = availableExercises.filter(exercise => {
-    console.log("Filtering exercise:", exercise);
-    console.log("Current muscle group filter:", muscleGroupFilter);
-    console.log("Current search query:", searchQuery);
-
     const matchesMuscleGroup = muscleGroupFilter === 'All' || 
-      (exercise.muscle_group?.toLowerCase() === muscleGroupFilter.toLowerCase());
+      exercise.muscle_group?.toLowerCase() === muscleGroupFilter.toLowerCase();
     
-    const searchLower = searchQuery.toLowerCase();
-    const nameMatch = exercise.name?.toLowerCase().includes(searchLower);
-    const muscleGroupMatch = exercise.muscle_group?.toLowerCase().includes(searchLower);
-    
-    const matches = matchesMuscleGroup && (searchQuery === '' || nameMatch || muscleGroupMatch);
-    console.log("Exercise matches filters:", matches);
-    return matches;
+    // We don't need to filter by search query here anymore since it's handled in the fetchExercises function
+    return matchesMuscleGroup;
   });
 
-  console.log("Filtered exercises:", filteredExercises);
+  // Update useEffect to refetch exercises when search query changes
+  useEffect(() => {
+    fetchExercises();
+  }, [searchQuery]);
 
   return (
     <div className="min-h-screen bg-background">

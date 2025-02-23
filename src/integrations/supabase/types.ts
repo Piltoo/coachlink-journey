@@ -143,9 +143,10 @@ export type Database = {
           description: string | null
           difficulty_level: string | null
           equitment_needed: string | null
+          ID: string | null
           mid_posisiton_image: string | null
           muscle_group: string | null
-          Name: string | null
+          name: string | null
           start_position_image: string | null
           Type: string | null
         }
@@ -153,9 +154,10 @@ export type Database = {
           description?: string | null
           difficulty_level?: string | null
           equitment_needed?: string | null
+          ID?: string | null
           mid_posisiton_image?: string | null
           muscle_group?: string | null
-          Name?: string | null
+          name?: string | null
           start_position_image?: string | null
           Type?: string | null
         }
@@ -163,9 +165,10 @@ export type Database = {
           description?: string | null
           difficulty_level?: string | null
           equitment_needed?: string | null
+          ID?: string | null
           mid_posisiton_image?: string | null
           muscle_group?: string | null
-          Name?: string | null
+          name?: string | null
           start_position_image?: string | null
           Type?: string | null
         }
