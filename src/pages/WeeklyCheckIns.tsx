@@ -1,6 +1,6 @@
-
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ export default function WeeklyCheckIns() {
   const [questions, setQuestions] = useState<CheckInQuestion[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const form = useForm<FormData>({
     defaultValues: {
       weight_kg: 0,
@@ -52,6 +53,31 @@ export default function WeeklyCheckIns() {
       },
     },
   });
+
+  useEffect(() => {
+    async function checkCanSubmit() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .rpc('can_create_checkin', { user_id: user.id });
+
+      if (error) {
+        console.error('Error checking check-in status:', error);
+        return;
+      }
+
+      if (!data) {
+        toast({
+          title: "Tidslås aktivt",
+          description: "Du måste vänta 1 minut innan du kan göra en ny check-in.",
+        });
+        navigate('/dashboard');
+      }
+    }
+
+    checkCanSubmit();
+  }, [toast, navigate]);
 
   useEffect(() => {
     async function fetchQuestions() {
@@ -79,14 +105,24 @@ export default function WeeklyCheckIns() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      // Hämta current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
         throw new Error('Kunde inte verifiera användaren');
       }
 
-      // Skapa weekly checkin med client_id
+      const { data: canCreate, error: checkError } = await supabase
+        .rpc('can_create_checkin', { user_id: user.id });
+
+      if (checkError || !canCreate) {
+        toast({
+          title: "Tidslås aktivt",
+          description: "Du måste vänta 1 minut innan du kan göra en ny check-in.",
+        });
+        navigate('/dashboard');
+        return;
+      }
+
       const { data: checkinData, error: checkinError } = await supabase
         .from('weekly_checkins')
         .insert([
@@ -102,7 +138,6 @@ export default function WeeklyCheckIns() {
 
       if (checkinError) throw checkinError;
 
-      // Spara mätningar
       const { error: measurementsError } = await supabase
         .from('measurements')
         .insert([
@@ -115,7 +150,6 @@ export default function WeeklyCheckIns() {
 
       if (measurementsError) throw measurementsError;
 
-      // Sen sparar vi svaren
       const answers = questions.map(q => ({
         checkin_id: checkinData.id,
         question_id: q.id,
@@ -133,7 +167,7 @@ export default function WeeklyCheckIns() {
         description: "Din vecko-checkin har sparats.",
       });
 
-      form.reset();
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error submitting check-in:', error);
       toast({
@@ -150,7 +184,7 @@ export default function WeeklyCheckIns() {
     <div className="container mx-auto py-6 max-w-3xl">
       <Card>
         <CardHeader>
-          <CardTitle>Vecko Check-in</CardTitle>
+          <CardTitle>Vecka Check-in</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
