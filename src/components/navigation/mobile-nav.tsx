@@ -1,8 +1,10 @@
 
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { LayoutDashboard, ClipboardCheck, Dumbbell, MessageSquare, Settings, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MobileNavProps {
   open: boolean;
@@ -11,6 +13,29 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
+  const [canCheckIn, setCanCheckIn] = useState(true);
+
+  useEffect(() => {
+    async function checkCanSubmit() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: existingCheckIn } = await supabase
+        .from('weekly_checkins')
+        .select('created_at')
+        .eq('client_id', user.id)
+        .gt('created_at', new Date(Date.now() - 60000).toISOString())
+        .maybeSingle();
+
+      setCanCheckIn(!existingCheckIn);
+    }
+
+    checkCanSubmit();
+    // Kolla var 10:e sekund om tidslåset har gått ut
+    const interval = setInterval(checkCanSubmit, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger asChild className="md:hidden">
@@ -37,16 +62,18 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
               Dashboard
             </Link>
           </Button>
-          <Button
-            asChild
-            variant="ghost"
-            className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/10"
-          >
-            <Link to="/weekly-checkins" onClick={() => onOpenChange(false)}>
-              <ClipboardCheck className="h-5 w-5 mr-2" />
-              Weekly Check-ins
-            </Link>
-          </Button>
+          {canCheckIn && (
+            <Button
+              asChild
+              variant="ghost"
+              className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/10"
+            >
+              <Link to="/weekly-checkins" onClick={() => onOpenChange(false)}>
+                <ClipboardCheck className="h-5 w-5 mr-2" />
+                Weekly Check-ins
+              </Link>
+            </Button>
+          )}
           <Button
             asChild
             variant="ghost"
