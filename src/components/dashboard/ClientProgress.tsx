@@ -22,13 +22,7 @@ type HealthAssessment = {
   target_weight: number;
   starting_weight: number;
   height_cm?: number;
-};
-
-type MeasurementCard = {
-  title: string;
-  key: keyof Omit<Measurement, 'created_at' | 'neck_cm'>;
-  unit: string;
-  color: string;
+  gender?: 'male' | 'female';
 };
 
 const measurementCards: MeasurementCard[] = [
@@ -54,7 +48,7 @@ export const ClientProgress = () => {
 
       const { data: healthData, error: healthError } = await supabase
         .from('client_health_assessments')
-        .select('target_weight, starting_weight')
+        .select('target_weight, starting_weight, height_cm, gender')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -70,12 +64,12 @@ export const ClientProgress = () => {
         return;
       }
 
-      // Säkerställ att vi har rätt typning och hantering av data
       if (healthData) {
         setHealthAssessment({
           target_weight: healthData.target_weight,
           starting_weight: healthData.starting_weight,
-          height_cm: healthData.height_cm || 180 // Använd default värde om height_cm inte finns
+          height_cm: healthData.height_cm || 180,
+          gender: healthData.gender || 'male'
         });
       }
 
@@ -131,8 +125,22 @@ export const ClientProgress = () => {
       const height = healthAssessment.height_cm;
       const waist = latest.waist_cm;
       const neck = latest.neck_cm;
+      const gender = healthAssessment.gender || 'male';
       
-      const bodyFat = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
+      let bodyFat: number;
+      
+      if (gender === 'male') {
+        // Navy Body Fat Formula för män
+        bodyFat = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
+      } else {
+        // Navy Body Fat Formula för kvinnor (inkluderar även höftmått)
+        if (!latest.hips_cm) {
+          setBodyFatPercentage(null);
+          return;
+        }
+        const hips = latest.hips_cm;
+        bodyFat = 163.205 * Math.log10(waist + hips - neck) - 97.684 * Math.log10(height) - 78.387;
+      }
       
       setBodyFatPercentage(Math.min(Math.max(Math.round(bodyFat * 10) / 10, 2), 45));
     };
