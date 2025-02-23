@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
@@ -15,6 +14,7 @@ type Measurement = {
   thigh_cm: number | null;
   arm_cm: number | null;
   created_at: string;
+  neck_cm?: number | null;
 };
 
 type HealthAssessment = {
@@ -24,7 +24,7 @@ type HealthAssessment = {
 
 type MeasurementCard = {
   title: string;
-  key: keyof Omit<Measurement, 'created_at'>;
+  key: keyof Omit<Measurement, 'created_at' | 'neck_cm'>;
   unit: string;
   color: string;
 };
@@ -82,7 +82,8 @@ export const ClientProgress = () => {
             hips_cm,
             thigh_cm,
             arm_cm,
-            weight_kg
+            weight_kg,
+            neck_cm
           )
         `)
         .eq('client_id', user.id)
@@ -109,6 +110,25 @@ export const ClientProgress = () => {
 
     fetchData();
   }, [toast]);
+
+  const calculateBodyFat = (measurement: Measurement | null) => {
+    if (!measurement || !measurement.waist_cm || !measurement.neck_cm) {
+      return null;
+    }
+    
+    // Navy Body Fat Formula för män
+    // 86.010 × log10(midja - nacke) - 70.041 × log10(längd) + 36.76
+    
+    // Vi antar en genomsnittlig längd på 180cm tills vi har en kolumn för det
+    const height = 180;
+    const waist = measurement.waist_cm;
+    const neck = measurement.neck_cm;
+    
+    const bodyFat = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
+    
+    // Avrunda till en decimal och säkerställ att resultatet är mellan 2-45%
+    return Math.min(Math.max(Math.round(bodyFat * 10) / 10, 2), 45);
+  };
 
   const calculateProgress = (current: number, initial: number, target: number) => {
     if (initial === target) return 100;
@@ -140,6 +160,8 @@ export const ClientProgress = () => {
     healthAssessment.target_weight
   );
 
+  const bodyFatPercentage = calculateBodyFat(latest);
+
   const formatDate = (date: string) => {
     return format(new Date(date), 'dd/MM');
   };
@@ -158,6 +180,17 @@ export const ClientProgress = () => {
             <p className="text-sm text-muted-foreground">
               {weightProgress.toFixed(1)}% framsteg mot målet
             </p>
+            {bodyFatPercentage && (
+              <div className="mt-4 p-3 bg-green-50 rounded-md">
+                <h3 className="text-sm font-medium text-primary/80 mb-1">Beräknad kroppsfett</h3>
+                <p className="text-2xl font-bold text-primary">
+                  {bodyFatPercentage}%
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Baserat på Navy Body Fat Formula
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </GlassCard>
