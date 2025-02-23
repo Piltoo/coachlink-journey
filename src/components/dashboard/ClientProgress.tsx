@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
@@ -80,7 +81,8 @@ export const ClientProgress = () => {
         });
       }
 
-      const { data: measurementsData, error: measurementsError } = await supabase
+      // Hämta senaste check-in med vikt och mått
+      const { data: latestWeeklyCheckin, error: checkinError } = await supabase
         .from('weekly_checkins')
         .select(`
           weight_kg,
@@ -91,7 +93,6 @@ export const ClientProgress = () => {
             hips_cm,
             thigh_cm,
             arm_cm,
-            weight_kg,
             neck_cm
           )
         `)
@@ -99,7 +100,7 @@ export const ClientProgress = () => {
         .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at', { ascending: true });
 
-      if (measurementsError) {
+      if (checkinError) {
         toast({
           title: "Error",
           description: "Failed to load measurements",
@@ -108,13 +109,16 @@ export const ClientProgress = () => {
         return;
       }
 
-      const transformedMeasurements = measurementsData.map(data => ({
-        weight_kg: data.weight_kg,
-        created_at: data.created_at,
-        ...data.measurements?.[0]
-      }));
+      if (latestWeeklyCheckin) {
+        const transformedMeasurements = latestWeeklyCheckin.map(data => ({
+          weight_kg: data.weight_kg,
+          created_at: data.created_at,
+          ...data.measurements?.[0]
+        }));
 
-      setMeasurements(transformedMeasurements);
+        console.log("Transformed measurements:", transformedMeasurements);
+        setMeasurements(transformedMeasurements);
+      }
     };
 
     fetchData();
