@@ -1,24 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GlassCard } from "@/components/ui/glass-card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-type ServiceOption = {
-  id: string;
-  label: string;
-};
-
-const serviceOptions: ServiceOption[] = [
-  { id: "personal-training", label: "Personal Training" },
-  { id: "coaching", label: "Coaching" },
-  { id: "treatments", label: "Treatments" },
-  { id: "others", label: "Others" },
-];
+import { ServiceSelection } from "@/components/auth/ServiceSelection";
+import { PasswordResetForm } from "@/components/auth/PasswordResetForm";
+import { ConfirmationMessage } from "@/components/auth/ConfirmationMessage";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -30,8 +20,6 @@ const Auth = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -43,33 +31,6 @@ const Auth = () => {
       return () => clearTimeout(timer);
     }
   }, [showConfirmation, navigate]);
-
-  const handlePasswordReset = async () => {
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (error) throw error;
-
-      navigate("/health-assessment");
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update password",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,51 +131,11 @@ const Auth = () => {
   };
 
   if (showPasswordReset) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100/30 to-green-50 flex items-center justify-center px-4">
-        <GlassCard className="w-full max-w-md p-8 bg-white/40 backdrop-blur-lg">
-          <h2 className="text-2xl font-bold text-primary text-center mb-6">
-            Set New Password
-          </h2>
-          <div className="space-y-4">
-            <Input
-              type="password"
-              placeholder="New Password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-            <Input
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-            <Button
-              onClick={handlePasswordReset}
-              className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium"
-            >
-              Set Password
-            </Button>
-          </div>
-        </GlassCard>
-      </div>
-    );
+    return <PasswordResetForm />;
   }
 
   if (showConfirmation) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100/30 to-green-50 flex items-center justify-center px-4">
-        <GlassCard className="w-full max-w-md p-8 bg-white/40 backdrop-blur-lg text-center">
-          <h2 className="text-2xl font-bold text-primary mb-4">Thank you for your request!</h2>
-          <p className="text-gray-600">
-            We will send you an email with the confirmation when a coach accepts your request.
-          </p>
-          <p className="text-sm text-gray-500 mt-4">
-            Redirecting to home page in a few seconds...
-          </p>
-        </GlassCard>
-      </div>
-    );
+    return <ConfirmationMessage />;
   }
 
   return (
@@ -255,62 +176,12 @@ const Auth = () => {
           </div>
           
           {isSignUp && (
-            <>
-              <div className="space-y-4">
-                <div className="text-sm font-medium text-gray-700">
-                  Select the services you're interested in:
-                </div>
-                <div className="space-y-3">
-                  {serviceOptions.map((service) => (
-                    <div key={service.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={service.id}
-                        checked={selectedServices.includes(service.id)}
-                        onCheckedChange={(checked) => {
-                          setSelectedServices(prev =>
-                            checked
-                              ? [...prev, service.id]
-                              : prev.filter(id => id !== service.id)
-                          );
-                        }}
-                      />
-                      <label
-                        htmlFor={service.id}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {service.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="terms"
-                  checked={agreedToTerms}
-                  onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                />
-                <label
-                  htmlFor="terms"
-                  className="text-sm text-gray-600"
-                >
-                  I agree to the{" "}
-                  <button
-                    type="button"
-                    className="text-primary underline hover:text-primary/80"
-                    onClick={() => {
-                      toast({
-                        title: "Coming Soon",
-                        description: "The terms and conditions are currently being drafted.",
-                      });
-                    }}
-                  >
-                    terms and conditions
-                  </button>
-                </label>
-              </div>
-            </>
+            <ServiceSelection
+              selectedServices={selectedServices}
+              setSelectedServices={setSelectedServices}
+              agreedToTerms={agreedToTerms}
+              setAgreedToTerms={setAgreedToTerms}
+            />
           )}
 
           <Button
