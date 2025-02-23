@@ -43,25 +43,25 @@ export const useStats = () => {
         tomorrow.setDate(tomorrow.getDate() + 1);
 
         const [
-          { count: activeClientsCount },
-          { count: newClientsCount },
-          { count: pendingCheckinsCount },
-          { count: unreadMessagesCount },
-          { count: notConnectedCount },
+          { data: activeClients },
+          { data: newClients },
+          { data: pendingCheckins },
+          { data: unreadMessages },
+          { data: notConnectedClients },
           { data: weeklyPayments },
           { data: sessions }
         ] = await Promise.all([
           // Active clients count
           supabase
             .from('coach_clients')
-            .select('*', { count: 'exact', head: true })
+            .select('id')
             .eq('coach_id', user.id)
             .eq('status', 'active'),
           
           // New clients this week count
           supabase
             .from('coach_clients')
-            .select('*', { count: 'exact', head: true })
+            .select('id')
             .eq('coach_id', user.id)
             .eq('status', 'active')
             .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
@@ -69,20 +69,20 @@ export const useStats = () => {
           // Pending check-ins count
           supabase
             .from('weekly_checkins')
-            .select('*', { count: 'exact', head: true })
+            .select('id')
             .eq('status', 'pending'),
           
           // Unread messages count
           supabase
             .from('messages')
-            .select('*', { count: 'exact', head: true })
+            .select('id')
             .eq('receiver_id', user.id)
             .eq('status', 'sent'),
           
           // New arrivals count
           supabase
             .from('coach_clients')
-            .select('*', { count: 'exact', head: true })
+            .select('id')
             .eq('coach_id', user.id)
             .eq('status', 'not_connected'),
           
@@ -98,8 +98,10 @@ export const useStats = () => {
           supabase
             .from('workout_sessions')
             .select(`
+              id,
               start_time,
-              client:profiles!workout_sessions_client_id_fkey (
+              client_id,
+              profiles!workout_sessions_client_id_fkey (
                 full_name,
                 email
               )
@@ -112,26 +114,33 @@ export const useStats = () => {
         ]);
 
         if (sessions) {
-          setTodaySessions(sessions);
+          const formattedSessions = sessions.map(session => ({
+            start_time: session.start_time,
+            client: {
+              full_name: session.profiles?.full_name || '',
+              email: session.profiles?.email || ''
+            }
+          }));
+          setTodaySessions(formattedSessions);
         }
 
         const totalWeeklySales = weeklyPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
 
         setStats({
           activeClients: {
-            value: activeClientsCount || 0,
-            description: `+${newClientsCount || 0} new this week`
+            value: activeClients?.length || 0,
+            description: `+${newClients?.length || 0} new this week`
           },
           pendingCheckins: {
-            value: pendingCheckinsCount || 0,
+            value: pendingCheckins?.length || 0,
             description: "Requires review"
           },
           unreadMessages: {
-            value: unreadMessagesCount || 0,
+            value: unreadMessages?.length || 0,
             description: "New messages"
           },
           newArrivals: {
-            value: notConnectedCount || 0,
+            value: notConnectedClients?.length || 0,
             description: "New potential clients"
           },
           totalSales: {
