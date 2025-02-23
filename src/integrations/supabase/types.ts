@@ -138,6 +138,39 @@ export type Database = {
           },
         ]
       }
+      exercise_datab_all_coaches: {
+        Row: {
+          description: string | null
+          difficulty_level: string | null
+          equitment_needed: string | null
+          mid_posisiton_image: string | null
+          muscle_group: string | null
+          Name: string | null
+          start_position_image: string | null
+          Type: string | null
+        }
+        Insert: {
+          description?: string | null
+          difficulty_level?: string | null
+          equitment_needed?: string | null
+          mid_posisiton_image?: string | null
+          muscle_group?: string | null
+          Name?: string | null
+          start_position_image?: string | null
+          Type?: string | null
+        }
+        Update: {
+          description?: string | null
+          difficulty_level?: string | null
+          equitment_needed?: string | null
+          mid_posisiton_image?: string | null
+          muscle_group?: string | null
+          Name?: string | null
+          start_position_image?: string | null
+          Type?: string | null
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           coach_id: string

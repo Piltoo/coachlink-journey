@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Exercise } from '@/components/nutrition-training/types/exercise';
-import { ExerciseCardView } from '@/components/nutrition-training/exercise/ExerciseCardView';
 import { ExerciseListView } from '@/components/nutrition-training/exercise/ExerciseListView';
 
 type ExerciseWithDetails = Exercise & {
@@ -18,6 +18,7 @@ type ExerciseWithDetails = Exercise & {
   reps?: number;
   weight?: number;
   notes?: string;
+  isCustom?: boolean;
 };
 
 export default function CreateTrainingPlan() {
@@ -26,7 +27,7 @@ export default function CreateTrainingPlan() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedExercises, setSelectedExercises] = useState<ExerciseWithDetails[]>([]);
-  const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
+  const [availableExercises, setAvailableExercises] = useState<ExerciseWithDetails[]>([]);
   const [muscleGroupFilter, setMuscleGroupFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -39,13 +40,45 @@ export default function CreateTrainingPlan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: exercises, error } = await supabase
+      // Fetch coach's custom exercises
+      const { data: customExercises, error: customError } = await supabase
         .from('exercises')
         .select('*')
         .eq('coach_id', user.id);
 
-      if (error) throw error;
-      setAvailableExercises(exercises || []);
+      if (customError) throw customError;
+
+      // Fetch exercises from the general database
+      const { data: generalExercises, error: generalError } = await supabase
+        .from('exercise_datab_all_coaches')
+        .select('*');
+
+      if (generalError) throw generalError;
+
+      // Transform general exercises to match Exercise type and add isCustom flag
+      const transformedGeneralExercises = generalExercises.map((ex: any) => ({
+        id: `general_${ex.Name?.replace(/\s+/g, '_')}`, // Create a unique ID
+        name: ex.Name || '',
+        description: ex.description || '',
+        muscle_group: ex.muscle_group || '',
+        start_position_image: ex.start_position_image || null,
+        mid_position_image: ex.mid_posisiton_image || null,
+        difficulty_level: ex.difficulty_level || 'Beginner',
+        equipment_needed: ex.equitment_needed || null,
+        instructions: ex.description || '',
+        isCustom: false
+      }));
+
+      // Add isCustom flag to custom exercises
+      const transformedCustomExercises = customExercises.map(ex => ({
+        ...ex,
+        isCustom: true
+      }));
+
+      // Combine both sets of exercises
+      const allExercises = [...transformedCustomExercises, ...transformedGeneralExercises];
+      setAvailableExercises(allExercises);
+
     } catch (error) {
       console.error('Error fetching exercises:', error);
       toast({
@@ -63,6 +96,9 @@ export default function CreateTrainingPlan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
+      // Filter out the isCustom property before saving
+      const exerciseDetailsForSaving = selectedExercises.map(({ isCustom, ...ex }) => ex);
+
       const { error } = await supabase
         .from('training_plan_templates')
         .insert([
@@ -71,7 +107,7 @@ export default function CreateTrainingPlan() {
             name,
             description,
             exercises: selectedExercises.map(ex => ex.id),
-            exercise_details: selectedExercises
+            exercise_details: exerciseDetailsForSaving
           }
         ]);
 
@@ -211,10 +247,15 @@ export default function CreateTrainingPlan() {
             <CardContent className="space-y-4">
               {selectedExercises.length > 0 ? (
                 <div className="space-y-4">
-                  {selectedExercises.map((exercise, index) => (
+                  {selectedExercises.map((exercise) => (
                     <div key={exercise.id} className="border rounded-lg p-4 space-y-4">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-medium">{exercise.name}</h3>
+                        <div>
+                          <h3 className="text-lg font-medium">{exercise.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {exercise.isCustom ? 'Custom Exercise' : 'General Database'}
+                          </p>
+                        </div>
                         <Button
                           variant="ghost"
                           size="sm"
