@@ -133,7 +133,6 @@ export default function CreateTrainingPlan() {
       }));
 
       const transformedGeneralExercises = (generalExercises || []).map((ex: any) => {
-        // Generate a deterministic UUID based on the exercise name
         const uuid = generateUUID(ex.name || 'unnamed_exercise');
         
         return {
@@ -171,17 +170,23 @@ export default function CreateTrainingPlan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Clean up exercise details before saving
-      const exerciseDetailsForSaving = selectedExercises.map(({ isCustom, ...ex }) => ({
-        id: ex.id,
+      // Prepare exercise details
+      const exerciseDetails = selectedExercises.map(ex => ({
+        exercise_id: ex.id,
         sets: ex.sets || 3,
         reps: ex.reps || 12,
         weight: ex.weight || 0,
         notes: ex.notes || '',
-        name: ex.name
+        name: ex.name,
+        type: ex.isCustom ? 'custom' : 'general'
       }));
 
-      console.log("Saving exercise details:", exerciseDetailsForSaving);
+      console.log("Saving training plan with details:", {
+        coach_id: user.id,
+        name,
+        description,
+        exercise_details: exerciseDetails
+      });
 
       const { error } = await supabase
         .from('training_plan_templates')
@@ -190,8 +195,7 @@ export default function CreateTrainingPlan() {
             coach_id: user.id,
             name,
             description,
-            exercises: selectedExercises.map(ex => ex.id),
-            exercise_details: exerciseDetailsForSaving
+            exercise_details: exerciseDetails
           }
         ]);
 
