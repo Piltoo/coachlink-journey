@@ -41,14 +41,17 @@ const Dashboard = () => {
 
         console.log("Fetching profile for user:", user.id);
 
-        const { data: profile, error: profileError } = await supabase
+        // Debug: Log the full profile query
+        const profileQuery = await supabase
           .from('profiles')
-          .select('first_name, user_profile, email')
+          .select('*')
           .eq('id', user.id)
           .single();
+        
+        console.log("Full profile data:", profileQuery);
 
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
+        if (profileQuery.error) {
+          console.error("Error fetching profile:", profileQuery.error);
           toast({
             title: "Profile Error",
             description: "Failed to load user profile. Please try refreshing the page.",
@@ -56,6 +59,8 @@ const Dashboard = () => {
           });
           return;
         }
+
+        const profile = profileQuery.data;
 
         if (!profile) {
           console.error("No profile found for user");
@@ -67,18 +72,19 @@ const Dashboard = () => {
           return;
         }
 
-        // Add debug log to see the exact value
+        // Debug: Log the raw profile data
         console.log("Raw profile data:", profile);
+        console.log("User profile value:", profile.user_profile);
         
         // Validate that user_profile is one of the expected values
         const validProfiles: UserProfile[] = ['client', 'coach', 'operator', 'therapist'];
-        const userProfileValue = profile.user_profile as UserProfile;
+        const userProfileValue = profile.user_profile?.toLowerCase() as UserProfile;
         
         if (!validProfiles.includes(userProfileValue)) {
           console.error("Invalid user profile type:", userProfileValue);
           toast({
             title: "Profile Error",
-            description: `Invalid profile type: ${userProfileValue}. Please contact support.`,
+            description: `Invalid profile type: ${profile.user_profile}. Please contact support.`,
             variant: "destructive",
           });
           return;
