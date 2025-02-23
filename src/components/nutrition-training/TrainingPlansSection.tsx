@@ -38,22 +38,14 @@ export function TrainingPlansSection() {
 
       const { data, error } = await supabase
         .from('training_plan_templates')
-        .select(`
-          *,
-          exercises:exercise_details(*)
-        `)
+        .select('*')
         .eq('coach_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Transform the data to include exercise details
-      const transformedData = (data || []).map(plan => ({
-        ...plan,
-        exercises: plan.exercise_details || []
-      }));
-
-      setTrainingPlans(transformedData);
+      // The exercise_details is already included in the response as a JSONB column
+      setTrainingPlans(data || []);
     } catch (error) {
       console.error('Error fetching training plans:', error);
       toast({
