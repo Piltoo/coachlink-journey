@@ -64,17 +64,41 @@ const NewArrivals = () => {
       if (profilesError) throw profilesError;
 
       if (clientProfiles) {
-        const formattedClients = clientProfiles.map(profile => {
+        // Get additional client data for plans
+        const clientPlansPromises = clientProfiles.map(async (profile) => {
+          const [nutritionPlan, workoutPlan, workoutSession] = await Promise.all([
+            supabase
+              .from('nutrition_plans')
+              .select('id')
+              .eq('client_id', profile.id)
+              .maybeSingle(),
+            supabase
+              .from('workout_plans')
+              .select('id')
+              .eq('client_id', profile.id)
+              .maybeSingle(),
+            supabase
+              .from('workout_sessions')
+              .select('id')
+              .eq('client_id', profile.id)
+              .maybeSingle()
+          ]);
+
           const relationshipData = notConnectedClients.find(rel => rel.client_id === profile.id);
+          
           return {
             id: profile.id,
             full_name: profile.full_name,
             email: profile.email,
             status: 'not_connected',
+            hasNutritionPlan: !!nutritionPlan.data,
+            hasWorkoutPlan: !!workoutPlan.data,
+            hasPersonalTraining: !!workoutSession.data,
             requested_services: relationshipData?.requested_services || []
-          };
+          } satisfies Client;
         });
 
+        const formattedClients = await Promise.all(clientPlansPromises);
         console.log("Formatted clients:", formattedClients);
         setClients(formattedClients);
       }

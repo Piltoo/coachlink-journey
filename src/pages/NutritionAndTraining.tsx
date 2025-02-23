@@ -23,7 +23,7 @@ export default function NutritionAndTraining() {
 
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('user_role, role')
+          .select('role')
           .eq('id', user.id)
           .single();
 
@@ -33,7 +33,7 @@ export default function NutritionAndTraining() {
           return;
         }
 
-        setHasAccess(profile?.user_role === 'coach' || profile?.role === 'coach');
+        setHasAccess(profile?.role === 'coach');
       } catch (error) {
         console.error("Error in fetchUserRole:", error);
         setHasAccess(false);
