@@ -26,62 +26,43 @@ const NewArrivals = () => {
         return;
       }
 
+      console.log("Fetching clients for coach:", user.id);
+
       const { data: notConnectedClients, error: relationshipsError } = await supabase
         .from('coach_clients')
-        .select('client_id, status')
+        .select('client_id, status, requested_services')
         .eq('coach_id', user.id)
         .eq('status', 'not_connected');
 
       if (relationshipsError) throw relationshipsError;
 
-      const clientIds = notConnectedClients?.map(rel => rel.client_id) || [];
-
-      if (clientIds.length === 0) {
+      if (!notConnectedClients || notConnectedClients.length === 0) {
         setClients([]);
         return;
       }
 
+      const clientIds = notConnectedClients.map(rel => rel.client_id);
+
       const { data: clientProfiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, full_name, email, requested_services')
-        .eq('role', 'client')
+        .select('id, full_name, email')
         .in('id', clientIds);
 
       if (profilesError) throw profilesError;
 
       if (clientProfiles) {
-        const clientPromises = clientProfiles.map(async (profile) => {
-          const [nutritionPlans, workoutPlans, workoutSessions] = await Promise.all([
-            supabase
-              .from('nutrition_plans')
-              .select('id')
-              .eq('client_id', profile.id)
-              .maybeSingle(),
-            supabase
-              .from('workout_plans')
-              .select('id')
-              .eq('client_id', profile.id)
-              .maybeSingle(),
-            supabase
-              .from('workout_sessions')
-              .select('id')
-              .eq('client_id', profile.id)
-              .maybeSingle(),
-          ]);
-
+        const formattedClients = clientProfiles.map(profile => {
+          const relationshipData = notConnectedClients.find(rel => rel.client_id === profile.id);
           return {
             id: profile.id,
             full_name: profile.full_name,
             email: profile.email,
             status: 'not_connected',
-            hasNutritionPlan: !!nutritionPlans.data,
-            hasWorkoutPlan: !!workoutPlans.data,
-            hasPersonalTraining: !!workoutSessions.data,
-            requested_services: profile.requested_services,
+            requested_services: relationshipData?.requested_services || []
           };
         });
 
-        const formattedClients = await Promise.all(clientPromises);
+        console.log("Formatted clients:", formattedClients);
         setClients(formattedClients);
       }
     } catch (error: any) {
@@ -106,7 +87,6 @@ const NewArrivals = () => {
         return;
       }
 
-      // Update the existing coach-client relationship instead of creating a new one
       const { error } = await supabase
         .from('coach_clients')
         .update({ status: newStatus })
