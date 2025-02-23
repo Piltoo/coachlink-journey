@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type ServiceOption = {
   id: string;
@@ -29,6 +29,9 @@ const Auth = () => {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -40,6 +43,33 @@ const Auth = () => {
       return () => clearTimeout(timer);
     }
   }, [showConfirmation, navigate]);
+
+  const handlePasswordReset = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      navigate("/health-assessment");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update password",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +84,6 @@ const Auth = () => {
           throw new Error("Please agree to the terms and conditions");
         }
 
-        // First create the user account
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -70,7 +99,6 @@ const Auth = () => {
         if (signUpError) throw signUpError;
 
         if (signUpData.user) {
-          // Insert the profile explicitly
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
@@ -83,7 +111,6 @@ const Auth = () => {
 
           if (profileError) throw profileError;
 
-          // Get all coaches
           const { data: coaches, error: coachesError } = await supabase
             .from('profiles')
             .select('id')
@@ -92,7 +119,6 @@ const Auth = () => {
           if (coachesError) throw coachesError;
 
           if (coaches && coaches.length > 0) {
-            // Create coach-client relationships with initial "not_connected" status
             const coachClientRelations = coaches.map(coach => ({
               client_id: signUpData.user.id,
               coach_id: coach.id,
@@ -110,12 +136,26 @@ const Auth = () => {
           setShowConfirmation(true);
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
+        
         if (error) throw error;
-        navigate("/dashboard");
+
+        if (data.user) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role, registration_status')
+            .eq('id', data.user.id)
+            .single();
+
+          if (profileData?.role === 'client' && profileData?.registration_status === 'pending') {
+            setShowPasswordReset(true);
+          } else {
+            navigate("/dashboard");
+          }
+        }
       }
     } catch (error: any) {
       console.error("Error during auth:", error);
@@ -128,6 +168,38 @@ const Auth = () => {
       setIsLoading(false);
     }
   };
+
+  if (showPasswordReset) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100/30 to-green-50 flex items-center justify-center px-4">
+        <GlassCard className="w-full max-w-md p-8 bg-white/40 backdrop-blur-lg">
+          <h2 className="text-2xl font-bold text-primary text-center mb-6">
+            Set New Password
+          </h2>
+          <div className="space-y-4">
+            <Input
+              type="password"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <Input
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+            <Button
+              onClick={handlePasswordReset}
+              className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium"
+            >
+              Set Password
+            </Button>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
 
   if (showConfirmation) {
     return (
