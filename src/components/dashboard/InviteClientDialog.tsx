@@ -38,38 +38,28 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("You must be logged in to create clients");
       }
 
-      // Create a random password for the user (they can reset it later)
-      const tempPassword = crypto.randomUUID();
-
-      // Create auth user first
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newClientEmail,
-        password: tempPassword,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-          }
-        }
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create auth user");
-
-      // Create coach-client relationship
-      const { error: relationError } = await supabase
-        .from('coach_clients')
+      // First, create entry in clients_not_connected
+      const { data: notConnectedClient, error: notConnectedError } = await supabase
+        .from('clients_not_connected')
         .insert({
-          coach_id: user.id,
-          client_id: authData.user.id,
-          status: 'not_connected'
-        });
+          email: newClientEmail,
+          first_name: firstName,
+          last_name: lastName,
+          coach_id: user.id
+        })
+        .select()
+        .single();
 
-      if (relationError) throw relationError;
+      if (notConnectedError) {
+        if (notConnectedError.code === '23505') { // Unique violation
+          throw new Error("A client with this email already exists");
+        }
+        throw notConnectedError;
+      }
 
       toast({
         title: "Success",
-        description: "Client account created successfully",
+        description: "Client has been added to your pending list",
       });
 
       // Reset form and close dialog
@@ -86,7 +76,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
       console.error("Error creating client:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create client account",
+        description: error.message || "Failed to create client",
         variant: "destructive",
       });
     } finally {
