@@ -62,7 +62,7 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
     }
   };
 
-  const createModal = (title: string, content: HTMLElement, onConfirm: () => void) => {
+  const createModal = (title: string, content: HTMLElement) => {
     const modal = document.createElement('div');
     modal.style.position = 'fixed';
     modal.style.top = '50%';
@@ -122,9 +122,12 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
       };
       
       confirmButton.onclick = () => {
-        onConfirm();
+        let result = null;
+        if (content.querySelector('#password-confirmation')) {
+          result = (content.querySelector('#password-confirmation') as HTMLInputElement).value;
+        }
         cleanup();
-        resolve(true);
+        resolve(result || true);
       };
       
       cancelButton.onclick = () => {
@@ -145,19 +148,16 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
       <input type="password" id="password-confirmation" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="Enter your password">
     `;
     
-    const getPassword = () => (document.getElementById('password-confirmation') as HTMLInputElement).value;
-    
-    const passwordConfirmed = await createModal(
+    const result = await createModal(
       'Confirm Deletion',
-      passwordInput,
-      () => {}
+      passwordInput
     );
     
-    if (!passwordConfirmed) {
+    if (!result || typeof result !== 'string') {
       return;
     }
 
-    const passwordValue = getPassword();
+    const passwordValue = result;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -191,8 +191,7 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
       
       const confirmed = await createModal(
         'Delete Client',
-        confirmContent,
-        () => {}
+        confirmContent
       );
 
       if (!confirmed) {
