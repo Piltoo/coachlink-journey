@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -40,24 +39,36 @@ export default function CreateTrainingPlan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log("Fetching exercises for coach:", user.id);
+
       // Fetch coach's custom exercises
       const { data: customExercises, error: customError } = await supabase
         .from('exercises')
         .select('*')
         .eq('coach_id', user.id);
 
-      if (customError) throw customError;
+      if (customError) {
+        console.error("Error fetching custom exercises:", customError);
+        throw customError;
+      }
+
+      console.log("Custom exercises:", customExercises);
 
       // Fetch exercises from the general database
       const { data: generalExercises, error: generalError } = await supabase
         .from('exercise_datab_all_coaches')
         .select('*');
 
-      if (generalError) throw generalError;
+      if (generalError) {
+        console.error("Error fetching general exercises:", generalError);
+        throw generalError;
+      }
+
+      console.log("General exercises:", generalExercises);
 
       // Transform general exercises to match Exercise type and add isCustom flag
       const transformedGeneralExercises = generalExercises.map((ex: any) => ({
-        id: `general_${ex.Name?.replace(/\s+/g, '_')}`, // Create a unique ID
+        id: `general_${ex.Name?.replace(/\s+/g, '_')}`,
         name: ex.Name || '',
         description: ex.description || '',
         muscle_group: ex.muscle_group || '',
@@ -70,13 +81,14 @@ export default function CreateTrainingPlan() {
       }));
 
       // Add isCustom flag to custom exercises
-      const transformedCustomExercises = customExercises.map(ex => ({
+      const transformedCustomExercises = customExercises?.map(ex => ({
         ...ex,
         isCustom: true
-      }));
+      })) || [];
 
       // Combine both sets of exercises
       const allExercises = [...transformedCustomExercises, ...transformedGeneralExercises];
+      console.log("All exercises combined:", allExercises);
       setAvailableExercises(allExercises);
 
     } catch (error) {
@@ -150,12 +162,16 @@ export default function CreateTrainingPlan() {
   const hasActiveFilters = muscleGroupFilter !== 'All' || searchQuery.trim() !== '';
 
   const filteredExercises = availableExercises
-    .filter(exercise => 
-      (muscleGroupFilter === 'All' || exercise.muscle_group === muscleGroupFilter) &&
-      (searchQuery === '' || 
-        exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        exercise.muscle_group.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    .filter(exercise => {
+      const matchesMuscleGroup = muscleGroupFilter === 'All' || 
+        exercise.muscle_group?.toLowerCase() === muscleGroupFilter.toLowerCase();
+      
+      const searchLower = searchQuery.toLowerCase();
+      const nameMatch = exercise.name?.toLowerCase().includes(searchLower);
+      const muscleGroupMatch = exercise.muscle_group?.toLowerCase().includes(searchLower);
+      
+      return matchesMuscleGroup && (searchQuery === '' || nameMatch || muscleGroupMatch);
+    });
 
   return (
     <div className="min-h-screen bg-background">
