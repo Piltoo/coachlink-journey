@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { ClientProgress } from "@/components/dashboard/ClientProgress";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = () => {
   const [isCoach, setIsCoach] = useState<boolean>(false);
@@ -17,32 +18,33 @@ const Dashboard = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          console.log("No user found");
+          toast({
+            title: "Error",
+            description: "No user found. Please log in again.",
+            variant: "destructive",
+          });
           return;
         }
 
-        // Check if user is a coach using the is_coach function
-        const { data: coachStatus, error: coachError } = await supabase
-          .rpc('is_coach', { user_id: user.id });
-
-        if (coachError) {
-          console.error("Error checking coach status:", coachError);
-          return;
-        }
-
-        // Fetch profile data
+        // Fetch profile data first
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('first_name')
+          .select('first_name, role')
           .eq('id', user.id)
           .single();
 
         if (profileError) {
           console.error("Error fetching profile:", profileError);
+          toast({
+            title: "Error",
+            description: "Failed to load user profile",
+            variant: "destructive",
+          });
           return;
         }
 
-        setIsCoach(coachStatus || false);
+        // Set coach status based on profile role
+        setIsCoach(profile?.role === 'coach');
         setFirstName(profile?.first_name || "");
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -60,7 +62,18 @@ const Dashboard = () => {
   }, [toast]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <Skeleton className="h-12 w-[250px]" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Skeleton className="h-[200px]" />
+            <Skeleton className="h-[200px]" />
+            <Skeleton className="h-[200px] md:col-span-2" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -68,7 +81,11 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
           <DashboardHeader firstName={firstName} />
-          {isCoach ? <StatsCards /> : <ClientProgress />}
+          {isCoach ? (
+            <StatsCards />
+          ) : (
+            <ClientProgress />
+          )}
         </div>
       </div>
     </div>
