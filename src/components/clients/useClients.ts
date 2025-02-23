@@ -31,7 +31,7 @@ export const useClients = () => {
       // First check if the user is a coach by checking their profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role, user_profile')
+        .select('user_profile')
         .eq('id', user.id)
         .single();
 
@@ -42,8 +42,8 @@ export const useClients = () => {
 
       console.log("User profile:", profile);
       
-      if (!profile || profile.role !== 'coach') {
-        console.error("User is not a coach. Role:", profile?.role);
+      if (!profile || profile.user_profile !== 'coach') {
+        console.error("User is not a coach. Profile type:", profile?.user_profile);
         toast({
           title: "Access Denied",
           description: "Only coaches can access client management",
