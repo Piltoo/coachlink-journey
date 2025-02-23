@@ -38,15 +38,24 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("You must be logged in to create clients");
       }
 
-      // Create the profile first
+      // Generate a new UUID for the client
+      const { data: newId } = await supabase.rpc('generate_uuid');
+      
+      if (!newId) {
+        throw new Error("Failed to generate client ID");
+      }
+
+      // Create the profile with the generated ID
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .insert({
+          id: newId,
           email: newClientEmail,
           full_name: `${firstName} ${lastName}`,
-          role: 'client',
           first_name: firstName,
-          last_name: lastName
+          last_name: lastName,
+          role: 'client',
+          user_profile: 'client'
         })
         .select()
         .single();
