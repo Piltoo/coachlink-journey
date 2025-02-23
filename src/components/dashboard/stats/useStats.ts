@@ -76,9 +76,9 @@ export const useStats = () => {
         }
 
         // Get count of not connected clients (new arrivals)
-        const { data: notConnectedClients, error: notConnectedError } = await supabase
+        const { count: notConnectedCount, error: notConnectedError } = await supabase
           .from('coach_clients')
-          .select('client_id', { count: 'exact' })
+          .select('client_id', { count: 'exact', head: true })
           .eq('coach_id', user.id)
           .eq('status', 'not_connected');
 
@@ -132,7 +132,7 @@ export const useStats = () => {
             description: "New messages"
           },
           newArrivals: {
-            value: notConnectedClients?.count || 0,
+            value: notConnectedCount || 0,
             description: "New potential clients"
           },
           totalSales: {
