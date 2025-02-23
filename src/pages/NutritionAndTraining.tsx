@@ -7,40 +7,11 @@ import { AccessCheck } from "@/components/nutrition-training/AccessCheck";
 import { Exercise, Ingredient } from "@/components/nutrition-training/types/nutrition-training";
 
 export default function NutritionAndTraining() {
-  const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchUserRole = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setHasAccess(false);
-          return;
-        }
-
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error("Error fetching profile:", error);
-          setHasAccess(false);
-          return;
-        }
-
-        setHasAccess(profile?.role === 'coach');
-      } catch (error) {
-        console.error("Error in fetchUserRole:", error);
-        setHasAccess(false);
-      }
-    };
-
-    fetchUserRole();
     fetchIngredients();
     fetchExercises();
   }, []);
@@ -80,24 +51,22 @@ export default function NutritionAndTraining() {
     }
   };
 
-  if (!hasAccess) {
-    return <AccessCheck />;
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-8">
-          Nutrition & Training Plans
-        </h1>
-        
-        <NavigationTabs
-          ingredients={ingredients}
-          exercises={exercises}
-          onIngredientAdded={fetchIngredients}
-          onExerciseChange={fetchExercises}
-        />
+    <AccessCheck>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-8">
+            Nutrition & Training Plans
+          </h1>
+          
+          <NavigationTabs
+            ingredients={ingredients}
+            exercises={exercises}
+            onIngredientAdded={fetchIngredients}
+            onExerciseChange={fetchExercises}
+          />
+        </div>
       </div>
-    </div>
+    </AccessCheck>
   );
 }

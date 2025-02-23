@@ -17,15 +17,13 @@ export const useClients = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Verify coach role
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+      // Use the new is_coach function
+      const { data: isCoach, error: coachError } = await supabase
+        .rpc('is_coach', { user_id: user.id });
 
-      if (profileError) throw profileError;
-      if (profile?.role !== 'coach') {
+      if (coachError) throw coachError;
+      
+      if (!isCoach) {
         toast({
           title: "Access Denied",
           description: "Only coaches can access client management",
