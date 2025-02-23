@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Dumbbell, MessageSquare, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Users, Dumbbell, MessageSquare, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useCoachCheck } from "@/hooks/useCoachCheck";
 
 interface DesktopNavProps {
   onSignOut: () => void;
@@ -12,6 +13,7 @@ interface DesktopNavProps {
 export function DesktopNav({ onSignOut }: DesktopNavProps) {
   const location = useLocation();
   const [canCheckIn, setCanCheckIn] = useState(true);
+  const { isCoach } = useCoachCheck();
   const isActive = (path: string) => location.pathname === path;
 
   useEffect(() => {
@@ -29,11 +31,13 @@ export function DesktopNav({ onSignOut }: DesktopNavProps) {
       setCanCheckIn(!existingCheckIn);
     }
 
-    checkCanSubmit();
-    // Kolla var 10:e sekund om tidslåset har gått ut
-    const interval = setInterval(checkCanSubmit, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!isCoach) {
+      checkCanSubmit();
+      // Kolla var 10:e sekund om tidslåset har gått ut
+      const interval = setInterval(checkCanSubmit, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isCoach]);
 
   return (
     <div className="flex items-center space-x-4">
@@ -47,18 +51,33 @@ export function DesktopNav({ onSignOut }: DesktopNavProps) {
           <LayoutDashboard className="h-5 w-5" />
         </Link>
       </Button>
-      {canCheckIn && (
+      
+      {isCoach ? (
         <Button
           asChild
           variant="ghost"
           size="icon"
-          className={`w-12 h-12 rounded-full ${isActive('/weekly-checkins') ? 'bg-green-100/20 text-green-100' : 'text-gray-400 hover:text-green-100 hover:bg-green-100/20'}`}
+          className={`w-12 h-12 rounded-full ${isActive('/clients') ? 'bg-green-100/20 text-green-100' : 'text-gray-400 hover:text-green-100 hover:bg-green-100/20'}`}
         >
-          <Link to="/weekly-checkins" title="Weekly Check-ins">
-            <ClipboardCheck className="h-5 w-5" />
+          <Link to="/clients" title="My Clients">
+            <Users className="h-5 w-5" />
           </Link>
         </Button>
+      ) : (
+        canCheckIn && (
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className={`w-12 h-12 rounded-full ${isActive('/weekly-checkins') ? 'bg-green-100/20 text-green-100' : 'text-gray-400 hover:text-green-100 hover:bg-green-100/20'}`}
+          >
+            <Link to="/weekly-checkins" title="Weekly Check-ins">
+              <ClipboardCheck className="h-5 w-5" />
+            </Link>
+          </Button>
+        )
       )}
+      
       <Button
         asChild
         variant="ghost"
@@ -69,6 +88,7 @@ export function DesktopNav({ onSignOut }: DesktopNavProps) {
           <Dumbbell className="h-5 w-5" />
         </Link>
       </Button>
+      
       <Button
         asChild
         variant="ghost"
@@ -79,6 +99,7 @@ export function DesktopNav({ onSignOut }: DesktopNavProps) {
           <MessageSquare className="h-5 w-5" />
         </Link>
       </Button>
+      
       <Button
         asChild
         variant="ghost"
@@ -89,6 +110,7 @@ export function DesktopNav({ onSignOut }: DesktopNavProps) {
           <Settings className="h-5 w-5" />
         </Link>
       </Button>
+      
       <Button
         variant="ghost"
         size="icon"

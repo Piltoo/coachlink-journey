@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { LayoutDashboard, ClipboardCheck, Dumbbell, MessageSquare, Settings, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Users, Dumbbell, MessageSquare, Settings, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/integrations/supabase/client";
+import { useCoachCheck } from "@/hooks/useCoachCheck";
 
 interface MobileNavProps {
   open: boolean;
@@ -14,6 +15,7 @@ interface MobileNavProps {
 
 export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
   const [canCheckIn, setCanCheckIn] = useState(true);
+  const { isCoach } = useCoachCheck();
 
   useEffect(() => {
     async function checkCanSubmit() {
@@ -30,11 +32,13 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
       setCanCheckIn(!existingCheckIn);
     }
 
-    checkCanSubmit();
-    // Kolla var 10:e sekund om tidslåset har gått ut
-    const interval = setInterval(checkCanSubmit, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!isCoach) {
+      checkCanSubmit();
+      // Kolla var 10:e sekund om tidslåset har gått ut
+      const interval = setInterval(checkCanSubmit, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isCoach]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -62,18 +66,33 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
               Dashboard
             </Link>
           </Button>
-          {canCheckIn && (
+
+          {isCoach ? (
             <Button
               asChild
               variant="ghost"
               className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/10"
             >
-              <Link to="/weekly-checkins" onClick={() => onOpenChange(false)}>
-                <ClipboardCheck className="h-5 w-5 mr-2" />
-                Weekly Check-ins
+              <Link to="/clients" onClick={() => onOpenChange(false)}>
+                <Users className="h-5 w-5 mr-2" />
+                My Clients
               </Link>
             </Button>
+          ) : (
+            canCheckIn && (
+              <Button
+                asChild
+                variant="ghost"
+                className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/10"
+              >
+                <Link to="/weekly-checkins" onClick={() => onOpenChange(false)}>
+                  <ClipboardCheck className="h-5 w-5 mr-2" />
+                  Weekly Check-ins
+                </Link>
+              </Button>
+            )
           )}
+
           <Button
             asChild
             variant="ghost"
@@ -84,6 +103,7 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
               Nutrition & Training
             </Link>
           </Button>
+
           <Button
             asChild
             variant="ghost"
@@ -94,6 +114,7 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
               Messages
             </Link>
           </Button>
+
           <Button
             asChild
             variant="ghost"
@@ -104,6 +125,7 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
               Settings
             </Link>
           </Button>
+
           <Button
             variant="ghost"
             className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/10"
