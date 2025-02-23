@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
@@ -168,6 +167,12 @@ export const ClientProgress = () => {
 
   const latest = getLatestMeasurement();
 
+  const getHealthyRangeText = (gender: 'male' | 'female') => {
+    return gender === 'male' 
+      ? "En hälsosam kroppsfettsprocent för män är mellan 8-19%"
+      : "En hälsosam kroppsfettsprocent för kvinnor är mellan 21-33%";
+  };
+
   if (!latest || !healthAssessment) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -197,20 +202,23 @@ export const ClientProgress = () => {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Nuvarande: {currentWeight}kg</span>
-              <span>Mål: {healthAssessment.target_weight}kg</span>
+              <span>Mål: {healthAssessment?.target_weight}kg</span>
             </div>
             <Progress value={weightProgress} className="h-2" />
             <p className="text-sm text-muted-foreground">
               {weightProgress.toFixed(1)}% framsteg mot målet
             </p>
-            {bodyFatPercentage && (
+            {bodyFatPercentage && healthAssessment?.gender && (
               <div className="mt-4 p-3 bg-green-50 rounded-md">
-                <h3 className="text-sm font-medium text-primary/80 mb-1">Beräknad kroppsfett</h3>
+                <h3 className="text-sm font-medium text-primary/80 mb-1">Uppskattad kroppsfett</h3>
                 <p className="text-2xl font-bold text-primary">
                   {bodyFatPercentage}%
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Baserat på Navy Body Fat Formula
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {getHealthyRangeText(healthAssessment.gender)}
                 </p>
               </div>
             )}
