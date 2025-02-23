@@ -19,6 +19,7 @@ import NewArrivals from "@/pages/NewArrivals";
 import CreateNutritionPlan from "@/pages/CreateNutritionPlan";
 import CreateTrainingPlan from "@/pages/CreateTrainingPlan";
 import HealthAssessment from "@/pages/HealthAssessment";
+import WeeklyCheckIns from "@/pages/WeeklyCheckIns";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ function App() {
               <Route path="/clients/:id" element={<ClientProfile />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/new-arrivals" element={<NewArrivals />} />
+              <Route path="/weekly-checkins" element={<WeeklyCheckIns />} />
               <Route path="/nutrition-and-training/*" element={<NutritionAndTraining />} />
               <Route path="/nutrition-and-training/create-nutrition-plan" element={<CreateNutritionPlan />} />
               <Route path="/nutrition-and-training/create-nutrition-plan/:planId" element={<CreateNutritionPlan />} />
