@@ -46,6 +46,8 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("You must be logged in to invite clients");
       }
 
+      console.log("Coach ID:", user.id);
+
       // Use the invite_client function
       const { data, error } = await supabase
         .rpc('invite_client', {
@@ -55,6 +57,8 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         });
 
       if (error) throw error;
+
+      console.log("Client invited successfully:", data);
 
       toast({
         title: "Success",
@@ -141,4 +145,3 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
     </Dialog>
   );
 };
-
