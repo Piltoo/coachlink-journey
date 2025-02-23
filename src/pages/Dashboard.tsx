@@ -22,9 +22,18 @@ const Dashboard = () => {
           return;
         }
 
+        // Check if user is a coach
+        const { data: isCoach, error: coachError } = await supabase
+          .rpc('is_coach', { user_id: user.id });
+
+        if (coachError) {
+          console.error("Error checking coach status:", coachError);
+          return;
+        }
+
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role, first_name')
+          .select('first_name')
           .eq('id', user.id)
           .single();
 
@@ -38,7 +47,7 @@ const Dashboard = () => {
           return;
         }
         
-        setUserRole(profile.role);
+        setUserRole(isCoach ? 'coach' : 'client');
         setFirstName(profile.first_name || "");
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
