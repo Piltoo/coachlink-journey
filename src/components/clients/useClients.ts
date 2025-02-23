@@ -27,11 +27,34 @@ export const useClients = () => {
         throw new Error("No authenticated user");
       }
 
+      // First verify that the user is a coach
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_profile')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching user profile:", profileError);
+        throw profileError;
+      }
+
+      if (!userProfile || userProfile.user_profile !== 'coach') {
+        console.error("Access denied: User is not a coach");
+        toast({
+          title: "Access Denied",
+          description: "Only coaches can access client management",
+          variant: "destructive",
+        });
+        setClients([]);
+        return;
+      }
+
       console.log("Fetching client relationships...");
-      // Get all active client relationships - RLS will automatically filter by coach_id
       const { data: clientRelationships, error: clientsError } = await supabase
         .from('coach_clients')
         .select('client_id, status, requested_services')
+        .eq('coach_id', user.id) // Explicitly filter by coach_id
         .neq('status', 'not_connected');
 
       if (clientsError) {
@@ -58,7 +81,7 @@ export const useClients = () => {
         throw profilesError;
       }
 
-      if (!clientProfiles) {
+      if (!clientProfiles || clientProfiles.length === 0) {
         console.log("No client profiles found");
         setClients([]);
         return;
@@ -76,16 +99,19 @@ export const useClients = () => {
               .from('nutrition_plans')
               .select('id')
               .eq('client_id', profile.id)
+              .eq('coach_id', user.id) // Add coach_id filter
               .maybeSingle(),
             supabase
               .from('workout_plans')
               .select('id')
               .eq('client_id', profile.id)
+              .eq('coach_id', user.id) // Add coach_id filter
               .maybeSingle(),
             supabase
               .from('workout_sessions')
               .select('id')
               .eq('client_id', profile.id)
+              .eq('coach_id', user.id) // Add coach_id filter
               .maybeSingle()
           ]);
 
