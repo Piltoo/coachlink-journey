@@ -10,21 +10,42 @@ import { MobileNav } from "./mobile-nav";
 export function NavBar() {
   const [open, setOpen] = useState(false);
   const [brandingName, setBrandingName] = useState("FitTracker");
+  const [session, setSession] = useState(null);
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const isPublicRoute = location.pathname === "/" || location.pathname === "/auth";
 
   useEffect(() => {
+    // Hämta initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Sätt upp auth state listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session && !isPublicRoute) {
+        navigate('/auth');
+      }
+    });
+
+    // Cleanup subscription
+    return () => subscription.unsubscribe();
+  }, [navigate, isPublicRoute]);
+
+  useEffect(() => {
     const fetchBranding = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (user) {
+      if (session?.user) {
         // First try to get the coach's branding if the user is a client
         const { data: coachClient } = await supabase
           .from('coach_clients')
           .select('coach_id')
-          .eq('client_id', user.id)
+          .eq('client_id', session.user.id)
           .single();
 
         const coachId = coachClient?.coach_id;
@@ -33,7 +54,7 @@ export function NavBar() {
         const { data: themePrefs } = await supabase
           .from('theme_preferences')
           .select('company_name')
-          .eq('user_id', coachId || user.id)
+          .eq('user_id', coachId || session.user.id)
           .single();
 
         if (themePrefs?.company_name) {
@@ -42,41 +63,30 @@ export function NavBar() {
       }
     };
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      if (!isPublicRoute) {
-        fetchBranding();
-      } else {
-        setBrandingName("FitTracker");
-      }
-    });
-
-    // Initial fetch
     if (!isPublicRoute) {
       fetchBranding();
+    } else {
+      setBrandingName("FitTracker");
     }
-
-    // Cleanup subscription
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [isPublicRoute]);
+  }, [isPublicRoute, session]);
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "There was an error signing out",
-        variant: "destructive",
-      });
-    } else {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       toast({
         title: "Success",
         description: "Signed out successfully",
       });
       navigate('/');
+    } catch (error: any) {
+      console.error('Sign out error:', error);
+      toast({
+        title: "Error",
+        description: "There was an error signing out",
+        variant: "destructive",
+      });
     }
   };
 
@@ -87,7 +97,7 @@ export function NavBar() {
           {brandingName}
         </Link>
         
-        {location.pathname === "/" && (
+        {location.pathname === "/" && !session && (
           <Button 
             asChild
             variant="ghost" 
@@ -97,7 +107,7 @@ export function NavBar() {
           </Button>
         )}
         
-        {!isPublicRoute && (
+        {session && !isPublicRoute && (
           <div className="flex items-center space-x-4">
             <div className="hidden md:flex">
               <DesktopNav onSignOut={handleSignOut} />
