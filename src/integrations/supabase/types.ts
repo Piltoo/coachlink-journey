@@ -1072,6 +1072,12 @@ export type Database = {
         }
         Returns: string
       }
+      is_coach: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       answer_status: "pending" | "completed"
