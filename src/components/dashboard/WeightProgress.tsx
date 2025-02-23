@@ -1,6 +1,8 @@
 
+import { useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { HealthAssessment } from "./types";
 import { calculateProgress, getHealthyRangeText } from "./utils";
 
@@ -15,6 +17,8 @@ export const WeightProgress = ({
   healthAssessment, 
   bodyFatPercentage 
 }: Props) => {
+  const [showBodyFat, setShowBodyFat] = useState(false);
+  
   const weightProgress = calculateProgress(
     currentWeight,
     healthAssessment.starting_weight,
@@ -34,7 +38,22 @@ export const WeightProgress = ({
           <p className="text-sm text-muted-foreground">
             {weightProgress.toFixed(1)}% framsteg mot målet
           </p>
-          {bodyFatPercentage && healthAssessment?.gender && (
+          
+          <div className="flex items-center space-x-2 pt-2">
+            <Checkbox 
+              id="show-body-fat"
+              checked={showBodyFat}
+              onCheckedChange={(checked) => setShowBodyFat(checked as boolean)}
+            />
+            <label 
+              htmlFor="show-body-fat" 
+              className="text-sm text-muted-foreground cursor-pointer"
+            >
+              Visa kroppsfettsanalys
+            </label>
+          </div>
+
+          {showBodyFat && bodyFatPercentage && healthAssessment?.gender && (
             <div className="mt-4 p-3 bg-green-50 rounded-md">
               <h3 className="text-sm font-medium text-primary/80 mb-1">Uppskattad kroppsfett</h3>
               <p className="text-2xl font-bold text-primary">
