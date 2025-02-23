@@ -7,7 +7,7 @@ import { subDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
 type Measurement = {
-  weight_kg: number;
+  weight_kg: number | null;
   waist_cm: number | null;
   chest_cm: number | null;
   hips_cm: number | null;
@@ -16,9 +16,14 @@ type Measurement = {
   created_at: string;
 };
 
+type HealthAssessment = {
+  target_weight: number;
+  starting_weight: number;
+};
+
 export const ClientProgress = () => {
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
-  const [targetWeight, setTargetWeight] = useState<number | null>(null);
+  const [healthAssessment, setHealthAssessment] = useState<HealthAssessment | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,6 +32,27 @@ export const ClientProgress = () => {
       if (!user) return;
 
       const thirtyDaysAgo = subDays(new Date(), 30);
+
+      // Hämta hälsobedömningen för att få målvikten
+      const { data: healthData, error: healthError } = await supabase
+        .from('client_health_assessments')
+        .select('target_weight, starting_weight')
+        .eq('client_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (healthError) {
+        console.error("Error fetching health assessment:", healthError);
+        toast({
+          title: "Error",
+          description: "Failed to load health assessment data",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setHealthAssessment(healthData);
 
       // Fetch measurements from the last 30 days
       const { data: measurementsData, error: measurementsError } = await supabase
@@ -39,7 +65,8 @@ export const ClientProgress = () => {
             chest_cm,
             hips_cm,
             thigh_cm,
-            arm_cm
+            arm_cm,
+            weight_kg
           )
         `)
         .eq('client_id', user.id)
@@ -63,10 +90,6 @@ export const ClientProgress = () => {
       }));
 
       setMeasurements(transformedMeasurements);
-
-      // For demo purposes, setting a mock target weight
-      // TODO: Implement target weight setting functionality
-      setTargetWeight(75);
     };
 
     fetchData();
@@ -83,36 +106,38 @@ export const ClientProgress = () => {
     return measurements[measurements.length - 1] || null;
   };
 
-  const getInitialMeasurement = () => {
-    return measurements[0] || null;
-  };
-
   const latest = getLatestMeasurement();
-  const initial = getInitialMeasurement();
 
-  if (!latest || !initial || !targetWeight) {
-    return null;
+  if (!latest || !healthAssessment) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
+          <p className="text-muted-foreground">Ingen data tillgänglig ännu</p>
+        </GlassCard>
+      </div>
+    );
   }
 
+  const currentWeight = latest.weight_kg || 0;
   const weightProgress = calculateProgress(
-    latest.weight_kg,
-    initial.weight_kg,
-    targetWeight
+    currentWeight,
+    healthAssessment.starting_weight,
+    healthAssessment.target_weight
   );
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
         <div className="flex flex-col space-y-4">
-          <h2 className="text-lg font-medium text-primary/80">Weight Progress</h2>
+          <h2 className="text-lg font-medium text-primary/80">Viktframsteg</h2>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>Current: {latest.weight_kg}kg</span>
-              <span>Target: {targetWeight}kg</span>
+              <span>Nuvarande: {currentWeight}kg</span>
+              <span>Mål: {healthAssessment.target_weight}kg</span>
             </div>
             <Progress value={weightProgress} className="h-2" />
             <p className="text-sm text-muted-foreground">
-              {weightProgress.toFixed(1)}% progress to goal
+              {weightProgress.toFixed(1)}% framsteg mot målet
             </p>
           </div>
         </div>
@@ -120,24 +145,24 @@ export const ClientProgress = () => {
 
       <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
         <div className="flex flex-col space-y-4">
-          <h2 className="text-lg font-medium text-primary/80">Measurements Changes</h2>
+          <h2 className="text-lg font-medium text-primary/80">Mätningsförändringar</h2>
           <div className="space-y-3">
-            {latest.waist_cm && initial.waist_cm && (
+            {latest.waist_cm && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Waist</span>
-                  <span>{latest.waist_cm}cm (-{(initial.waist_cm - latest.waist_cm).toFixed(1)}cm)</span>
+                  <span>Midjemått</span>
+                  <span>{latest.waist_cm}cm</span>
                 </div>
-                <Progress value={((initial.waist_cm - latest.waist_cm) / initial.waist_cm) * 100} className="h-2" />
+                <Progress value={100} className="h-2" />
               </div>
             )}
-            {latest.chest_cm && initial.chest_cm && (
+            {latest.chest_cm && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Chest</span>
-                  <span>{latest.chest_cm}cm ({(latest.chest_cm - initial.chest_cm).toFixed(1)}cm)</span>
+                  <span>Bröstkorg</span>
+                  <span>{latest.chest_cm}cm</span>
                 </div>
-                <Progress value={((latest.chest_cm - initial.chest_cm) / initial.chest_cm) * 100} className="h-2" />
+                <Progress value={100} className="h-2" />
               </div>
             )}
           </div>

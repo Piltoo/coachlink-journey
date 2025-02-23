@@ -416,6 +416,7 @@ export type Database = {
           side_photo_url: string | null
           thigh_cm: number | null
           waist_cm: number | null
+          weight_kg: number | null
         }
         Insert: {
           arm_cm?: number | null
@@ -430,6 +431,7 @@ export type Database = {
           side_photo_url?: string | null
           thigh_cm?: number | null
           waist_cm?: number | null
+          weight_kg?: number | null
         }
         Update: {
           arm_cm?: number | null
@@ -444,6 +446,7 @@ export type Database = {
           side_photo_url?: string | null
           thigh_cm?: number | null
           waist_cm?: number | null
+          weight_kg?: number | null
         }
         Relationships: [
           {
