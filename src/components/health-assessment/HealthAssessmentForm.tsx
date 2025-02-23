@@ -1,3 +1,4 @@
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -12,6 +13,7 @@ const formSchema = z.object({
   target_weight: z.string().min(1, "Målvikt är obligatoriskt"),
   current_activity_level: z.string().min(1, "Aktivitetsnivå är obligatoriskt"),
   previous_exercise_experience: z.string(),
+  gym_equipment_access: z.string().min(1, "Träningsanläggning är obligatoriskt"),
   health_goals: z.string().min(1, "Hälsomål är obligatoriskt"),
   medical_conditions: z.string(),
   dietary_restrictions: z.string(),
@@ -31,6 +33,7 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
       target_weight: "",
       current_activity_level: "",
       previous_exercise_experience: "",
+      gym_equipment_access: "",
       health_goals: "",
       medical_conditions: "",
       dietary_restrictions: "",
@@ -120,6 +123,31 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
               <FormControl>
                 <Textarea {...field} placeholder="Beskriv din tidigare träningserfarenhet" />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="gym_equipment_access"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tillgång till träningsanläggning</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Välj nivå på träningsanläggning" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="1">1 - Kroppsvikt/hemmagym</SelectItem>
+                  <SelectItem value="2">2 - Grundläggande utrustning</SelectItem>
+                  <SelectItem value="3">3 - Standard gymutrustning</SelectItem>
+                  <SelectItem value="4">4 - Välutrustad anläggning</SelectItem>
+                  <SelectItem value="5">5 - Toppanläggning med stor variation på maskiner</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
