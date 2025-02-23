@@ -57,32 +57,26 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("You must be logged in to invite clients");
       }
 
-      // Create the client using the invite_client function
-      const { data, error } = await supabase
-        .rpc('invite_client', {
-          client_email: newClientEmail,
-          client_name: `${firstName} ${lastName}`,
-          client_password: newClientPassword
-        });
+      // Call the invite_client function to create the new client
+      const { data, error } = await supabase.rpc('invite_client', {
+        client_email: newClientEmail,
+        client_name: `${firstName} ${lastName}`,
+        client_password: newClientPassword
+      });
 
       if (error) throw error;
 
-      // Update the requested services for both profile and coach_client relationship
-      const updates = await Promise.all([
-        supabase
-          .from('profiles')
-          .update({ requested_services: selectedServices })
-          .eq('id', data),
-        supabase
-          .from('coach_clients')
-          .update({ requested_services: selectedServices })
-          .eq('client_id', data)
-          .eq('coach_id', user.id)
-      ]);
+      // Update the requested services
+      const { error: serviceError } = await supabase
+        .from('coach_clients')
+        .update({ 
+          requested_services: selectedServices,
+          status: 'not_connected'
+        })
+        .eq('client_id', data)
+        .eq('coach_id', user.id);
 
-      // Check for errors in either update
-      const updateError = updates.find(update => update.error);
-      if (updateError) throw updateError.error;
+      if (serviceError) throw serviceError;
 
       toast({
         title: "Success",
