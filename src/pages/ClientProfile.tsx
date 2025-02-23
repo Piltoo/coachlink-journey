@@ -7,18 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 const ClientProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [healthAssessment, setHealthAssessment] = useState(null);
-  const [nutritionPlan, setNutritionPlan] = useState(null);
-  const [workoutPlan, setWorkoutPlan] = useState(null);
-  const [latestCheckIn, setLatestCheckIn] = useState(null);
+  const [checkIns, setCheckIns] = useState([]);
   const [clientProfile, setClientProfile] = useState<{
     full_name?: string;
     email?: string;
+    has_completed_assessment?: boolean;
   } | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
@@ -29,7 +29,7 @@ const ClientProfile = () => {
       // Fetch client profile
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, email')
+        .select('full_name, email, has_completed_assessment')
         .eq('id', id)
         .single();
 
@@ -50,41 +50,18 @@ const ClientProfile = () => {
         setHealthAssessment(assessmentData);
       }
 
-      // Fetch active nutrition plan
-      const { data: nutritionData } = await supabase
-        .from('nutrition_plans')
-        .select('*')
-        .eq('client_id', id)
-        .eq('status', 'active')
-        .single();
-
-      if (nutritionData) {
-        setNutritionPlan(nutritionData);
-      }
-
-      // Fetch active workout plan
-      const { data: workoutData } = await supabase
-        .from('workout_plans')
-        .select('*')
-        .eq('client_id', id)
-        .eq('status', 'active')
-        .single();
-
-      if (workoutData) {
-        setWorkoutPlan(workoutData);
-      }
-
-      // Fetch latest check-in
-      const { data: checkInData } = await supabase
+      // Fetch all check-ins with measurements
+      const { data: checkInsData } = await supabase
         .from('weekly_checkins')
-        .select('*')
+        .select(`
+          *,
+          measurements (*)
+        `)
         .eq('client_id', id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .order('created_at', { ascending: false });
 
-      if (checkInData) {
-        setLatestCheckIn(checkInData);
+      if (checkInsData) {
+        setCheckIns(checkInsData);
       }
     };
 
@@ -156,98 +133,17 @@ const ClientProfile = () => {
         <Tabs defaultValue="profile" className="mb-6">
           <TabsList className="bg-white/50 backdrop-blur-sm border">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="nutrition">Nutrition Plans</TabsTrigger>
-            <TabsTrigger value="workout">Workout Plans</TabsTrigger>
+            <TabsTrigger value="checkIns">Check-ins</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Latest Check-in</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {latestCheckIn ? (
-                    <div className="space-y-2">
-                      <p>Weight: {latestCheckIn.weight_kg} kg</p>
-                      <p>Date: {new Date(latestCheckIn.created_at).toLocaleDateString()}</p>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">No check-in data available</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Health Assessment</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {healthAssessment ? (
-                    <div className="space-y-2">
-                      <p>Goals: {healthAssessment.health_goals}</p>
-                      <p>Activity Level: {healthAssessment.current_activity_level}</p>
-                      <p>Starting Weight: {healthAssessment.starting_weight} kg</p>
-                      <p>Target Weight: {healthAssessment.target_weight} kg</p>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">No health assessment available</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="nutrition">
             <Card>
               <CardHeader>
-                <CardTitle>Active Nutrition Plan</CardTitle>
+                <CardTitle>Client Profile</CardTitle>
               </CardHeader>
-              <CardContent>
-                {nutritionPlan ? (
-                  <div className="space-y-2">
-                    <p className="font-semibold">{nutritionPlan.title}</p>
-                    <p>{nutritionPlan.description}</p>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <p>Calories: {nutritionPlan.calories_target}</p>
-                      <p>Protein: {nutritionPlan.protein_target}g</p>
-                      <p>Carbs: {nutritionPlan.carbs_target}g</p>
-                      <p>Fats: {nutritionPlan.fats_target}g</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">No active nutrition plan</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="workout">
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Workout Plan</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {workoutPlan ? (
-                  <div className="space-y-2">
-                    <p className="font-semibold">{workoutPlan.title}</p>
-                    <p>{workoutPlan.description}</p>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">No active workout plan</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Client Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Name:</span>
@@ -258,9 +154,143 @@ const ClientProfile = () => {
                     <span className="font-medium">Email:</span>
                     <span>{clientProfile?.email || 'Not provided'}</span>
                   </div>
+                </div>
+
+                {healthAssessment && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <h3 className="font-medium">Health Assessment</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Starting Weight</p>
+                        <p className="font-medium">{healthAssessment.starting_weight} kg</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Target Weight</p>
+                        <p className="font-medium">{healthAssessment.target_weight} kg</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Activity Level</p>
+                        <p className="font-medium">{healthAssessment.current_activity_level}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Health Goals</p>
+                        <p className="font-medium">{healthAssessment.health_goals}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="checkIns" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Latest Check-in</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {checkIns[0] ? (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Date</p>
+                      <p className="font-medium">
+                        {format(new Date(checkIns[0].created_at), 'PPP')}
+                      </p>
+                    </div>
+                    {checkIns[0].measurements && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Weight</p>
+                          <p className="font-medium">{checkIns[0].weight_kg} kg</p>
+                        </div>
+                        {checkIns[0].measurements.neck_cm && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Neck</p>
+                            <p className="font-medium">{checkIns[0].measurements.neck_cm} cm</p>
+                          </div>
+                        )}
+                        {checkIns[0].measurements.chest_cm && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Chest</p>
+                            <p className="font-medium">{checkIns[0].measurements.chest_cm} cm</p>
+                          </div>
+                        )}
+                        {checkIns[0].measurements.waist_cm && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Waist</p>
+                            <p className="font-medium">{checkIns[0].measurements.waist_cm} cm</p>
+                          </div>
+                        )}
+                        {checkIns[0].measurements.hips_cm && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Hips</p>
+                            <p className="font-medium">{checkIns[0].measurements.hips_cm} cm</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">No check-in data available</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {checkIns.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Check-in History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {checkIns.map((checkIn) => (
+                      <div key={checkIn.id} className="border-b pb-6 last:border-b-0 last:pb-0">
+                        <div className="flex justify-between items-start mb-4">
+                          <h4 className="font-medium">
+                            {format(new Date(checkIn.created_at), 'PPP')}
+                          </h4>
+                          <span className="text-sm text-muted-foreground">
+                            Weight: {checkIn.weight_kg} kg
+                          </span>
+                        </div>
+                        {checkIn.measurements && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {checkIn.measurements.neck_cm && (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Neck</p>
+                                <p>{checkIn.measurements.neck_cm} cm</p>
+                              </div>
+                            )}
+                            {checkIn.measurements.chest_cm && (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Chest</p>
+                                <p>{checkIn.measurements.chest_cm} cm</p>
+                              </div>
+                            )}
+                            {checkIn.measurements.waist_cm && (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Waist</p>
+                                <p>{checkIn.measurements.waist_cm} cm</p>
+                              </div>
+                            )}
+                            {checkIn.measurements.hips_cm && (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Hips</p>
+                                <p>{checkIn.measurements.hips_cm} cm</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
+            )}
+          </TabsContent>
 
+          <TabsContent value="settings">
+            <div className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Security</CardTitle>
