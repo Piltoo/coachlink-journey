@@ -38,33 +38,30 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("You must be logged in to create clients");
       }
 
-      // Generate a new UUID using the crypto API
-      const newId = crypto.randomUUID();
+      // Create a random password for the user (they can reset it later)
+      const tempPassword = crypto.randomUUID();
 
-      // Create the profile with the generated ID
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .insert([{
-          id: newId,
-          email: newClientEmail,
-          full_name: `${firstName} ${lastName}`,
-          first_name: firstName,
-          last_name: lastName,
-          role: 'client' as const,
-          user_profile: 'client' as const
-        }])
-        .select()
-        .single();
+      // Create auth user first
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newClientEmail,
+        password: tempPassword,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
+      });
 
-      if (profileError) throw profileError;
-      if (!profileData) throw new Error("Failed to create client profile");
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Failed to create auth user");
 
       // Create coach-client relationship
       const { error: relationError } = await supabase
         .from('coach_clients')
         .insert({
           coach_id: user.id,
-          client_id: profileData.id,
+          client_id: authData.user.id,
           status: 'not_connected'
         });
 
