@@ -14,16 +14,31 @@ export const useClients = () => {
 
   const fetchClients = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      console.log("Starting to fetch clients...");
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error("Auth error:", userError);
+        throw userError;
+      }
+      
+      if (!user) {
+        console.error("No authenticated user found");
+        throw new Error("No authenticated user");
+      }
 
-      // Use the new is_coach function
+      console.log("Checking if user is coach...");
+      // Use the is_coach function
       const { data: isCoach, error: coachError } = await supabase
         .rpc('is_coach', { user_id: user.id });
 
-      if (coachError) throw coachError;
+      if (coachError) {
+        console.error("Error checking coach status:", coachError);
+        throw coachError;
+      }
       
       if (!isCoach) {
+        console.error("User is not a coach");
         toast({
           title: "Access Denied",
           description: "Only coaches can access client management",
@@ -32,6 +47,7 @@ export const useClients = () => {
         return;
       }
 
+      console.log("Fetching client relationships...");
       // First get all active client relationships
       const { data: clientRelationships, error: clientsError } = await supabase
         .from('coach_clients')
@@ -39,12 +55,18 @@ export const useClients = () => {
         .eq('coach_id', user.id)
         .neq('status', 'not_connected');
 
-      if (clientsError) throw clientsError;
+      if (clientsError) {
+        console.error("Error fetching client relationships:", clientsError);
+        throw clientsError;
+      }
 
       if (!clientRelationships || clientRelationships.length === 0) {
+        console.log("No client relationships found");
         setClients([]);
         return;
       }
+
+      console.log("Found client relationships:", clientRelationships);
 
       // Then get the client profiles
       const { data: clientProfiles, error: profilesError } = await supabase
@@ -52,12 +74,18 @@ export const useClients = () => {
         .select('id, full_name, email')
         .in('id', clientRelationships.map(rel => rel.client_id));
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error("Error fetching client profiles:", profilesError);
+        throw profilesError;
+      }
 
       if (!clientProfiles) {
+        console.log("No client profiles found");
         setClients([]);
         return;
       }
+
+      console.log("Found client profiles:", clientProfiles);
 
       // Get additional plan information for each client
       const clientsWithPlans = await Promise.all(
@@ -95,6 +123,7 @@ export const useClients = () => {
         })
       );
 
+      console.log("Final processed clients:", clientsWithPlans);
       setClients(clientsWithPlans);
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -123,3 +152,4 @@ export const useClients = () => {
     fetchClients
   };
 };
+
