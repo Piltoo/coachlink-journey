@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const formSchema = z.object({
   starting_weight: z.string().min(1, "Vikt är obligatoriskt"),
+  height_cm: z.string().min(1, "Längd är obligatoriskt"),
   target_weight: z.string().min(1, "Målvikt är obligatoriskt"),
   current_activity_level: z.string().min(1, "Aktivitetsnivå är obligatoriskt"),
   previous_exercise_experience: z.string(),
@@ -30,6 +31,7 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       starting_weight: "",
+      height_cm: "",
       target_weight: "",
       current_activity_level: "",
       previous_exercise_experience: "",
@@ -46,6 +48,20 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="height_cm"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Längd (cm)</FormLabel>
+                <FormControl>
+                  <Input type="number" step="1" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name="starting_weight"

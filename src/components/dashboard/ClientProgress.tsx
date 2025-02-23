@@ -118,9 +118,15 @@ export const ClientProgress = () => {
     
     // Navy Body Fat Formula för män
     // 86.010 × log10(midja - nacke) - 70.041 × log10(längd) + 36.76
+    const { data: healthData } = await supabase
+      .from('client_health_assessments')
+      .select('height_cm')
+      .eq('client_id', user?.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
     
-    // Vi antar en genomsnittlig längd på 180cm tills vi har en kolumn för det
-    const height = 180;
+    const height = healthData?.height_cm || 180; // Fallback till 180cm om ingen längd finns
     const waist = measurement.waist_cm;
     const neck = measurement.neck_cm;
     
