@@ -33,9 +33,17 @@ const NewArrivals = () => {
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // Change from single() to maybeSingle()
 
       if (coachError) throw coachError;
+      if (!coachProfile) {
+        toast({
+          title: "Error",
+          description: "Coach profile not found",
+          variant: "destructive",
+        });
+        return;
+      }
       if (coachProfile.role !== 'coach') {
         throw new Error('Only coaches can view new arrivals');
       }
