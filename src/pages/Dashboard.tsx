@@ -7,8 +7,10 @@ import { ClientProgress } from "@/components/dashboard/ClientProgress";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 
+type UserProfile = 'client' | 'coach' | 'operator' | 'therapist';
+
 const Dashboard = () => {
-  const [isCoach, setIsCoach] = useState<boolean>(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [firstName, setFirstName] = useState<string>("");
   const { toast } = useToast();
@@ -67,7 +69,7 @@ const Dashboard = () => {
 
         console.log("Profile loaded:", { userProfile: profile.user_profile, firstName: profile.first_name });
         
-        setIsCoach(profile.user_profile === 'coach');
+        setUserProfile(profile.user_profile as UserProfile);
         setFirstName(profile.first_name || "");
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -83,6 +85,36 @@ const Dashboard = () => {
 
     fetchData();
   }, [toast]);
+
+  const renderDashboardContent = () => {
+    switch (userProfile) {
+      case 'client':
+        return <ClientProgress />;
+      case 'coach':
+        return <StatsCards />;
+      case 'operator':
+        return (
+          <div className="text-center p-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Operator Dashboard</h2>
+            <p className="text-gray-600">Welcome to the operator dashboard. Operator-specific features coming soon.</p>
+          </div>
+        );
+      case 'therapist':
+        return (
+          <div className="text-center p-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Therapist Dashboard</h2>
+            <p className="text-gray-600">Welcome to the therapist dashboard. Therapist-specific features coming soon.</p>
+          </div>
+        );
+      default:
+        return (
+          <div className="text-center p-8">
+            <h2 className="text-2xl font-bold text-red-600">Invalid User Profile</h2>
+            <p className="text-gray-600">Please contact support to update your profile.</p>
+          </div>
+        );
+    }
+  };
 
   if (isLoading) {
     return (
@@ -104,11 +136,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
           <DashboardHeader firstName={firstName} />
-          {isCoach ? (
-            <StatsCards />
-          ) : (
-            <ClientProgress />
-          )}
+          {renderDashboardContent()}
         </div>
       </div>
     </div>
