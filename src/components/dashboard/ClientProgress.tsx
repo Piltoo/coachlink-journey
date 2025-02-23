@@ -20,6 +20,7 @@ type Measurement = {
 type HealthAssessment = {
   target_weight: number;
   starting_weight: number;
+  height_cm?: number;
 };
 
 type MeasurementCard = {
@@ -40,6 +41,7 @@ const measurementCards: MeasurementCard[] = [
 export const ClientProgress = () => {
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [healthAssessment, setHealthAssessment] = useState<HealthAssessment | null>(null);
+  const [bodyFatPercentage, setBodyFatPercentage] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,10 +51,9 @@ export const ClientProgress = () => {
 
       const thirtyDaysAgo = subDays(new Date(), 30);
 
-      // Hämta hälsobedömningen för att få målvikten
       const { data: healthData, error: healthError } = await supabase
         .from('client_health_assessments')
-        .select('target_weight, starting_weight')
+        .select('target_weight, starting_weight, height_cm')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -70,7 +71,6 @@ export const ClientProgress = () => {
 
       setHealthAssessment(healthData);
 
-      // Fetch measurements from the last 30 days
       const { data: measurementsData, error: measurementsError } = await supabase
         .from('weekly_checkins')
         .select(`
@@ -111,30 +111,26 @@ export const ClientProgress = () => {
     fetchData();
   }, [toast]);
 
-  const calculateBodyFat = (measurement: Measurement | null) => {
-    if (!measurement || !measurement.waist_cm || !measurement.neck_cm) {
-      return null;
-    }
-    
-    // Navy Body Fat Formula för män
-    // 86.010 × log10(midja - nacke) - 70.041 × log10(längd) + 36.76
-    const { data: healthData } = await supabase
-      .from('client_health_assessments')
-      .select('height_cm')
-      .eq('client_id', user?.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-    
-    const height = healthData?.height_cm || 180; // Fallback till 180cm om ingen längd finns
-    const waist = measurement.waist_cm;
-    const neck = measurement.neck_cm;
-    
-    const bodyFat = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
-    
-    // Avrunda till en decimal och säkerställ att resultatet är mellan 2-45%
-    return Math.min(Math.max(Math.round(bodyFat * 10) / 10, 2), 45);
-  };
+  useEffect(() => {
+    const calculateBodyFat = async () => {
+      const latest = measurements[measurements.length - 1];
+      
+      if (!latest || !latest.waist_cm || !latest.neck_cm || !healthAssessment?.height_cm) {
+        setBodyFatPercentage(null);
+        return;
+      }
+
+      const height = healthAssessment.height_cm;
+      const waist = latest.waist_cm;
+      const neck = latest.neck_cm;
+      
+      const bodyFat = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
+      
+      setBodyFatPercentage(Math.min(Math.max(Math.round(bodyFat * 10) / 10, 2), 45));
+    };
+
+    calculateBodyFat();
+  }, [measurements, healthAssessment]);
 
   const calculateProgress = (current: number, initial: number, target: number) => {
     if (initial === target) return 100;
@@ -165,8 +161,6 @@ export const ClientProgress = () => {
     healthAssessment.starting_weight,
     healthAssessment.target_weight
   );
-
-  const bodyFatPercentage = calculateBodyFat(latest);
 
   const formatDate = (date: string) => {
     return format(new Date(date), 'dd/MM');
