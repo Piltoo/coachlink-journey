@@ -15,8 +15,10 @@ export const ClientProgress = () => {
   const [healthAssessment, setHealthAssessment] = useState<HealthAssessment | null>(null);
   const { toast } = useToast();
 
+  // Ändrar till att alltid få senaste mätningen först
   const latest = useMemo(() => {
-    return measurements[measurements.length - 1] || null;
+    return [...measurements]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0] || null;
   }, [measurements]);
 
   const bodyFatPercentage = useMemo(() => {
@@ -59,6 +61,7 @@ export const ClientProgress = () => {
         });
       }
 
+      // Ändrar till descending för att få senaste först
       const { data: latestWeeklyCheckin, error: checkinError } = await supabase
         .from('weekly_checkins')
         .select(`
@@ -75,7 +78,7 @@ export const ClientProgress = () => {
         `)
         .eq('client_id', user.id)
         .gte('created_at', thirtyDaysAgo.toISOString())
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (checkinError) {
         toast({
@@ -94,7 +97,7 @@ export const ClientProgress = () => {
         }));
 
         console.log("Transformed measurements:", transformedMeasurements);
-        setMeasurements(transformedMeasurements);
+        setMeasurements(transformedMeasurements.reverse()); // Vänder tillbaka ordningen för grafernas skull
       }
     };
 
