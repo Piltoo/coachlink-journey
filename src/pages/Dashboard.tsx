@@ -67,9 +67,26 @@ const Dashboard = () => {
           return;
         }
 
-        console.log("Profile loaded:", { userProfile: profile.user_profile, firstName: profile.first_name });
+        // Add debug log to see the exact value
+        console.log("Raw profile data:", profile);
         
-        setUserProfile(profile.user_profile as UserProfile);
+        // Validate that user_profile is one of the expected values
+        const validProfiles: UserProfile[] = ['client', 'coach', 'operator', 'therapist'];
+        const userProfileValue = profile.user_profile as UserProfile;
+        
+        if (!validProfiles.includes(userProfileValue)) {
+          console.error("Invalid user profile type:", userProfileValue);
+          toast({
+            title: "Profile Error",
+            description: `Invalid profile type: ${userProfileValue}. Please contact support.`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log("Profile loaded:", { userProfile: userProfileValue, firstName: profile.first_name });
+        
+        setUserProfile(userProfileValue);
         setFirstName(profile.first_name || "");
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
