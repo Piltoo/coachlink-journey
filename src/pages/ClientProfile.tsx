@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, UserX } from "lucide-react";
+import { ChevronLeft, UserX, Mail, User } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
@@ -13,10 +13,25 @@ const ClientProfile = () => {
   const [nutritionPlan, setNutritionPlan] = useState(null);
   const [workoutPlan, setWorkoutPlan] = useState(null);
   const [latestCheckIn, setLatestCheckIn] = useState(null);
+  const [clientProfile, setClientProfile] = useState<{
+    full_name?: string;
+    email?: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchClientData = async () => {
       if (!id) return;
+
+      // Fetch client profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', id)
+        .single();
+
+      if (profileData) {
+        setClientProfile(profileData);
+      }
 
       // Fetch health assessment
       const { data: assessmentData } = await supabase
@@ -186,18 +201,38 @@ const ClientProfile = () => {
           </TabsContent>
 
           <TabsContent value="settings">
-            <Card>
-              <CardContent className="pt-6">
-                <Button
-                  variant="destructive"
-                  className="w-full"
-                  onClick={handleUnsubscribe}
-                >
-                  <UserX className="w-4 h-4 mr-2" />
-                  Unsubscribe Client
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Client Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Name:</span>
+                    <span>{clientProfile?.full_name || 'Not provided'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Email:</span>
+                    <span>{clientProfile?.email || 'Not provided'}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleUnsubscribe}
+                  >
+                    <UserX className="w-4 h-4 mr-2" />
+                    Unsubscribe Client
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
