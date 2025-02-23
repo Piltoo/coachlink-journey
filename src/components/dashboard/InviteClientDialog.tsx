@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -11,11 +12,19 @@ interface InviteClientDialogProps {
   onClientAdded?: () => void;
 }
 
+const serviceOptions = [
+  { id: "personal-training", label: "Personal Training" },
+  { id: "coaching", label: "Coaching" },
+  { id: "treatments", label: "Treatments" },
+  { id: "others", label: "Others" },
+];
+
 export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [tempPassword, setTempPassword] = useState("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [isInviting, setIsInviting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
@@ -25,6 +34,15 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
       toast({
         title: "Error",
         description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedServices.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one service",
         variant: "destructive",
       });
       return;
@@ -47,6 +65,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
           data: {
             first_name: firstName,
             last_name: lastName,
+            requested_services: selectedServices
           }
         }
       });
@@ -60,7 +79,8 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
             id: authData.user.id,
             email: newClientEmail,
             full_name: `${firstName} ${lastName}`,
-            role: 'client'
+            role: 'client',
+            requested_services: selectedServices
           });
 
         if (profileError) {
@@ -74,7 +94,8 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
           .insert({
             coach_id: user.id,
             client_id: authData.user.id,
-            status: 'not_connected'
+            status: 'not_connected',
+            requested_services: selectedServices
           });
 
         if (relationError) {
@@ -111,6 +132,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
       setLastName("");
       setNewClientEmail("");
       setTempPassword("");
+      setSelectedServices([]);
       setIsOpen(false);
 
       // Call the callback to refresh the client list if provided
@@ -180,6 +202,32 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
               placeholder="Set a temporary password"
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Services Requested *</Label>
+            <div className="space-y-3">
+              {serviceOptions.map((service) => (
+                <div key={service.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={service.id}
+                    checked={selectedServices.includes(service.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedServices(prev =>
+                        checked
+                          ? [...prev, service.id]
+                          : prev.filter(id => id !== service.id)
+                      );
+                    }}
+                  />
+                  <label
+                    htmlFor={service.id}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {service.label}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
           <Button 
             onClick={handleInviteClient}
