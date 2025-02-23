@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { GlassCard } from "@/components/ui/glass-card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -97,14 +96,6 @@ const Auth = () => {
             {isLoading ? "Loading..." : "Sign In"}
           </Button>
         </form>
-        <div className="mt-4 text-center">
-          <Link
-            to="/lead"
-            className="text-[#a7cca4] hover:underline"
-          >
-            Interested in our services? Click here to learn more
-          </Link>
-        </div>
       </GlassCard>
     </div>
   );
