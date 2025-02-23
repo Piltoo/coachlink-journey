@@ -7,10 +7,10 @@ import { ClientProgress } from "@/components/dashboard/ClientProgress";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type UserProfile = 'client' | 'coach' | 'operator' | 'therapist';
+type UserRole = 'client' | 'coach' | 'operator' | 'therapist';
 
 const Dashboard = () => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [firstName, setFirstName] = useState<string>("");
   const { toast } = useToast();
@@ -43,7 +43,7 @@ const Dashboard = () => {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('user_profile, first_name')
+          .select('role, first_name')
           .eq('id', user.id)
           .single();
 
@@ -69,36 +69,36 @@ const Dashboard = () => {
 
         console.log("Raw profile data:", profile);
 
-        // Handle user_profile validation
-        if (!profile.user_profile) {
-          console.error("No user_profile found in profile data");
+        // Handle role validation
+        if (!profile.role) {
+          console.error("No role found in profile data");
           toast({
             title: "Profile Error",
-            description: "User profile type is missing. Please contact support.",
+            description: "User role is missing. Please contact support.",
             variant: "destructive",
           });
           return;
         }
 
-        const profileType = profile.user_profile.toLowerCase();
-        console.log("Profile type (lowercase):", profileType);
+        const roleType = profile.role.toLowerCase() as UserRole;
+        console.log("Role type (lowercase):", roleType);
 
-        // Strict type checking against valid profiles
-        if (!['client', 'coach', 'operator', 'therapist'].includes(profileType)) {
-          console.error("Invalid profile type:", profileType);
+        // Strict type checking against valid roles
+        if (!['client', 'coach', 'operator', 'therapist'].includes(roleType)) {
+          console.error("Invalid role type:", roleType);
           toast({
             title: "Profile Error",
-            description: `Invalid profile type: ${profileType}. Please contact support.`,
+            description: `Invalid role type: ${roleType}. Please contact support.`,
             variant: "destructive",
           });
           return;
         }
 
-        setUserProfile(profileType as UserProfile);
+        setUserRole(roleType);
         setFirstName(profile.first_name || "");
         
         console.log("Profile loaded successfully:", {
-          userProfile: profileType,
+          userRole: roleType,
           firstName: profile.first_name
         });
 
@@ -118,7 +118,7 @@ const Dashboard = () => {
   }, [toast]);
 
   const renderDashboardContent = () => {
-    switch (userProfile) {
+    switch (userRole) {
       case 'client':
         return <ClientProgress />;
       case 'coach':
@@ -140,7 +140,7 @@ const Dashboard = () => {
       default:
         return (
           <div className="text-center p-8">
-            <h2 className="text-2xl font-bold text-red-600">Invalid User Profile</h2>
+            <h2 className="text-2xl font-bold text-red-600">Invalid User Role</h2>
             <p className="text-gray-600">Please contact support to update your profile.</p>
           </div>
         );
