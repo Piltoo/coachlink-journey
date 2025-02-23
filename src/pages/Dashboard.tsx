@@ -41,17 +41,14 @@ const Dashboard = () => {
 
         console.log("Fetching profile for user:", user.id);
 
-        // Debug: Log the full profile query
-        const profileQuery = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
-        
-        console.log("Full profile data:", profileQuery);
 
-        if (profileQuery.error) {
-          console.error("Error fetching profile:", profileQuery.error);
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
           toast({
             title: "Profile Error",
             description: "Failed to load user profile. Please try refreshing the page.",
@@ -59,8 +56,6 @@ const Dashboard = () => {
           });
           return;
         }
-
-        const profile = profileQuery.data;
 
         if (!profile) {
           console.error("No profile found for user");
@@ -72,28 +67,30 @@ const Dashboard = () => {
           return;
         }
 
-        // Debug: Log the raw profile data
-        console.log("Raw profile data:", profile);
-        console.log("User profile value:", profile.user_profile);
-        
-        // Validate that user_profile is one of the expected values
+        // Debug: Log profile data
+        console.log("Profile data:", profile);
+
         const validProfiles: UserProfile[] = ['client', 'coach', 'operator', 'therapist'];
-        const userProfileValue = profile.user_profile?.toLowerCase() as UserProfile;
+        const userProfileValue = profile.user_profile?.toLowerCase();
         
-        if (!validProfiles.includes(userProfileValue)) {
+        if (!userProfileValue || !validProfiles.includes(userProfileValue as UserProfile)) {
           console.error("Invalid user profile type:", userProfileValue);
           toast({
             title: "Profile Error",
-            description: `Invalid profile type: ${profile.user_profile}. Please contact support.`,
+            description: "Invalid user profile type. Please contact support.",
             variant: "destructive",
           });
           return;
         }
 
-        console.log("Profile loaded:", { userProfile: userProfileValue, firstName: profile.first_name });
-        
-        setUserProfile(userProfileValue);
+        setUserProfile(userProfileValue as UserProfile);
         setFirstName(profile.first_name || "");
+        
+        console.log("Profile loaded successfully:", {
+          userProfile: userProfileValue,
+          firstName: profile.first_name
+        });
+
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({
