@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { subDays } from "date-fns";
+import { subDays, format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 type Measurement = {
   weight_kg: number | null;
@@ -20,6 +21,21 @@ type HealthAssessment = {
   target_weight: number;
   starting_weight: number;
 };
+
+type MeasurementCard = {
+  title: string;
+  key: keyof Omit<Measurement, 'created_at'>;
+  unit: string;
+  color: string;
+};
+
+const measurementCards: MeasurementCard[] = [
+  { title: "Midjemått", key: "waist_cm", unit: "cm", color: "#10B981" },
+  { title: "Bröstkorg", key: "chest_cm", unit: "cm", color: "#3B82F6" },
+  { title: "Armar", key: "arm_cm", unit: "cm", color: "#8B5CF6" },
+  { title: "Studs", key: "hips_cm", unit: "cm", color: "#EC4899" },
+  { title: "Ben", key: "thigh_cm", unit: "cm", color: "#F59E0B" },
+];
 
 export const ClientProgress = () => {
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
@@ -82,7 +98,6 @@ export const ClientProgress = () => {
         return;
       }
 
-      // Transform the data to flatten the measurements
       const transformedMeasurements = measurementsData.map(data => ({
         weight_kg: data.weight_kg,
         created_at: data.created_at,
@@ -125,6 +140,10 @@ export const ClientProgress = () => {
     healthAssessment.target_weight
   );
 
+  const formatDate = (date: string) => {
+    return format(new Date(date), 'dd/MM');
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
@@ -143,31 +162,62 @@ export const ClientProgress = () => {
         </div>
       </GlassCard>
 
-      <GlassCard className="bg-white/40 backdrop-blur-lg border border-green-100">
-        <div className="flex flex-col space-y-4">
-          <h2 className="text-lg font-medium text-primary/80">Mätningsförändringar</h2>
-          <div className="space-y-3">
-            {latest.waist_cm && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Midjemått</span>
-                  <span>{latest.waist_cm}cm</span>
-                </div>
-                <Progress value={100} className="h-2" />
+      {measurementCards.map((card) => {
+        const measurementData = measurements
+          .filter(m => m[card.key] !== null)
+          .map(m => ({
+            value: m[card.key],
+            date: formatDate(m.created_at)
+          }));
+
+        if (measurementData.length === 0) return null;
+
+        return (
+          <GlassCard 
+            key={card.key} 
+            className="bg-white/40 backdrop-blur-lg border border-green-100"
+          >
+            <div className="flex flex-col space-y-4">
+              <h2 className="text-lg font-medium text-primary/80">{card.title}</h2>
+              <div className="h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={measurementData}>
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#94a3b8"
+                      fontSize={12}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      stroke="#94a3b8"
+                      fontSize={12}
+                      tickLine={false}
+                      unit={card.unit}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke={card.color}
+                      strokeWidth={2}
+                      dot={{ fill: card.color }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
-            )}
-            {latest.chest_cm && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Bröstkorg</span>
-                  <span>{latest.chest_cm}cm</span>
-                </div>
-                <Progress value={100} className="h-2" />
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Senaste: {latest[card.key]}{card.unit}</span>
               </div>
-            )}
-          </div>
-        </div>
-      </GlassCard>
+            </div>
+          </GlassCard>
+        );
+      })}
     </div>
   );
 };
