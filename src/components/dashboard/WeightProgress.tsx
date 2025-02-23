@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { HealthAssessment } from "./types";
 import { calculateProgress, getHealthyRangeText } from "./utils";
 
@@ -40,10 +40,10 @@ export const WeightProgress = ({
           </p>
           
           <div className="flex items-center space-x-2 pt-2">
-            <Checkbox 
+            <Switch
               id="show-body-fat"
               checked={showBodyFat}
-              onCheckedChange={(checked) => setShowBodyFat(checked as boolean)}
+              onCheckedChange={setShowBodyFat}
             />
             <label 
               htmlFor="show-body-fat" 
