@@ -16,7 +16,18 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          console.error("Error fetching user:", userError);
+          toast({
+            title: "Authentication Error",
+            description: "Please try logging in again",
+            variant: "destructive",
+          });
+          return;
+        }
+
         if (!user) {
           toast({
             title: "Error",
@@ -26,26 +37,38 @@ const Dashboard = () => {
           return;
         }
 
-        // Fetch profile data first
+        console.log("Fetching profile for user:", user.id);
+
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('first_name, role')
+          .select('first_name, role, email')
           .eq('id', user.id)
           .single();
 
         if (profileError) {
           console.error("Error fetching profile:", profileError);
           toast({
-            title: "Error",
-            description: "Failed to load user profile",
+            title: "Profile Error",
+            description: "Failed to load user profile. Please try refreshing the page.",
             variant: "destructive",
           });
           return;
         }
 
-        // Set coach status based on profile role
-        setIsCoach(profile?.role === 'coach');
-        setFirstName(profile?.first_name || "");
+        if (!profile) {
+          console.error("No profile found for user");
+          toast({
+            title: "Profile Error",
+            description: "User profile not found. Please contact support.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log("Profile loaded:", { role: profile.role, firstName: profile.first_name });
+        
+        setIsCoach(profile.role === 'coach');
+        setFirstName(profile.first_name || "");
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
         toast({
