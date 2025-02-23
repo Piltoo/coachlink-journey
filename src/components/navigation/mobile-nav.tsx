@@ -24,7 +24,7 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
         .from('weekly_checkins')
         .select('created_at')
         .eq('client_id', user.id)
-        .gt('created_at', new Date(Date.now() - 60000).toISOString())
+        .gt('created_at', new Date(Date.now() - 300000).toISOString())
         .maybeSingle();
 
       setCanCheckIn(!existingCheckIn);

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -60,22 +59,17 @@ export default function WeeklyCheckIns() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: canCreate, error } = await supabase
+      const { data: existingCheckIn } = await supabase
         .from('weekly_checkins')
         .select('created_at')
         .eq('client_id', user.id)
-        .gt('created_at', new Date(Date.now() - 60000).toISOString())
+        .gt('created_at', new Date(Date.now() - 300000).toISOString())
         .maybeSingle();
 
-      if (error) {
-        console.error('Error checking check-in status:', error);
-        return;
-      }
-
-      if (canCreate) {
+      if (existingCheckIn) {
         toast({
           title: "Tidslås aktivt",
-          description: "Du måste vänta 1 minut innan du kan göra en ny check-in.",
+          description: "Du måste vänta 5 minuter innan du kan göra en ny check-in.",
         });
         navigate('/dashboard');
       }
@@ -121,7 +115,7 @@ export default function WeeklyCheckIns() {
         .from('weekly_checkins')
         .select('created_at')
         .eq('client_id', user.id)
-        .gt('created_at', new Date(Date.now() - 60000).toISOString())
+        .gt('created_at', new Date(Date.now() - 300000).toISOString())
         .maybeSingle();
 
       if (checkError) throw checkError;
@@ -129,7 +123,7 @@ export default function WeeklyCheckIns() {
       if (existingCheckIn) {
         toast({
           title: "Tidslås aktivt",
-          description: "Du måste vänta 1 minut innan du kan göra en ny check-in.",
+          description: "Du måste vänta 5 minuter innan du kan göra en ny check-in.",
         });
         navigate('/dashboard');
         return;
@@ -176,7 +170,7 @@ export default function WeeklyCheckIns() {
 
       toast({
         title: "Framgång!",
-        description: "Din vecko-checkin har sparats.",
+        description: "Din vecka-checkin har sparats.",
       });
 
       navigate('/dashboard');
@@ -196,7 +190,7 @@ export default function WeeklyCheckIns() {
     <div className="container mx-auto py-6 max-w-3xl">
       <Card>
         <CardHeader>
-          <CardTitle>Vecko Check-in</CardTitle>
+          <CardTitle>Vecka Check-in</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
