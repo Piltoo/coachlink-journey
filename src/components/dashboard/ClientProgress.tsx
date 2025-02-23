@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
@@ -81,7 +80,6 @@ export const ClientProgress = () => {
         });
       }
 
-      // Hämta senaste check-in med vikt och mått
       const { data: latestWeeklyCheckin, error: checkinError } = await supabase
         .from('weekly_checkins')
         .select(`
@@ -274,9 +272,6 @@ export const ClientProgress = () => {
                     />
                   </LineChart>
                 </ResponsiveContainer>
-              </div>
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Senaste: {latest[card.key]}{card.unit}</span>
               </div>
             </div>
           </GlassCard>
