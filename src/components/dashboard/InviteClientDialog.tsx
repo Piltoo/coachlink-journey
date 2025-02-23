@@ -42,20 +42,48 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
     setIsInviting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("You must be logged in to invite clients");
-      }
-
-      // Create the client using the simplified invite_client function
-      const { data, error } = await supabase.rpc('invite_client', {
-        client_email: newClientEmail,
-        client_name: `${firstName} ${lastName}`,
-        client_password: newClientPassword
+      // 1. Skapa en ny användare med Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newClientEmail,
+        password: newClientPassword,
+        options: {
+          data: {
+            full_name: `${firstName} ${lastName}`
+          }
+        }
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Failed to create user account");
+
+      const newClientId = authData.user.id;
+
+      // 2. Skapa profilen
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: newClientId,
+          email: newClientEmail,
+          full_name: `${firstName} ${lastName}`,
+          role: 'client'
+        });
+
+      if (profileError) throw profileError;
+
+      // 3. Hämta den inloggade coachen
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("You must be logged in to invite clients");
+
+      // 4. Skapa coach-client relationen
+      const { error: relationError } = await supabase
+        .from('coach_clients')
+        .insert({
+          coach_id: user.id,
+          client_id: newClientId,
+          status: 'not_connected'
+        });
+
+      if (relationError) throw relationError;
 
       toast({
         title: "Success",
