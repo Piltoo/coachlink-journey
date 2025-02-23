@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,7 +17,10 @@ interface Exercise {
   sets?: number;
   reps?: number;
   weight?: number;
+  notes?: string;
   order_index: number;
+  difficulty_level?: string;
+  instructions?: string;
 }
 
 interface TrainingPlanDetailsProps {
@@ -27,9 +29,23 @@ interface TrainingPlanDetailsProps {
     name: string;
     description: string;
     exercises?: string[];
+    exercise_details?: Array<{
+      exercise_id: string;
+      sets: number;
+      reps: number;
+      weight: number;
+      notes: string;
+      order_index: number;
+      description: string;
+      muscle_group: string;
+      equipment_needed: string;
+      difficulty_level: string;
+      instructions: string;
+    }>;
   };
   isOpen: boolean;
   onClose: () => void;
+  onUpdate?: () => void;
 }
 
 interface TrainingPlanTemplate {
@@ -42,33 +58,55 @@ interface TrainingPlanTemplate {
     sets: number;
     reps: number;
     weight: number;
+    notes: string;
     order_index: number;
+    description: string;
+    muscle_group: string;
+    equipment_needed: string;
+    difficulty_level: string;
+    instructions: string;
   }>;
   coach_id: string;
   created_at: string;
   updated_at: string;
 }
 
-export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetailsProps) {
+export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: TrainingPlanDetailsProps) {
   const [clients, setClients] = useState<{ id: string; full_name: string }[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [availableExercises, setAvailableExercises] = useState<Exercise[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null);
-  const [selectedReplacement, setSelectedReplacement] = useState<{ index: number; exercise: Exercise | null }>({
-    index: -1,
-    exercise: null
-  });
   const { toast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
       fetchClients();
-      fetchExercises();
+      initializeExercises();
       fetchAllExercises();
     }
-  }, [isOpen, plan.id, plan.exercises]);
+  }, [isOpen, plan]);
+
+  const initializeExercises = () => {
+    if (plan.exercise_details && Array.isArray(plan.exercise_details)) {
+      const initialExercises = plan.exercise_details.map((detail: any) => ({
+        id: detail.exercise_id,
+        name: detail.name,
+        sets: detail.sets || 3,
+        reps: detail.reps || 12,
+        weight: detail.weight || 0,
+        notes: detail.notes || '',
+        order_index: detail.order_index || 0,
+        description: detail.description || '',
+        muscle_group: detail.muscle_group || '',
+        equipment_needed: detail.equipment_needed || '',
+        difficulty_level: detail.difficulty_level || 'Beginner',
+        instructions: detail.instructions || ''
+      }));
+      setExercises(initialExercises);
+    }
+  };
 
   const fetchAllExercises = async () => {
     try {
@@ -195,7 +233,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
     setDraggedIndex(null);
   };
 
-  const handleExerciseChange = (index: number, field: 'sets' | 'reps' | 'weight', value: string) => {
+  const handleExerciseChange = (index: number, field: 'sets' | 'reps' | 'weight' | 'notes', value: string) => {
     const numValue = parseInt(value) || 0;
     const newExercises = [...exercises];
     newExercises[index] = {
@@ -207,20 +245,24 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
 
   const handleSaveChanges = async () => {
     try {
-      const exerciseDetails = exercises.map(exercise => ({
+      const exerciseDetails = exercises.map((exercise, index) => ({
         exercise_id: exercise.id,
+        name: exercise.name,
         sets: exercise.sets || 3,
         reps: exercise.reps || 12,
         weight: exercise.weight || 0,
-        order_index: exercise.order_index
+        notes: exercise.notes || '',
+        order_index: index,
+        description: exercise.description,
+        muscle_group: exercise.muscle_group,
+        equipment_needed: exercise.equipment_needed,
+        difficulty_level: exercise.difficulty_level,
+        instructions: exercise.instructions
       }));
-
-      const exerciseIds = exercises.map(e => e.id);
 
       const { error } = await supabase
         .from('training_plan_templates')
         .update({
-          exercises: exerciseIds,
           exercise_details: exerciseDetails,
           updated_at: new Date().toISOString()
         })
@@ -232,6 +274,10 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
         title: "Success",
         description: "Training plan updated successfully",
       });
+
+      if (onUpdate) {
+        onUpdate();
+      }
     } catch (error) {
       console.error('Error updating training plan:', error);
       toast({
@@ -260,10 +306,17 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
         .sort((a, b) => a.order_index - b.order_index)
         .map(exercise => ({
           exercise_id: exercise.id,
+          name: exercise.name,
           sets: exercise.sets || 3,
           reps: exercise.reps || 12,
           weight: exercise.weight || 0,
-          order_index: exercise.order_index
+          notes: exercise.notes || '',
+          order_index: exercise.order_index,
+          description: exercise.description,
+          muscle_group: exercise.muscle_group,
+          equipment_needed: exercise.equipment_needed,
+          difficulty_level: exercise.difficulty_level,
+          instructions: exercise.instructions
         }));
 
       const { error: planError } = await supabase
@@ -484,6 +537,15 @@ export function TrainingPlanDetails({ plan, isOpen, onClose }: TrainingPlanDetai
                           onChange={(e) => handleExerciseChange(index, 'weight', e.target.value)}
                           className="w-16 p-1 border rounded text-center"
                           min="0"
+                        />
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <label className="text-xs text-muted-foreground">Notes</label>
+                        <input
+                          type="text"
+                          value={exercise.notes}
+                          onChange={(e) => handleExerciseChange(index, 'notes', e.target.value)}
+                          className="w-16 p-1 border rounded text-center"
                         />
                       </div>
                     </div>

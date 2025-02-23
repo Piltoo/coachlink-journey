@@ -38,12 +38,22 @@ export function TrainingPlansSection() {
 
       const { data, error } = await supabase
         .from('training_plan_templates')
-        .select('*')
+        .select(`
+          *,
+          exercises:exercise_details(*)
+        `)
         .eq('coach_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTrainingPlans(data || []);
+
+      // Transform the data to include exercise details
+      const transformedData = (data || []).map(plan => ({
+        ...plan,
+        exercises: plan.exercise_details || []
+      }));
+
+      setTrainingPlans(transformedData);
     } catch (error) {
       console.error('Error fetching training plans:', error);
       toast({
@@ -59,6 +69,10 @@ export function TrainingPlansSection() {
       return plan.exercise_details.length;
     }
     return 0;
+  };
+
+  const handlePlanUpdate = () => {
+    fetchTrainingPlans(); // Refresh the plans after an update
   };
 
   return (
@@ -103,6 +117,7 @@ export function TrainingPlansSection() {
           plan={selectedPlan}
           isOpen={!!selectedPlan}
           onClose={() => setSelectedPlan(null)}
+          onUpdate={handlePlanUpdate}
         />
       )}
     </div>
