@@ -3,55 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, GripVertical, Save, X, ArrowRight } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-
-interface Exercise {
-  id: string;
-  name: string;
-  description: string;
-  muscle_group: string;
-  equipment_needed?: string;
-  sets?: number;
-  reps?: number;
-  weight?: number;
-  notes?: string;
-  order_index: number;
-  difficulty_level?: string;
-  instructions?: string;
-}
-
-interface TrainingPlanDetailsProps {
-  plan: {
-    id: string;
-    name: string;
-    description: string;
-    exercises?: string[];
-    exercise_details?: Array<{
-      exercise_id: string;
-      sets: number;
-      reps: number;
-      weight: number;
-      notes: string;
-      order_index: number;
-      description: string;
-      muscle_group: string;
-      equipment_needed: string;
-      difficulty_level: string;
-      instructions: string;
-    }>;
-  };
-  isOpen: boolean;
-  onClose: () => void;
-  onUpdate?: () => void;
-}
-
-interface SelectedReplacement {
-  index: number;
-  exercise: Exercise | null;
-}
+import { Send, Save } from "lucide-react";
+import { ExerciseList } from "./training-plan/ExerciseList";
+import { ClientSelect } from "./training-plan/ClientSelect";
+import { Exercise, SelectedReplacement, TrainingPlanDetailsProps } from "./types/training";
 
 export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: TrainingPlanDetailsProps) {
   const [clients, setClients] = useState<{ id: string; full_name: string }[]>([]);
@@ -321,7 +276,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: Trainin
     }
   };
 
-  const confirmReplacement = () => {
+  const handleConfirmReplacement = () => {
     if (selectedReplacement.exercise && selectedReplacement.index !== -1) {
       const updatedExercises = [...exercises];
       const oldExercise = updatedExercises[selectedReplacement.index];
@@ -368,130 +323,21 @@ export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: Trainin
 
           <div>
             <h4 className="font-medium mb-2">Exercises</h4>
-            {exercises.length > 0 ? (
-              <ScrollArea className="h-[300px] border rounded-md p-4">
-                {exercises.map((exercise, index) => (
-                  <div
-                    key={exercise.id}
-                    draggable
-                    onDragStart={() => handleDragStart(index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDragEnd={handleDragEnd}
-                    className="flex items-center gap-4 p-2 border-b last:border-b-0 cursor-move hover:bg-accent/5"
-                  >
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex-1 space-y-2">
-                      <Popover 
-                        open={openPopoverIndex === index} 
-                        onOpenChange={(open) => {
-                          if (!open) {
-                            setSelectedReplacement({ index: -1, exercise: null });
-                          }
-                          setOpenPopoverIndex(open ? index : null);
-                        }}
-                      >
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
-                            <div className="text-left">
-                              <h5 className="font-medium">{exercise.name}</h5>
-                              <p className="text-sm text-muted-foreground">
-                                {exercise.equipment_needed || 'No equipment needed'}
-                              </p>
-                            </div>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 p-0">
-                          <div className="p-4 border-b">
-                            <h4 className="font-medium text-sm">Select a replacement exercise</h4>
-                          </div>
-                          <ScrollArea className="h-[300px]">
-                            <div className="p-2">
-                              {availableExercises
-                                .filter(e => e.muscle_group === exercise.muscle_group && e.id !== exercise.id)
-                                .map(e => (
-                                  <div
-                                    key={e.id}
-                                    className="flex items-center justify-between p-2 hover:bg-accent/5 rounded-md"
-                                  >
-                                    <span className="font-medium">{e.name}</span>
-                                    <Checkbox 
-                                      checked={selectedReplacement.exercise?.id === e.id}
-                                      onCheckedChange={(checked) => handleReplaceSelection(index, e, checked as boolean)}
-                                    />
-                                  </div>
-                                ))}
-                            </div>
-                          </ScrollArea>
-                          {selectedReplacement.exercise && (
-                            <div className="p-2 border-t">
-                              <Button 
-                                className="w-full" 
-                                onClick={confirmReplacement}
-                              >
-                                Replace with {selectedReplacement.exercise.name} <ArrowRight className="ml-2 h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
-                        </PopoverContent>
-                      </Popover>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveExercise(index)}
-                        className="h-8 w-8"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex flex-col items-center">
-                        <label className="text-xs text-muted-foreground">Sets</label>
-                        <input
-                          type="number"
-                          value={exercise.sets}
-                          onChange={(e) => handleExerciseChange(index, 'sets', e.target.value)}
-                          className="w-16 p-1 border rounded text-center"
-                          min="0"
-                        />
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <label className="text-xs text-muted-foreground">Reps</label>
-                        <input
-                          type="number"
-                          value={exercise.reps}
-                          onChange={(e) => handleExerciseChange(index, 'reps', e.target.value)}
-                          className="w-16 p-1 border rounded text-center"
-                          min="0"
-                        />
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <label className="text-xs text-muted-foreground">Weight</label>
-                        <input
-                          type="number"
-                          value={exercise.weight}
-                          onChange={(e) => handleExerciseChange(index, 'weight', e.target.value)}
-                          className="w-16 p-1 border rounded text-center"
-                          min="0"
-                        />
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <label className="text-xs text-muted-foreground">Notes</label>
-                        <input
-                          type="text"
-                          value={exercise.notes}
-                          onChange={(e) => handleExerciseChange(index, 'notes', e.target.value)}
-                          className="w-16 p-1 border rounded text-center"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </ScrollArea>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No exercises added to this plan yet.
-              </p>
-            )}
+            <ExerciseList
+              exercises={exercises}
+              availableExercises={availableExercises}
+              draggedIndex={draggedIndex}
+              openPopoverIndex={openPopoverIndex}
+              selectedReplacement={selectedReplacement}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+              onExerciseChange={handleExerciseChange}
+              onPopoverChange={setOpenPopoverIndex}
+              onReplaceSelection={handleReplaceSelection}
+              onConfirmReplacement={handleConfirmReplacement}
+              onRemoveExercise={handleRemoveExercise}
+            />
           </div>
 
           <div className="flex gap-2">
@@ -501,21 +347,11 @@ export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: Trainin
             </Button>
           </div>
 
-          <div>
-            <h4 className="font-medium mb-2">Send to Client</h4>
-            <select
-              className="w-full p-2 border rounded-md"
-              value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.target.value)}
-            >
-              <option value="">Select a client</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.full_name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <ClientSelect
+            clients={clients}
+            selectedClientId={selectedClientId}
+            onClientSelect={setSelectedClientId}
+          />
 
           <div className="flex gap-2">
             <Button 
