@@ -75,7 +75,7 @@ export const ClientProgress = () => {
           target_weight: healthData.target_weight,
           starting_weight: healthData.starting_weight,
           height_cm: healthData.height_cm || 180,
-          gender: healthData.gender as 'male' | 'female' || 'male'
+          gender: healthData.gender || 'male'
         });
       }
 
@@ -118,6 +118,39 @@ export const ClientProgress = () => {
 
     fetchData();
   }, [toast]);
+
+  useEffect(() => {
+    const calculateBodyFat = async () => {
+      const latest = measurements[measurements.length - 1];
+      
+      if (!latest || !latest.waist_cm || !latest.neck_cm || !healthAssessment?.height_cm) {
+        setBodyFatPercentage(null);
+        return;
+      }
+
+      const height = healthAssessment.height_cm;
+      const waist = latest.waist_cm;
+      const neck = latest.neck_cm;
+      const gender = healthAssessment.gender || 'male';
+      
+      let bodyFat: number;
+      
+      if (gender === 'male') {
+        bodyFat = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
+      } else {
+        if (!latest.hips_cm) {
+          setBodyFatPercentage(null);
+          return;
+        }
+        const hips = latest.hips_cm;
+        bodyFat = 163.205 * Math.log10(waist + hips - neck) - 97.684 * Math.log10(height) - 78.387;
+      }
+      
+      setBodyFatPercentage(Math.min(Math.max(Math.round(bodyFat * 10) / 10, 2), 45));
+    };
+
+    calculateBodyFat();
+  }, [measurements, healthAssessment]);
 
   const calculateProgress = (current: number, initial: number, target: number) => {
     if (initial === target) return 100;
