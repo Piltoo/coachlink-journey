@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Progress } from "@/components/ui/progress";
@@ -53,7 +54,7 @@ export const ClientProgress = () => {
 
       const { data: healthData, error: healthError } = await supabase
         .from('client_health_assessments')
-        .select('target_weight, starting_weight, height_cm')
+        .select('target_weight, starting_weight')
         .eq('client_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -69,7 +70,14 @@ export const ClientProgress = () => {
         return;
       }
 
-      setHealthAssessment(healthData);
+      // Säkerställ att vi har rätt typning och hantering av data
+      if (healthData) {
+        setHealthAssessment({
+          target_weight: healthData.target_weight,
+          starting_weight: healthData.starting_weight,
+          height_cm: healthData.height_cm || 180 // Använd default värde om height_cm inte finns
+        });
+      }
 
       const { data: measurementsData, error: measurementsError } = await supabase
         .from('weekly_checkins')
