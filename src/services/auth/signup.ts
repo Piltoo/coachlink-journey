@@ -15,6 +15,8 @@ export const signUpUser = async ({
   selectedServices,
 }: SignUpData) => {
   try {
+    console.log("Starting signup process...");
+    
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -33,9 +35,11 @@ export const signUpUser = async ({
     }
 
     if (!signUpData.user) {
+      console.error("No user data returned");
       throw new Error("No user data returned from signup");
     }
 
+    console.log("Signup successful:", signUpData.user.id);
     return signUpData;
   } catch (error) {
     console.error("Error in signUpUser:", error);

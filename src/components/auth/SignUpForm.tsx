@@ -25,6 +25,7 @@ export const SignUpForm = ({ onSuccess, onToggleMode }: SignUpFormProps) => {
     e.preventDefault();
     
     try {
+      // Validate form fields
       if (!email || !password || !fullName) {
         throw new Error("Please fill in all required fields");
       }
@@ -38,17 +39,20 @@ export const SignUpForm = ({ onSuccess, onToggleMode }: SignUpFormProps) => {
       }
 
       setIsLoading(true);
+      console.log("Starting signup submission...");
 
-      await signUpUser({
+      const result = await signUpUser({
         email,
         password,
         fullName,
         selectedServices,
       });
 
+      console.log("Signup successful:", result);
+
       toast({
-        title: "Success",
-        description: "Your account has been created successfully.",
+        title: "Success!",
+        description: "Your account has been created. Please check your email for verification.",
       });
 
       onSuccess();
@@ -106,7 +110,7 @@ export const SignUpForm = ({ onSuccess, onToggleMode }: SignUpFormProps) => {
         className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium"
         disabled={isLoading || !agreedToTerms}
       >
-        {isLoading ? "Loading..." : "Sign Up"}
+        {isLoading ? "Creating Account..." : "Sign Up"}
       </Button>
       <div className="mt-4 text-center">
         <button
