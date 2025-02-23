@@ -208,9 +208,9 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="low">Låg - God möjlighet till återhämtning</SelectItem>
-                  <SelectItem value="medium">Medel - Periodvis begränsad återhämtning</SelectItem>
-                  <SelectItem value="high">Hög - Mycket begränsad återhämtning</SelectItem>
+                  <SelectItem value="1">1 - God möjlighet till återhämtning</SelectItem>
+                  <SelectItem value="2">2 - Periodvis begränsad återhämtning</SelectItem>
+                  <SelectItem value="3">3 - Mycket begränsad återhämtning</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
