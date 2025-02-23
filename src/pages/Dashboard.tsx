@@ -43,7 +43,7 @@ const Dashboard = () => {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('user_profile, first_name')
           .eq('id', user.id)
           .single();
 
@@ -67,27 +67,38 @@ const Dashboard = () => {
           return;
         }
 
-        // Debug: Log profile data
-        console.log("Profile data:", profile);
+        console.log("Raw profile data:", profile);
 
-        const validProfiles: UserProfile[] = ['client', 'coach', 'operator', 'therapist'];
-        const userProfileValue = profile.user_profile?.toLowerCase();
-        
-        if (!userProfileValue || !validProfiles.includes(userProfileValue as UserProfile)) {
-          console.error("Invalid user profile type:", userProfileValue);
+        // Handle user_profile validation
+        if (!profile.user_profile) {
+          console.error("No user_profile found in profile data");
           toast({
             title: "Profile Error",
-            description: "Invalid user profile type. Please contact support.",
+            description: "User profile type is missing. Please contact support.",
             variant: "destructive",
           });
           return;
         }
 
-        setUserProfile(userProfileValue as UserProfile);
+        const profileType = profile.user_profile.toLowerCase();
+        console.log("Profile type (lowercase):", profileType);
+
+        // Strict type checking against valid profiles
+        if (!['client', 'coach', 'operator', 'therapist'].includes(profileType)) {
+          console.error("Invalid profile type:", profileType);
+          toast({
+            title: "Profile Error",
+            description: `Invalid profile type: ${profileType}. Please contact support.`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setUserProfile(profileType as UserProfile);
         setFirstName(profile.first_name || "");
         
         console.log("Profile loaded successfully:", {
-          userProfile: userProfileValue,
+          userProfile: profileType,
           firstName: profile.first_name
         });
 
