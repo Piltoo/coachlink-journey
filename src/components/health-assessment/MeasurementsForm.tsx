@@ -41,7 +41,7 @@ export function MeasurementsForm({ onSubmit }: MeasurementsFormProps) {
             name="neck_cm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Halsmått (cm)</FormLabel>
+                <FormLabel>Nacke (cm)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.1" {...field} />
                 </FormControl>
@@ -55,7 +55,7 @@ export function MeasurementsForm({ onSubmit }: MeasurementsFormProps) {
             name="chest_cm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Bröstmått (cm)</FormLabel>
+                <FormLabel>Bröstkorg (cm)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.1" {...field} />
                 </FormControl>
@@ -69,7 +69,7 @@ export function MeasurementsForm({ onSubmit }: MeasurementsFormProps) {
             name="arm_cm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Armmått (cm)</FormLabel>
+                <FormLabel>Armar (cm)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.1" {...field} />
                 </FormControl>
@@ -97,7 +97,7 @@ export function MeasurementsForm({ onSubmit }: MeasurementsFormProps) {
             name="hips_cm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Höftmått (cm)</FormLabel>
+                <FormLabel>Studs (cm)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.1" {...field} />
                 </FormControl>
@@ -111,7 +111,7 @@ export function MeasurementsForm({ onSubmit }: MeasurementsFormProps) {
             name="thigh_cm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Lårmått (cm)</FormLabel>
+                <FormLabel>Ben (cm)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.1" {...field} />
                 </FormControl>
