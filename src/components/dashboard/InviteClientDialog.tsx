@@ -15,13 +15,12 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
-  const [newClientPassword, setNewClientPassword] = useState("");
   const [isInviting, setIsInviting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleInviteClient = async () => {
-    if (!newClientEmail || !firstName || !lastName || !newClientPassword) {
+    if (!newClientEmail || !firstName || !lastName) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -30,56 +29,37 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
       return;
     }
 
-    if (newClientPassword.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsInviting(true);
 
     try {
-      // 1. Skapa en ny användare med Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newClientEmail,
-        password: newClientPassword,
-        options: {
-          data: {
-            full_name: `${firstName} ${lastName}`
-          }
-        }
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("You must be logged in to create clients");
+      }
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user account");
-
-      const newClientId = authData.user.id;
-
-      // 2. Skapa profilen
-      const { error: profileError } = await supabase
+      // Create the profile first
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .insert({
-          id: newClientId,
           email: newClientEmail,
           full_name: `${firstName} ${lastName}`,
-          role: 'client'
-        });
+          role: 'client',
+          first_name: firstName,
+          last_name: lastName
+        })
+        .select()
+        .single();
 
       if (profileError) throw profileError;
+      if (!profileData) throw new Error("Failed to create client profile");
 
-      // 3. Hämta den inloggade coachen
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("You must be logged in to invite clients");
-
-      // 4. Skapa coach-client relationen
+      // Create coach-client relationship
       const { error: relationError } = await supabase
         .from('coach_clients')
         .insert({
           coach_id: user.id,
-          client_id: newClientId,
+          client_id: profileData.id,
           status: 'not_connected'
         });
 
@@ -94,7 +74,6 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
       setFirstName("");
       setLastName("");
       setNewClientEmail("");
-      setNewClientPassword("");
       setIsOpen(false);
 
       // Call the callback to refresh the client list if provided
@@ -102,7 +81,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         await onClientAdded();
       }
     } catch (error: any) {
-      console.error("Error inviting client:", error);
+      console.error("Error creating client:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to create client account",
@@ -116,11 +95,11 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button onClick={() => setIsOpen(true)}>Invite New Client</Button>
+        <Button onClick={() => setIsOpen(true)}>Create New Client</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create New Client Account</DialogTitle>
+          <DialogTitle>Create New Client</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
@@ -154,24 +133,12 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="clientPassword">Set Password *</Label>
-            <Input
-              id="clientPassword"
-              type="password"
-              value={newClientPassword}
-              onChange={(e) => setNewClientPassword(e.target.value)}
-              placeholder="Set a password for the client (min. 6 characters)"
-              minLength={6}
-              required
-            />
-          </div>
           <Button 
             onClick={handleInviteClient}
             disabled={isInviting}
             className="w-full"
           >
-            {isInviting ? "Creating Account..." : "Create Client Account"}
+            {isInviting ? "Creating Client..." : "Create Client"}
           </Button>
         </div>
       </DialogContent>
