@@ -19,24 +19,10 @@ export const useStats = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // First get the user
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           console.log("No user found in useStats");
-          return;
-        }
-
-        // Check if user is a coach
-        const { data: isCoach, error: coachError } = await supabase
-          .rpc('is_coach', { user_id: user.id });
-
-        if (coachError) {
-          console.error("Error checking coach status:", coachError);
-          return;
-        }
-
-        if (!isCoach) {
-          console.log("User is not a coach");
+          setIsLoading(false);
           return;
         }
 
@@ -56,79 +42,92 @@ export const useStats = () => {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        const { data: sessions } = await supabase
-          .from('workout_sessions')
-          .select(`
-            start_time,
-            client:profiles!workout_sessions_client_id_fkey (
-              full_name,
-              email
-            )
-          `)
-          .eq('coach_id', user.id)
-          .eq('status', 'confirmed')
-          .gte('start_time', today.toISOString())
-          .lt('start_time', tomorrow.toISOString())
-          .order('start_time');
-
-        if (sessions) {
-          setTodaySessions(sessions);
-        }
-
-        // Get count of not connected clients (new arrivals)
-        const { count: notConnectedCount, error: notConnectedError } = await supabase
-          .from('coach_clients')
-          .select('client_id', { count: 'exact', head: true })
-          .eq('coach_id', user.id)
-          .eq('status', 'not_connected');
-
-        if (notConnectedError) throw notConnectedError;
-
-        // Fetch this week's total sales from payments
-        const { data: weeklyPayments } = await supabase
-          .from('payments')
-          .select('amount')
-          .eq('status', 'paid')
-          .gte('paid_at', startOfWeek.toISOString())
-          .lte('paid_at', endOfWeek.toISOString());
-
-        const totalWeeklySales = weeklyPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
-
-        // Fetch other stats
-        const [activeClientsData, newClientsData, checkinsData, messagesData] = await Promise.all([
+        const [
+          { data: sessions },
+          { count: notConnectedCount },
+          { data: weeklyPayments },
+          { data: activeClientsData },
+          { data: newClientsData },
+          { data: checkinsData },
+          { data: messagesData }
+        ] = await Promise.all([
+          // Today's sessions
+          supabase
+            .from('workout_sessions')
+            .select(`
+              start_time,
+              client:profiles!workout_sessions_client_id_fkey (
+                full_name,
+                email
+              )
+            `)
+            .eq('coach_id', user.id)
+            .eq('status', 'confirmed')
+            .gte('start_time', today.toISOString())
+            .lt('start_time', tomorrow.toISOString())
+            .order('start_time'),
+          
+          // New arrivals count
+          supabase
+            .from('coach_clients')
+            .select('client_id', { count: 'exact', head: true })
+            .eq('coach_id', user.id)
+            .eq('status', 'not_connected'),
+          
+          // Weekly payments
+          supabase
+            .from('payments')
+            .select('amount')
+            .eq('status', 'paid')
+            .gte('paid_at', startOfWeek.toISOString())
+            .lte('paid_at', endOfWeek.toISOString()),
+          
+          // Active clients
           supabase
             .from('coach_clients')
             .select('id')
             .eq('coach_id', user.id)
             .eq('status', 'active'),
+          
+          // New clients this week
           supabase
             .from('coach_clients')
             .select('id')
             .eq('coach_id', user.id)
             .eq('status', 'active')
             .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+          
+          // Pending check-ins
           supabase
             .from('weekly_checkins')
             .select('id')
             .eq('status', 'pending'),
+          
+          // Unread messages
           supabase
             .from('messages')
             .select('id')
             .eq('receiver_id', user.id)
-            .eq('status', 'sent'),
+            .eq('status', 'sent')
         ]);
+
+        if (sessions) {
+          setTodaySessions(sessions);
+        }
+
+        const totalWeeklySales = weeklyPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
 
         setStats({
           activeClients: {
-            value: activeClientsData.data?.length || 0,
-            description: `+${newClientsData.data?.length || 0} new this week`
+            value: activeClientsData?.length || 0,
+            description: `+${newClientsData?.length || 0} new this week`
           },
           pendingCheckins: {
-            value: checkinsData.data?.length || 0,
+            value: checkinsData?.length || 0,
             description: "Requires review"
           },
           unreadMessages: {
-            value: messagesData.data?.length || 0,
+            value: messagesData?.length || 0,
             description: "New messages"
           },
           newArrivals: {
