@@ -53,7 +53,22 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
 
       // If we successfully created an auth user
       if (authData.user && !authError) {
-        // Create coach-client relationship
+        // First create the profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            email: newClientEmail,
+            full_name: `${firstName} ${lastName}`,
+            role: 'client'
+          });
+
+        if (profileError) {
+          console.error("Failed to create profile:", profileError);
+          throw profileError;
+        }
+
+        // Then create coach-client relationship
         const { error: relationError } = await supabase
           .from('coach_clients')
           .insert({
