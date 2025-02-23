@@ -27,18 +27,23 @@ export const useClients = () => {
         throw new Error("No authenticated user");
       }
 
-      console.log("Checking if user is coach...");
-      // Use the is_coach function
-      const { data: isCoach, error: coachError } = await supabase
-        .rpc('is_coach', { user_id: user.id });
+      console.log("Getting user profile...");
+      // First check if the user is a coach by checking their profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, user_profile')
+        .eq('id', user.id)
+        .single();
 
-      if (coachError) {
-        console.error("Error checking coach status:", coachError);
-        throw coachError;
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        throw profileError;
       }
+
+      console.log("User profile:", profile);
       
-      if (!isCoach) {
-        console.error("User is not a coach");
+      if (!profile || profile.role !== 'coach') {
+        console.error("User is not a coach. Role:", profile?.role);
         toast({
           title: "Access Denied",
           description: "Only coaches can access client management",
@@ -48,7 +53,7 @@ export const useClients = () => {
       }
 
       console.log("Fetching client relationships...");
-      // First get all active client relationships
+      // Get all active client relationships
       const { data: clientRelationships, error: clientsError } = await supabase
         .from('coach_clients')
         .select('client_id, status, requested_services')
@@ -68,7 +73,7 @@ export const useClients = () => {
 
       console.log("Found client relationships:", clientRelationships);
 
-      // Then get the client profiles
+      // Get the client profiles
       const { data: clientProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, email')
@@ -152,4 +157,3 @@ export const useClients = () => {
     fetchClients
   };
 };
-

@@ -1067,6 +1067,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      check_if_coach: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
       invite_client: {
         Args: {
           client_email: string
