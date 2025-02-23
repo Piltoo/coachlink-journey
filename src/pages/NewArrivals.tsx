@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -105,19 +106,18 @@ const NewArrivals = () => {
         return;
       }
 
+      // Update the existing coach-client relationship instead of creating a new one
       const { error } = await supabase
         .from('coach_clients')
-        .insert({
-          coach_id: user.id,
-          client_id: clientId,
-          status: newStatus,
-        });
+        .update({ status: newStatus })
+        .eq('coach_id', user.id)
+        .eq('client_id', clientId);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Client added successfully",
+        description: "Client status updated successfully",
       });
 
       fetchClients();
@@ -125,7 +125,7 @@ const NewArrivals = () => {
       console.error("Error updating client status:", error);
       toast({
         title: "Error",
-        description: "Failed to add client: " + error.message,
+        description: "Failed to update client status: " + error.message,
         variant: "destructive",
       });
     }
