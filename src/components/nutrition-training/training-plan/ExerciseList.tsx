@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GripVertical, ArrowRight, X } from "lucide-react";
 import { Exercise, SelectedReplacement } from "../types/training";
+import { ExerciseFields } from "./ExerciseFields";
 
 interface ExerciseListProps {
   exercises: Exercise[];
