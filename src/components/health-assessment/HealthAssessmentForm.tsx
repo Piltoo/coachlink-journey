@@ -200,7 +200,7 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
           name="stress_levels"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Stressnivå</FormLabel>
+              <FormLabel>Stressnivå - Hur upplever du din möjlighet för återhämtning i vardagen?</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
@@ -208,9 +208,9 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="low">Låg</SelectItem>
-                  <SelectItem value="medium">Medel</SelectItem>
-                  <SelectItem value="high">Hög</SelectItem>
+                  <SelectItem value="low">Låg - God möjlighet till återhämtning</SelectItem>
+                  <SelectItem value="medium">Medel - Periodvis begränsad återhämtning</SelectItem>
+                  <SelectItem value="high">Hög - Mycket begränsad återhämtning</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
