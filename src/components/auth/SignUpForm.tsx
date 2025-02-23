@@ -23,21 +23,32 @@ export const SignUpForm = ({ onSuccess, onToggleMode }: SignUpFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    
     try {
+      if (!email || !password || !fullName) {
+        throw new Error("Please fill in all required fields");
+      }
+      
       if (selectedServices.length === 0) {
         throw new Error("Please select at least one service");
       }
+      
       if (!agreedToTerms) {
         throw new Error("Please agree to the terms and conditions");
       }
+
+      setIsLoading(true);
 
       await signUpUser({
         email,
         password,
         fullName,
         selectedServices,
+      });
+
+      toast({
+        title: "Success",
+        description: "Your account has been created successfully.",
       });
 
       onSuccess();
