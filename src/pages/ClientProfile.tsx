@@ -1,14 +1,17 @@
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, UserX, Mail, User } from "lucide-react";
+import { ChevronLeft, UserX, Mail, User, Key } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const ClientProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [healthAssessment, setHealthAssessment] = useState(null);
   const [nutritionPlan, setNutritionPlan] = useState(null);
   const [workoutPlan, setWorkoutPlan] = useState(null);
@@ -17,6 +20,7 @@ const ClientProfile = () => {
     full_name?: string;
     email?: string;
   } | null>(null);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   useEffect(() => {
     const fetchClientData = async () => {
@@ -97,6 +101,43 @@ const ClientProfile = () => {
 
     if (!error) {
       navigate('/clients');
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!clientProfile?.email) {
+      toast({
+        title: "Error",
+        description: "Client email not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsResettingPassword(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        clientProfile.email,
+        {
+          redirectTo: `${window.location.origin}/reset-password`,
+        }
+      );
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password reset email has been sent to the client",
+      });
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send password reset email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -217,6 +258,23 @@ const ClientProfile = () => {
                     <span className="font-medium">Email:</span>
                     <span>{clientProfile?.email || 'Not provided'}</span>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Security</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handlePasswordReset}
+                    disabled={isResettingPassword}
+                  >
+                    <Key className="w-4 h-4 mr-2" />
+                    {isResettingPassword ? 'Sending Reset Email...' : 'Send Password Reset Email'}
+                  </Button>
                 </CardContent>
               </Card>
 
