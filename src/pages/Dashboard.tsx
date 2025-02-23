@@ -120,7 +120,11 @@ const Dashboard = () => {
   const renderDashboardContent = () => {
     switch (userRole) {
       case 'client':
-        return <ClientProgress />;
+        return (
+          <div className="space-y-6">
+            <ClientProgress />
+          </div>
+        );
       case 'coach':
         return <StatsCards />;
       case 'operator':
