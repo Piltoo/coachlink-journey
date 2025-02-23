@@ -185,8 +185,8 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
       }
 
       const confirmContent = document.createElement('p');
-      confirmContent.textContent = "Are you sure you want to delete this client? This action cannot be undone.";
-      confirmContent.style.color = '#4B5563'; // text-gray-600
+      confirmContent.textContent = "Are you sure you want to delete this client? This action cannot be undone. All client data will be permanently deleted.";
+      confirmContent.style.color = '#4B5563';
       confirmContent.style.marginBottom = '8px';
       
       const confirmed = await createModal(
@@ -198,12 +198,104 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
         return;
       }
 
-      const { error } = await supabase
+      // Delete in correct order to maintain referential integrity
+      // 1. Delete nutrition plans
+      await supabase
+        .from('nutrition_plans')
+        .delete()
+        .eq('client_id', clientId);
+
+      // 2. Delete workout plans
+      await supabase
+        .from('workout_plans')
+        .delete()
+        .eq('client_id', clientId);
+
+      // 3. Delete workout sessions
+      await supabase
+        .from('workout_sessions')
+        .delete()
+        .eq('client_id', clientId);
+
+      // 4. Delete client health assessments
+      await supabase
+        .from('client_health_assessments')
+        .delete()
+        .eq('client_id', clientId);
+
+      // 5. Delete weekly checkins and related data
+      const { data: checkins } = await supabase
+        .from('weekly_checkins')
+        .select('id')
+        .eq('client_id', clientId);
+
+      if (checkins) {
+        for (const checkin of checkins) {
+          // Delete measurements
+          await supabase
+            .from('measurements')
+            .delete()
+            .eq('checkin_id', checkin.id);
+
+          // Delete checkin answers
+          await supabase
+            .from('checkin_answers')
+            .delete()
+            .eq('checkin_id', checkin.id);
+        }
+      }
+
+      // Delete the weekly checkins themselves
+      await supabase
+        .from('weekly_checkins')
+        .delete()
+        .eq('client_id', clientId);
+
+      // 6. Delete programs
+      await supabase
+        .from('programs')
+        .delete()
+        .eq('client_id', clientId);
+
+      // 7. Delete coach-client relationship
+      await supabase
         .from('coach_clients')
         .delete()
         .eq('client_id', clientId);
 
-      if (error) throw error;
+      // 8. Delete subscriptions and related payments
+      const { data: subscriptions } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('client_id', clientId);
+
+      if (subscriptions) {
+        for (const subscription of subscriptions) {
+          await supabase
+            .from('payments')
+            .delete()
+            .eq('subscription_id', subscription.id);
+        }
+
+        await supabase
+          .from('subscriptions')
+          .delete()
+          .eq('client_id', clientId);
+      }
+
+      // 9. Delete messages
+      await supabase
+        .from('messages')
+        .delete()
+        .or(`sender_id.eq.${clientId},receiver_id.eq.${clientId}`);
+
+      // 10. Finally, delete the profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', clientId);
+
+      if (profileError) throw profileError;
 
       toast({
         title: "Success",
@@ -212,9 +304,10 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
 
       onClientUpdated();
     } catch (error: any) {
+      console.error('Error deleting client:', error);
       toast({
         title: "Error",
-        description: "Failed to delete client",
+        description: "Failed to delete client: " + error.message,
         variant: "destructive",
       });
     }
