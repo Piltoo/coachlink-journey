@@ -13,14 +13,13 @@ interface InviteClientDialogProps {
 export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) => {
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newClientName, setNewClientName] = useState("");
+  const [newClientPassword, setNewClientPassword] = useState("");
   const [isInviting, setIsInviting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
-  const DEFAULT_PASSWORD = "test123";
-
   const handleInviteClient = async () => {
-    if (!newClientEmail || !newClientName) {
+    if (!newClientEmail || !newClientName || !newClientPassword) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -29,15 +28,32 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
       return;
     }
 
+    if (newClientPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsInviting(true);
 
     try {
-      // Use the invite_client function with default password
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error("You must be logged in to invite clients");
+      }
+
+      console.log("Coach ID:", user.id);
+
+      // Use the invite_client function
       const { data, error } = await supabase
         .rpc('invite_client', {
           client_email: newClientEmail,
           client_name: newClientName,
-          client_password: DEFAULT_PASSWORD
+          client_password: newClientPassword
         });
 
       if (error) throw error;
@@ -46,12 +62,13 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
 
       toast({
         title: "Success",
-        description: "Client account created successfully. They can log in with the temporary password: test123",
+        description: "Client account created successfully",
       });
 
       // Reset form and close dialog
       setNewClientEmail("");
       setNewClientName("");
+      setNewClientPassword("");
       setIsOpen(false);
 
       // Call the callback to refresh the client list if provided
@@ -101,6 +118,19 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
               value={newClientEmail}
               onChange={(e) => setNewClientEmail(e.target.value)}
               placeholder="Enter client's email"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="clientPassword" className="text-sm font-medium">
+              Set Password
+            </label>
+            <Input
+              id="clientPassword"
+              type="password"
+              value={newClientPassword}
+              onChange={(e) => setNewClientPassword(e.target.value)}
+              placeholder="Set a password for the client"
+              minLength={6}
             />
           </div>
           <Button 
