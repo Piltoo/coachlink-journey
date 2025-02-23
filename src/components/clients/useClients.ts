@@ -27,10 +27,10 @@ export const useClients = () => {
         throw new Error("No authenticated user");
       }
 
-      // First verify that the user is a coach
+      // Verify coach role using the updated RLS policy approach
       const { data: userProfile, error: profileError } = await supabase
         .from('profiles')
-        .select('user_profile')
+        .select('role')
         .eq('id', user.id)
         .single();
 
@@ -39,7 +39,7 @@ export const useClients = () => {
         throw profileError;
       }
 
-      if (!userProfile || userProfile.user_profile !== 'coach') {
+      if (!userProfile || userProfile.role !== 'coach') {
         console.error("Access denied: User is not a coach");
         toast({
           title: "Access Denied",
@@ -54,7 +54,6 @@ export const useClients = () => {
       const { data: clientRelationships, error: clientsError } = await supabase
         .from('coach_clients')
         .select('client_id, status, requested_services')
-        .eq('coach_id', user.id) // Explicitly filter by coach_id
         .neq('status', 'not_connected');
 
       if (clientsError) {
@@ -99,19 +98,16 @@ export const useClients = () => {
               .from('nutrition_plans')
               .select('id')
               .eq('client_id', profile.id)
-              .eq('coach_id', user.id) // Add coach_id filter
               .maybeSingle(),
             supabase
               .from('workout_plans')
               .select('id')
               .eq('client_id', profile.id)
-              .eq('coach_id', user.id) // Add coach_id filter
               .maybeSingle(),
             supabase
               .from('workout_sessions')
               .select('id')
               .eq('client_id', profile.id)
-              .eq('coach_id', user.id) // Add coach_id filter
               .maybeSingle()
           ]);
 
