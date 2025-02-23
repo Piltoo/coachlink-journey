@@ -20,6 +20,7 @@ const Auth = () => {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -31,6 +32,41 @@ const Auth = () => {
       return () => clearTimeout(timer);
     }
   }, [showConfirmation, navigate]);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({
+        title: "Error",
+        description: "Please enter your email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password reset link has been sent to your email",
+      });
+      setIsForgotPassword(false);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reset password email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +174,43 @@ const Auth = () => {
     return <ConfirmationMessage />;
   }
 
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100/30 to-green-50 flex items-center justify-center px-4">
+        <GlassCard className="w-full max-w-md p-8 bg-white/40 backdrop-blur-lg">
+          <h2 className="text-2xl font-bold text-primary text-center mb-6">
+            Reset Password
+          </h2>
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Button
+              type="submit"
+              className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium"
+              disabled={isLoading}
+            >
+              {isLoading ? "Sending..." : "Send Reset Link"}
+            </Button>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setIsForgotPassword(false)}
+                className="text-[#a7cca4] hover:underline text-sm"
+              >
+                Back to login
+              </button>
+            </div>
+          </form>
+        </GlassCard>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100/30 to-green-50 flex items-center justify-center px-4">
       <GlassCard className="w-full max-w-md p-8 bg-white/40 backdrop-blur-lg">
@@ -174,6 +247,18 @@ const Auth = () => {
               required
             />
           </div>
+          
+          {!isSignUp && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => setIsForgotPassword(true)}
+                className="text-sm text-[#a7cca4] hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
           
           {isSignUp && (
             <ServiceSelection
