@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,19 +12,28 @@ interface InviteClientDialogProps {
   onClientAdded?: () => void;
 }
 
+const serviceOptions = [
+  { id: "personal-training", label: "Personal Training" },
+  { id: "coaching", label: "Coaching" },
+  { id: "treatments", label: "Treatments" },
+  { id: "others", label: "Others" },
+];
+
 export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) => {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
-  const [newClientName, setNewClientName] = useState("");
   const [newClientPassword, setNewClientPassword] = useState("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [isInviting, setIsInviting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleInviteClient = async () => {
-    if (!newClientEmail || !newClientName || !newClientPassword) {
+    if (!newClientEmail || !firstName || !lastName || !newClientPassword || selectedServices.length === 0) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Please fill in all required fields and select at least one service",
         variant: "destructive",
       });
       return;
@@ -46,19 +57,27 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("You must be logged in to invite clients");
       }
 
-      console.log("Coach ID:", user.id);
-
       // Use the invite_client function
       const { data, error } = await supabase
         .rpc('invite_client', {
           client_email: newClientEmail,
-          client_name: newClientName,
+          client_name: `${firstName} ${lastName}`,
           client_password: newClientPassword
         });
 
       if (error) throw error;
 
-      console.log("Client invited successfully:", data);
+      // Update the profile with additional information
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          requested_services: selectedServices
+        })
+        .eq('id', data);
+
+      if (profileError) throw profileError;
 
       toast({
         title: "Success",
@@ -66,9 +85,11 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
       });
 
       // Reset form and close dialog
+      setFirstName("");
+      setLastName("");
       setNewClientEmail("");
-      setNewClientName("");
       setNewClientPassword("");
+      setSelectedServices([]);
       setIsOpen(false);
 
       // Call the callback to refresh the client list if provided
@@ -98,20 +119,25 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <label htmlFor="clientName" className="text-sm font-medium">
-              Client Name
-            </label>
+            <Label htmlFor="firstName">First Name</Label>
             <Input
-              id="clientName"
-              value={newClientName}
-              onChange={(e) => setNewClientName(e.target.value)}
-              placeholder="Enter client's name"
+              id="firstName"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="Enter client's first name"
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="clientEmail" className="text-sm font-medium">
-              Client Email
-            </label>
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              id="lastName"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Enter client's last name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="clientEmail">Client Email</Label>
             <Input
               id="clientEmail"
               type="email"
@@ -121,9 +147,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="clientPassword" className="text-sm font-medium">
-              Set Password
-            </label>
+            <Label htmlFor="clientPassword">Set Password</Label>
             <Input
               id="clientPassword"
               type="password"
@@ -132,6 +156,27 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
               placeholder="Set a password for the client"
               minLength={6}
             />
+          </div>
+          <div className="space-y-4">
+            <Label>Select Required Services</Label>
+            <div className="space-y-3">
+              {serviceOptions.map((service) => (
+                <div key={service.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={service.id}
+                    checked={selectedServices.includes(service.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedServices(prev =>
+                        checked
+                          ? [...prev, service.id]
+                          : prev.filter(id => id !== service.id)
+                      );
+                    }}
+                  />
+                  <Label htmlFor={service.id}>{service.label}</Label>
+                </div>
+              ))}
+            </div>
           </div>
           <Button 
             onClick={handleInviteClient}
