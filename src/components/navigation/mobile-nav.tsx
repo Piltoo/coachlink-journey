@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { LayoutDashboard, Users, Dumbbell, MessageSquare, Settings, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Dumbbell, MessageSquare, Settings, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
@@ -42,9 +42,9 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
             variant="ghost"
             className="w-full justify-start text-gray-400 hover:text-white hover:bg-white/10"
           >
-            <Link to="/clients" onClick={() => onOpenChange(false)}>
-              <Users className="h-5 w-5 mr-2" />
-              Clients
+            <Link to="/weekly-checkins" onClick={() => onOpenChange(false)}>
+              <ClipboardCheck className="h-5 w-5 mr-2" />
+              Weekly Check-ins
             </Link>
           </Button>
           <Button

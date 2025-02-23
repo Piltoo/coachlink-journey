@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Dumbbell, MessageSquare, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, ClipboardCheck, Dumbbell, MessageSquare, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DesktopNavProps {
@@ -27,10 +27,10 @@ export function DesktopNav({ onSignOut }: DesktopNavProps) {
         asChild
         variant="ghost"
         size="icon"
-        className={`w-12 h-12 rounded-full ${isActive('/clients') ? 'bg-green-100/20 text-green-100' : 'text-gray-400 hover:text-green-100 hover:bg-green-100/20'}`}
+        className={`w-12 h-12 rounded-full ${isActive('/weekly-checkins') ? 'bg-green-100/20 text-green-100' : 'text-gray-400 hover:text-green-100 hover:bg-green-100/20'}`}
       >
-        <Link to="/clients" title="Clients">
-          <Users className="h-5 w-5" />
+        <Link to="/weekly-checkins" title="Weekly Check-ins">
+          <ClipboardCheck className="h-5 w-5" />
         </Link>
       </Button>
       <Button
