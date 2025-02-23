@@ -7,7 +7,7 @@ import { ClientProgress } from "@/components/dashboard/ClientProgress";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type UserRole = 'client' | 'coach' | 'operator' | 'therapist';
+type UserRole = 'client' | 'coach' | 'operator';
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -84,7 +84,7 @@ const Dashboard = () => {
         console.log("Role type (lowercase):", roleType);
 
         // Strict type checking against valid roles
-        if (!['client', 'coach', 'operator', 'therapist'].includes(roleType)) {
+        if (!['client', 'coach', 'operator'].includes(roleType)) {
           console.error("Invalid role type:", roleType);
           toast({
             title: "Profile Error",
@@ -128,13 +128,6 @@ const Dashboard = () => {
           <div className="text-center p-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Operator Dashboard</h2>
             <p className="text-gray-600">Welcome to the operator dashboard. Operator-specific features coming soon.</p>
-          </div>
-        );
-      case 'therapist':
-        return (
-          <div className="text-center p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Therapist Dashboard</h2>
-            <p className="text-gray-600">Welcome to the therapist dashboard. Therapist-specific features coming soon.</p>
           </div>
         );
       default:
