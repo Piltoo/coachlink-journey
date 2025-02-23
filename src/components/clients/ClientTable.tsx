@@ -1,5 +1,5 @@
 
-import { Client } from "./useClients";
+import { Client } from "./types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {

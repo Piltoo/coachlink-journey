@@ -2,13 +2,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Client } from "./types";
 
 export const useClients = () => {
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [serviceFilter, setServiceFilter] = useState("all");
-  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchClients = async () => {
@@ -33,54 +34,65 @@ export const useClients = () => {
         return;
       }
 
-      const { data: activeClients, error: clientsError } = await supabase
+      // First get all active client relationships
+      const { data: clientRelationships, error: clientsError } = await supabase
         .from('coach_clients')
-        .select(`
-          client_id,
-          status,
-          requested_services,
-          profiles:client_id (
-            id,
-            full_name,
-            email,
-            role
-          )
-        `)
+        .select('client_id, status, requested_services')
         .eq('coach_id', user.id)
         .neq('status', 'not_connected');
 
       if (clientsError) throw clientsError;
 
+      if (!clientRelationships || clientRelationships.length === 0) {
+        setClients([]);
+        return;
+      }
+
+      // Then get the client profiles
+      const { data: clientProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', clientRelationships.map(rel => rel.client_id));
+
+      if (profilesError) throw profilesError;
+
+      if (!clientProfiles) {
+        setClients([]);
+        return;
+      }
+
       // Get additional plan information for each client
       const clientsWithPlans = await Promise.all(
-        activeClients.map(async (client) => {
+        clientProfiles.map(async (profile) => {
+          const relationship = clientRelationships.find(rel => rel.client_id === profile.id);
+          
           const [nutritionPlan, workoutPlan, workoutSession] = await Promise.all([
             supabase
               .from('nutrition_plans')
               .select('id')
-              .eq('client_id', client.client_id)
+              .eq('client_id', profile.id)
               .maybeSingle(),
             supabase
               .from('workout_plans')
               .select('id')
-              .eq('client_id', client.client_id)
+              .eq('client_id', profile.id)
               .maybeSingle(),
             supabase
               .from('workout_sessions')
               .select('id')
-              .eq('client_id', client.client_id)
+              .eq('client_id', profile.id)
               .maybeSingle()
           ]);
 
           return {
-            id: client.client_id,
-            full_name: client.profiles.full_name,
-            email: client.profiles.email,
-            status: client.status,
+            id: profile.id,
+            full_name: profile.full_name,
+            email: profile.email,
+            status: relationship?.status || 'not_connected',
             hasNutritionPlan: !!nutritionPlan.data,
             hasWorkoutPlan: !!workoutPlan.data,
             hasPersonalTraining: !!workoutSession.data,
-            requested_services: client.requested_services || []
+            requested_services: relationship?.requested_services || []
           };
         })
       );
