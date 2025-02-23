@@ -6,6 +6,11 @@ export const calculateBodyFat = (
   healthAssessment: HealthAssessment
 ): number | null => {
   if (!latest || !latest.waist_cm || !latest.neck_cm || !healthAssessment?.height_cm) {
+    console.log("Missing measurements:", {
+      waist: latest?.waist_cm,
+      neck: latest?.neck_cm,
+      height: healthAssessment?.height_cm
+    });
     return null;
   }
 
@@ -14,19 +19,53 @@ export const calculateBodyFat = (
   const neck = latest.neck_cm;
   const gender = healthAssessment.gender || 'male';
   
+  console.log("Calculating body fat with measurements:", {
+    height,
+    waist,
+    neck,
+    gender,
+    hips: latest.hips_cm
+  });
+
   let bodyFat: number;
   
   if (gender === 'male') {
-    bodyFat = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
+    const waistNeckDiff = waist - neck;
+    const logWaistNeck = Math.log10(waistNeckDiff);
+    const logHeight = Math.log10(height);
+    
+    bodyFat = 86.010 * logWaistNeck - 70.041 * logHeight + 36.76;
+    
+    console.log("Male body fat calculation:", {
+      waistNeckDiff,
+      logWaistNeck,
+      logHeight,
+      result: bodyFat
+    });
   } else {
     if (!latest.hips_cm) {
+      console.log("Missing hips measurement for female calculation");
       return null;
     }
     const hips = latest.hips_cm;
-    bodyFat = 163.205 * Math.log10(waist + hips - neck) - 97.684 * Math.log10(height) - 78.387;
+    const waistHipsNeck = waist + hips - neck;
+    const logWaistHipsNeck = Math.log10(waistHipsNeck);
+    const logHeight = Math.log10(height);
+    
+    bodyFat = 163.205 * logWaistHipsNeck - 97.684 * logHeight - 78.387;
+    
+    console.log("Female body fat calculation:", {
+      waistHipsNeck,
+      logWaistHipsNeck,
+      logHeight,
+      result: bodyFat
+    });
   }
   
-  return Math.min(Math.max(Math.round(bodyFat * 10) / 10, 2), 45);
+  const finalResult = Math.min(Math.max(Math.round(bodyFat * 10) / 10, 2), 45);
+  console.log("Final body fat percentage:", finalResult);
+  
+  return finalResult;
 };
 
 export const calculateProgress = (current: number, initial: number, target: number) => {
