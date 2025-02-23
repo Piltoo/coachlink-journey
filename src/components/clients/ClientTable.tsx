@@ -15,6 +15,7 @@ import { ClientActions } from "./ClientActions";
 import { CurrentServices } from "./CurrentServices";
 import { StatusBadge } from "./StatusBadge";
 import { useNavigate } from "react-router-dom";
+import { Input } from "../ui/input";
 
 interface ClientTableProps {
   clients: Client[];
@@ -63,8 +64,83 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
   };
 
   const handleDeleteClient = async (clientId: string) => {
-    // Prompt for password confirmation using window.prompt
-    const passwordConfirmation = window.prompt('Please enter your password to confirm deletion:');
+    // Använd Input-komponenten för lösenordsbekräftelse med type="password"
+    const passwordInput = document.createElement('div');
+    passwordInput.innerHTML = `
+      <input type="password" id="password-confirmation" class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" placeholder="Enter your password">
+    `;
+    
+    const passwordConfirmation = await new Promise((resolve) => {
+      const modal = document.createElement('div');
+      modal.style.position = 'fixed';
+      modal.style.top = '50%';
+      modal.style.left = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      modal.style.backgroundColor = 'white';
+      modal.style.padding = '20px';
+      modal.style.borderRadius = '8px';
+      modal.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
+      modal.style.zIndex = '1000';
+      
+      const title = document.createElement('h3');
+      title.textContent = 'Confirm Deletion';
+      title.style.marginBottom = '16px';
+      title.style.fontWeight = 'bold';
+      
+      const buttons = document.createElement('div');
+      buttons.style.display = 'flex';
+      buttons.style.gap = '8px';
+      buttons.style.marginTop = '16px';
+      buttons.style.justifyContent = 'flex-end';
+      
+      const confirmButton = document.createElement('button');
+      confirmButton.textContent = 'Confirm';
+      confirmButton.className = 'bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700';
+      
+      const cancelButton = document.createElement('button');
+      cancelButton.textContent = 'Cancel';
+      cancelButton.className = 'bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300';
+      
+      buttons.appendChild(cancelButton);
+      buttons.appendChild(confirmButton);
+      
+      modal.appendChild(title);
+      modal.appendChild(passwordInput);
+      modal.appendChild(buttons);
+      
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.right = '0';
+      overlay.style.bottom = '0';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      overlay.style.zIndex = '999';
+      
+      document.body.appendChild(overlay);
+      document.body.appendChild(modal);
+      
+      const cleanup = () => {
+        document.body.removeChild(modal);
+        document.body.removeChild(overlay);
+      };
+      
+      confirmButton.onclick = () => {
+        const password = (document.getElementById('password-confirmation') as HTMLInputElement).value;
+        cleanup();
+        resolve(password);
+      };
+      
+      cancelButton.onclick = () => {
+        cleanup();
+        resolve(null);
+      };
+      
+      overlay.onclick = () => {
+        cleanup();
+        resolve(null);
+      };
+    });
     
     if (!passwordConfirmation) {
       return;
@@ -84,7 +160,7 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user.email!,
-        password: passwordConfirmation,
+        password: passwordConfirmation as string,
       });
 
       if (signInError) {
