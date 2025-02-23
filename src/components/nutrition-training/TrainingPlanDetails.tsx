@@ -310,7 +310,7 @@ export function TrainingPlanDetails({ plan, isOpen, onClose, onUpdate }: Trainin
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[800px] w-[95vw]">
         <DialogHeader>
           <DialogTitle>{plan.name}</DialogTitle>
         </DialogHeader>
