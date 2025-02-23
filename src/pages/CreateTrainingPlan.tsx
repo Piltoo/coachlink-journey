@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -30,6 +29,42 @@ export default function CreateTrainingPlan() {
   const [availableExercises, setAvailableExercises] = useState<ExerciseWithDetails[]>([]);
   const [muscleGroupFilter, setMuscleGroupFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [muscleGroups, setMuscleGroups] = useState<string[]>(['All']);
+
+  const fetchMuscleGroups = async () => {
+    try {
+      const { data: customMuscleGroups, error: customError } = await supabase
+        .from('exercises')
+        .select('muscle_group')
+        .not('muscle_group', 'is', null);
+
+      if (customError) throw customError;
+
+      const { data: generalMuscleGroups, error: generalError } = await supabase
+        .from('exercise_datab_all_coaches')
+        .select('muscle_group')
+        .not('muscle_group', 'is', null);
+
+      if (generalError) throw generalError;
+
+      const allMuscleGroups = new Set(['All']);
+      customMuscleGroups.forEach(item => {
+        if (item.muscle_group) allMuscleGroups.add(item.muscle_group);
+      });
+      generalMuscleGroups.forEach(item => {
+        if (item.muscle_group) allMuscleGroups.add(item.muscle_group);
+      });
+
+      setMuscleGroups(Array.from(allMuscleGroups));
+
+    } catch (error) {
+      console.error('Error fetching muscle groups:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMuscleGroups();
+  }, []);
 
   useEffect(() => {
     fetchExercises();
@@ -43,7 +78,6 @@ export default function CreateTrainingPlan() {
         return;
       }
 
-      // Fetch coach's custom exercises with name filter if search query exists
       const customExercisesQuery = supabase
         .from('exercises')
         .select('*')
@@ -60,7 +94,6 @@ export default function CreateTrainingPlan() {
         throw customError;
       }
 
-      // Fetch general exercises with name filter if search query exists
       const generalExercisesQuery = supabase
         .from('exercise_datab_all_coaches')
         .select('*');
@@ -76,13 +109,11 @@ export default function CreateTrainingPlan() {
         throw generalError;
       }
 
-      // Transform custom exercises
       const transformedCustomExercises = (customExercises || []).map(ex => ({
         ...ex,
         isCustom: true
       }));
 
-      // Transform general exercises
       const transformedGeneralExercises = (generalExercises || []).map((ex: any) => ({
         id: `general_${ex.Name?.replace(/\s+/g, '_')}`,
         name: ex.Name || '',
@@ -96,7 +127,6 @@ export default function CreateTrainingPlan() {
         isCustom: false
       }));
 
-      // Combine both sets of exercises
       const allExercises = [...transformedCustomExercises, ...transformedGeneralExercises];
       console.log("All exercises after transformation:", allExercises);
       setAvailableExercises(allExercises);
@@ -174,11 +204,9 @@ export default function CreateTrainingPlan() {
     const matchesMuscleGroup = muscleGroupFilter === 'All' || 
       exercise.muscle_group?.toLowerCase() === muscleGroupFilter.toLowerCase();
     
-    // We don't need to filter by search query here anymore since it's handled in the fetchExercises function
     return matchesMuscleGroup;
   });
 
-  // Update useEffect to refetch exercises when search query changes
   useEffect(() => {
     fetchExercises();
   }, [searchQuery]);
@@ -236,15 +264,11 @@ export default function CreateTrainingPlan() {
                     <SelectValue placeholder="Filter by muscle" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="All">All Muscles</SelectItem>
-                    <SelectItem value="Shoulders">Shoulders</SelectItem>
-                    <SelectItem value="Chest">Chest</SelectItem>
-                    <SelectItem value="Biceps">Biceps</SelectItem>
-                    <SelectItem value="Triceps">Triceps</SelectItem>
-                    <SelectItem value="Abdominal">Abdominal</SelectItem>
-                    <SelectItem value="Quadriceps">Quadriceps</SelectItem>
-                    <SelectItem value="Hamstrings">Hamstrings</SelectItem>
-                    <SelectItem value="Gluts">Gluts</SelectItem>
+                    {muscleGroups.map((group) => (
+                      <SelectItem key={group} value={group}>
+                        {group}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Input
