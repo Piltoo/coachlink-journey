@@ -57,7 +57,7 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("You must be logged in to invite clients");
       }
 
-      // Use the invite_client function
+      // First create the client using the invite_client function
       const { data, error } = await supabase
         .rpc('invite_client', {
           client_email: newClientEmail,
@@ -67,17 +67,16 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
 
       if (error) throw error;
 
-      // Update the profile with additional information
-      const { error: profileError } = await supabase
-        .from('profiles')
+      // Then update the coach_clients record with the requested services
+      const { error: updateError } = await supabase
+        .from('coach_clients')
         .update({
-          first_name: firstName,
-          last_name: lastName,
           requested_services: selectedServices
         })
-        .eq('id', data);
+        .eq('client_id', data)
+        .eq('coach_id', user.id);
 
-      if (profileError) throw profileError;
+      if (updateError) throw updateError;
 
       toast({
         title: "Success",
@@ -119,46 +118,50 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="firstName">First Name</Label>
+            <Label htmlFor="firstName">First Name *</Label>
             <Input
               id="firstName"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
               placeholder="Enter client's first name"
+              required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="lastName">Last Name</Label>
+            <Label htmlFor="lastName">Last Name *</Label>
             <Input
               id="lastName"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
               placeholder="Enter client's last name"
+              required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="clientEmail">Client Email</Label>
+            <Label htmlFor="clientEmail">Client Email *</Label>
             <Input
               id="clientEmail"
               type="email"
               value={newClientEmail}
               onChange={(e) => setNewClientEmail(e.target.value)}
               placeholder="Enter client's email"
+              required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="clientPassword">Set Password</Label>
+            <Label htmlFor="clientPassword">Set Password *</Label>
             <Input
               id="clientPassword"
               type="password"
               value={newClientPassword}
               onChange={(e) => setNewClientPassword(e.target.value)}
-              placeholder="Set a password for the client"
+              placeholder="Set a password for the client (min. 6 characters)"
               minLength={6}
+              required
             />
           </div>
           <div className="space-y-4">
-            <Label>Select Required Services</Label>
+            <Label>Select Required Services *</Label>
             <div className="space-y-3">
               {serviceOptions.map((service) => (
                 <div key={service.id} className="flex items-center space-x-2">
