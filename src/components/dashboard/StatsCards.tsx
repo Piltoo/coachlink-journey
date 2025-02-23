@@ -7,16 +7,18 @@ import { useStats } from "./stats/useStats";
 
 export function StatsCards() {
   const navigate = useNavigate();
-  const { stats, todaySessions, userRole } = useStats();
+  const { stats, todaySessions, isLoading } = useStats();
 
-  if (userRole !== 'coach') return null;
+  if (isLoading) {
+    return <div>Loading stats...</div>;
+  }
 
   const handleNewArrivalsClick = () => {
     navigate('/new-arrivals');
   };
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {/* Left Side Stats - First Column */}
       <div className="space-y-4">
         <StatCard
@@ -59,7 +61,7 @@ export function StatsCards() {
       </div>
 
       {/* Right Side - Today's Assignments (spans 2 columns) */}
-      <div className="col-span-2">
+      <div className="md:col-span-2">
         <TodaySessions sessions={todaySessions} />
       </div>
     </div>
