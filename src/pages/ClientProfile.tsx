@@ -293,38 +293,36 @@ const ClientProfile = () => {
                         {format(new Date(checkIns[0].created_at), 'PPP')}
                       </p>
                     </div>
-                    {checkIns[0].measurements && (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Weight</p>
-                          <p className="font-medium">{checkIns[0].weight_kg} kg</p>
-                        </div>
-                        {checkIns[0].measurements.neck_cm && (
-                          <div>
-                            <p className="text-sm text-muted-foreground">Neck</p>
-                            <p className="font-medium">{checkIns[0].measurements.neck_cm} cm</p>
-                          </div>
-                        )}
-                        {checkIns[0].measurements.chest_cm && (
-                          <div>
-                            <p className="text-sm text-muted-foreground">Chest</p>
-                            <p className="font-medium">{checkIns[0].measurements.chest_cm} cm</p>
-                          </div>
-                        )}
-                        {checkIns[0].measurements.waist_cm && (
-                          <div>
-                            <p className="text-sm text-muted-foreground">Waist</p>
-                            <p className="font-medium">{checkIns[0].measurements.waist_cm} cm</p>
-                          </div>
-                        )}
-                        {checkIns[0].measurements.hips_cm && (
-                          <div>
-                            <p className="text-sm text-muted-foreground">Hips</p>
-                            <p className="font-medium">{checkIns[0].measurements.hips_cm} cm</p>
-                          </div>
-                        )}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Weight</p>
+                        <p className="font-medium">{checkIns[0].weight_kg} kg</p>
                       </div>
-                    )}
+                      {checkIns[0].measurements?.neck_cm && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Neck</p>
+                          <p className="font-medium">{checkIns[0].measurements.neck_cm} cm</p>
+                        </div>
+                      )}
+                      {checkIns[0].measurements?.chest_cm && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Chest</p>
+                          <p className="font-medium">{checkIns[0].measurements.chest_cm} cm</p>
+                        </div>
+                      )}
+                      {checkIns[0].measurements?.waist_cm && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Waist</p>
+                          <p className="font-medium">{checkIns[0].measurements.waist_cm} cm</p>
+                        </div>
+                      )}
+                      {checkIns[0].measurements?.hips_cm && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Hips</p>
+                          <p className="font-medium">{checkIns[0].measurements.hips_cm} cm</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <p className="text-muted-foreground">No check-in data available</p>
