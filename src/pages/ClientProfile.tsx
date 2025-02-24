@@ -25,31 +25,31 @@ const ClientProfile = () => {
   const measurementCards = [
     {
       title: "Weight",
-      key: "weight_kg",
+      key: "weight_kg" as const,
       color: "#2D6A4F",
       unit: "kg"
     },
     {
       title: "Neck",
-      key: "neck_cm",
+      key: "neck_cm" as const,
       color: "#40916C",
       unit: "cm"
     },
     {
       title: "Chest",
-      key: "chest_cm",
+      key: "chest_cm" as const,
       color: "#52B788",
       unit: "cm"
     },
     {
       title: "Waist",
-      key: "waist_cm",
+      key: "waist_cm" as const,
       color: "#74C69D",
       unit: "cm"
     },
     {
       title: "Hips",
-      key: "hips_cm",
+      key: "hips_cm" as const,
       color: "#95D5B2",
       unit: "cm"
     }
@@ -345,9 +345,13 @@ const ClientProfile = () => {
                         card={card}
                         measurements={last30DaysCheckIns.map(checkIn => ({
                           created_at: checkIn.created_at,
-                          [card.key]: card.key === 'weight_kg' 
-                            ? checkIn.weight_kg 
-                            : checkIn.measurements?.[card.key]
+                          weight_kg: checkIn.weight_kg,
+                          waist_cm: checkIn.measurements?.waist_cm || null,
+                          chest_cm: checkIn.measurements?.chest_cm || null,
+                          hips_cm: checkIn.measurements?.hips_cm || null,
+                          thigh_cm: checkIn.measurements?.thigh_cm || null,
+                          arm_cm: checkIn.measurements?.arm_cm || null,
+                          neck_cm: checkIn.measurements?.neck_cm || null
                         }))}
                       />
                     ))}
