@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, UserX, Mail, User, Key, Scale, Activity, Heart, AreaChart } from "lucide-react";
+import { ChevronLeft, UserX, Mail, User, Key } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
@@ -8,13 +8,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { MeasurementCard } from "@/components/dashboard/MeasurementCard";
+import type { Measurement } from "@/components/dashboard/types";
 
 const ClientProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [healthAssessment, setHealthAssessment] = useState(null);
-  const [checkIns, setCheckIns] = useState([]);
+  const [checkIns, setCheckIns] = useState<any[]>([]);
   const [clientProfile, setClientProfile] = useState<{
     full_name?: string;
     email?: string;
@@ -24,43 +25,48 @@ const ClientProfile = () => {
 
   const measurementCards = [
     {
-      title: "Weight",
+      title: "Vikt",
       key: "weight_kg" as const,
       color: "#2D6A4F",
       unit: "kg"
     },
     {
-      title: "Neck",
+      title: "Nacke",
       key: "neck_cm" as const,
       color: "#40916C",
       unit: "cm"
     },
     {
-      title: "Chest",
+      title: "Bröst",
       key: "chest_cm" as const,
       color: "#52B788",
       unit: "cm"
     },
     {
-      title: "Waist",
+      title: "Midja",
       key: "waist_cm" as const,
       color: "#74C69D",
       unit: "cm"
     },
     {
-      title: "Hips",
+      title: "Höfter",
       key: "hips_cm" as const,
       color: "#95D5B2",
       unit: "cm"
+    },
+    {
+      title: "Lår",
+      key: "thigh_cm" as const,
+      color: "#B7E4C7",
+      unit: "cm"
+    },
+    {
+      title: "Arm",
+      key: "arm_cm" as const,
+      color: "#D8F3DC",
+      unit: "cm"
     }
   ];
-
-  const last30DaysCheckIns = checkIns.filter(checkIn => {
-    const checkInDate = new Date(checkIn.created_at);
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    return checkInDate >= thirtyDaysAgo;
-  });
 
   useEffect(() => {
     const fetchClientData = async () => {
@@ -88,22 +94,60 @@ const ClientProfile = () => {
         setHealthAssessment(assessmentData);
       }
 
-      const { data: checkInsData } = await supabase
+      const { data: checkInsData, error } = await supabase
         .from('weekly_checkins')
         .select(`
           *,
-          measurements (*)
+          measurements (
+            weight_kg,
+            neck_cm,
+            chest_cm,
+            waist_cm,
+            hips_cm,
+            thigh_cm,
+            arm_cm,
+            created_at
+          )
         `)
         .eq('client_id', id)
         .order('created_at', { ascending: false });
 
+      if (error) {
+        console.error('Error fetching check-ins:', error);
+        return;
+      }
+
       if (checkInsData) {
-        setCheckIns(checkInsData);
+        const processedCheckIns = checkInsData.map(checkIn => ({
+          ...checkIn,
+          measurements: {
+            ...checkIn.measurements,
+          }
+        }));
+        setCheckIns(processedCheckIns);
       }
     };
 
     fetchClientData();
   }, [id]);
+
+  const last30DaysCheckIns = checkIns
+    .filter(checkIn => {
+      const checkInDate = new Date(checkIn.created_at);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return checkInDate >= thirtyDaysAgo;
+    })
+    .map(checkIn => ({
+      created_at: checkIn.created_at,
+      weight_kg: checkIn.weight_kg,
+      neck_cm: checkIn.measurements?.neck_cm || null,
+      chest_cm: checkIn.measurements?.chest_cm || null,
+      waist_cm: checkIn.measurements?.waist_cm || null,
+      hips_cm: checkIn.measurements?.hips_cm || null,
+      thigh_cm: checkIn.measurements?.thigh_cm || null,
+      arm_cm: checkIn.measurements?.arm_cm || null
+    })) as Measurement[];
 
   const handleUnsubscribe = async () => {
     if (!id) return;
@@ -164,7 +208,7 @@ const ClientProfile = () => {
           className="mb-6"
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
-          Back to Clients
+          Tillbaka till klienter
         </Button>
 
         <Tabs defaultValue="profile" className="mb-6">
@@ -282,50 +326,62 @@ const ClientProfile = () => {
           <TabsContent value="checkIns" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Latest Check-in</CardTitle>
+                <CardTitle>Senaste Check-in</CardTitle>
               </CardHeader>
               <CardContent>
                 {checkIns[0] ? (
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Date</p>
+                      <p className="text-sm text-muted-foreground">Datum</p>
                       <p className="font-medium">
                         {format(new Date(checkIns[0].created_at), 'PPP')}
                       </p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">Weight</p>
+                        <p className="text-sm text-muted-foreground">Vikt</p>
                         <p className="font-medium">{checkIns[0].weight_kg} kg</p>
                       </div>
                       {checkIns[0].measurements?.neck_cm && (
                         <div>
-                          <p className="text-sm text-muted-foreground">Neck</p>
+                          <p className="text-sm text-muted-foreground">Nacke</p>
                           <p className="font-medium">{checkIns[0].measurements.neck_cm} cm</p>
                         </div>
                       )}
                       {checkIns[0].measurements?.chest_cm && (
                         <div>
-                          <p className="text-sm text-muted-foreground">Chest</p>
+                          <p className="text-sm text-muted-foreground">Bröst</p>
                           <p className="font-medium">{checkIns[0].measurements.chest_cm} cm</p>
                         </div>
                       )}
                       {checkIns[0].measurements?.waist_cm && (
                         <div>
-                          <p className="text-sm text-muted-foreground">Waist</p>
+                          <p className="text-sm text-muted-foreground">Midja</p>
                           <p className="font-medium">{checkIns[0].measurements.waist_cm} cm</p>
                         </div>
                       )}
                       {checkIns[0].measurements?.hips_cm && (
                         <div>
-                          <p className="text-sm text-muted-foreground">Hips</p>
+                          <p className="text-sm text-muted-foreground">Höfter</p>
                           <p className="font-medium">{checkIns[0].measurements.hips_cm} cm</p>
+                        </div>
+                      )}
+                      {checkIns[0].measurements?.thigh_cm && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Lår</p>
+                          <p className="font-medium">{checkIns[0].measurements.thigh_cm} cm</p>
+                        </div>
+                      )}
+                      {checkIns[0].measurements?.arm_cm && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Arm</p>
+                          <p className="font-medium">{checkIns[0].measurements.arm_cm} cm</p>
                         </div>
                       )}
                     </div>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground">No check-in data available</p>
+                  <p className="text-muted-foreground">Ingen check-in data tillgänglig</p>
                 )}
               </CardContent>
             </Card>
@@ -333,24 +389,15 @@ const ClientProfile = () => {
             {last30DaysCheckIns.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Last 30 Days Progress</CardTitle>
+                  <CardTitle>Utveckling senaste 30 dagarna</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {measurementCards.map((card) => (
                       <MeasurementCard
                         key={card.key}
                         card={card}
-                        measurements={last30DaysCheckIns.map(checkIn => ({
-                          created_at: checkIn.created_at,
-                          weight_kg: checkIn.weight_kg,
-                          waist_cm: checkIn.measurements?.waist_cm || null,
-                          chest_cm: checkIn.measurements?.chest_cm || null,
-                          hips_cm: checkIn.measurements?.hips_cm || null,
-                          thigh_cm: checkIn.measurements?.thigh_cm || null,
-                          arm_cm: checkIn.measurements?.arm_cm || null,
-                          neck_cm: checkIn.measurements?.neck_cm || null
-                        }))}
+                        measurements={last30DaysCheckIns}
                       />
                     ))}
                   </div>
@@ -361,7 +408,7 @@ const ClientProfile = () => {
             {checkIns.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Check-in History</CardTitle>
+                  <CardTitle>Check-in Historik</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
@@ -376,7 +423,7 @@ const ClientProfile = () => {
                           </span>
                         </div>
                         {checkIn.measurements && (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {checkIn.measurements.neck_cm && (
                               <div>
                                 <p className="text-sm text-muted-foreground">Nacke</p>
