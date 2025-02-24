@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { MeasurementCard } from "@/components/dashboard/MeasurementCard";
 
 const ClientProfile = () => {
   const { id } = useParams();
@@ -20,6 +21,46 @@ const ClientProfile = () => {
     has_completed_assessment?: boolean;
   } | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  const measurementCards = [
+    {
+      title: "Weight",
+      key: "weight_kg",
+      color: "#2D6A4F",
+      unit: "kg"
+    },
+    {
+      title: "Neck",
+      key: "neck_cm",
+      color: "#40916C",
+      unit: "cm"
+    },
+    {
+      title: "Chest",
+      key: "chest_cm",
+      color: "#52B788",
+      unit: "cm"
+    },
+    {
+      title: "Waist",
+      key: "waist_cm",
+      color: "#74C69D",
+      unit: "cm"
+    },
+    {
+      title: "Hips",
+      key: "hips_cm",
+      color: "#95D5B2",
+      unit: "cm"
+    }
+  ];
+
+  const last30DaysCheckIns = checkIns.filter(checkIn => {
+    const checkInDate = new Date(checkIn.created_at);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return checkInDate >= thirtyDaysAgo;
+  });
 
   useEffect(() => {
     const fetchClientData = async () => {
@@ -290,6 +331,30 @@ const ClientProfile = () => {
                 )}
               </CardContent>
             </Card>
+
+            {last30DaysCheckIns.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Last 30 Days Progress</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {measurementCards.map((card) => (
+                      <MeasurementCard
+                        key={card.key}
+                        card={card}
+                        measurements={last30DaysCheckIns.map(checkIn => ({
+                          created_at: checkIn.created_at,
+                          [card.key]: card.key === 'weight_kg' 
+                            ? checkIn.weight_kg 
+                            : checkIn.measurements?.[card.key]
+                        }))}
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {checkIns.length > 0 && (
               <Card>
