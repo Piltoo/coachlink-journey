@@ -1,7 +1,6 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, UserX, Mail, User, Key } from "lucide-react";
+import { ChevronLeft, UserX, Mail, User, Key, Scale, Activity, Heart, AreaChart } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
@@ -26,7 +25,6 @@ const ClientProfile = () => {
     const fetchClientData = async () => {
       if (!id) return;
 
-      // Fetch client profile
       const { data: profileData } = await supabase
         .from('profiles')
         .select('full_name, email, has_completed_assessment')
@@ -37,7 +35,6 @@ const ClientProfile = () => {
         setClientProfile(profileData);
       }
 
-      // Fetch health assessment
       const { data: assessmentData } = await supabase
         .from('client_health_assessments')
         .select('*')
@@ -50,7 +47,6 @@ const ClientProfile = () => {
         setHealthAssessment(assessmentData);
       }
 
-      // Fetch all check-ins with measurements
       const { data: checkInsData } = await supabase
         .from('weekly_checkins')
         .select(`
@@ -133,7 +129,10 @@ const ClientProfile = () => {
         <Tabs defaultValue="profile" className="mb-6">
           <TabsList className="bg-white/50 backdrop-blur-sm border">
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="healthAssessment">Health Assessment</TabsTrigger>
             <TabsTrigger value="checkIns">Check-ins</TabsTrigger>
+            <TabsTrigger value="nutritionPlan">Nutrition Plan</TabsTrigger>
+            <TabsTrigger value="trainingPlan">Training Plan</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -155,32 +154,88 @@ const ClientProfile = () => {
                     <span>{clientProfile?.email || 'Not provided'}</span>
                   </div>
                 </div>
-
-                {healthAssessment && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <h3 className="font-medium">Health Assessment</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Starting Weight</p>
-                        <p className="font-medium">{healthAssessment.starting_weight} kg</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Target Weight</p>
-                        <p className="font-medium">{healthAssessment.target_weight} kg</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Activity Level</p>
-                        <p className="font-medium">{healthAssessment.current_activity_level}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Health Goals</p>
-                        <p className="font-medium">{healthAssessment.health_goals}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="healthAssessment" className="space-y-6">
+            {healthAssessment ? (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Physical Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Starting Weight</p>
+                      <p className="text-lg font-medium">{healthAssessment.starting_weight} kg</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Target Weight</p>
+                      <p className="text-lg font-medium">{healthAssessment.target_weight} kg</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Height</p>
+                      <p className="text-lg font-medium">{healthAssessment.height_cm} cm</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Activity Level</p>
+                      <p className="text-lg font-medium">{healthAssessment.current_activity_level}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Health Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Health Goals</p>
+                      <p className="mt-1">{healthAssessment.health_goals}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Medical Conditions</p>
+                      <p className="mt-1">{healthAssessment.medical_conditions || 'None reported'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Dietary Restrictions</p>
+                      <p className="mt-1">{healthAssessment.dietary_restrictions || 'None reported'}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Lifestyle Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Exercise Experience</p>
+                      <p className="mt-1">{healthAssessment.previous_exercise_experience}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Gym Equipment Access</p>
+                      <p className="mt-1">{healthAssessment.gym_equipment_access}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Sleep Patterns</p>
+                      <p className="mt-1">{healthAssessment.sleep_patterns}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Stress Levels</p>
+                      <p className="mt-1">{healthAssessment.stress_levels}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="py-6 text-center text-muted-foreground">
+                  No health assessment data available.
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="checkIns" className="space-y-6">
@@ -287,6 +342,38 @@ const ClientProfile = () => {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="nutritionPlan" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Nutrition Plans</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate(`/nutrition-and-training?client=${id}&tab=nutrition`)}
+                  className="w-full"
+                >
+                  View Nutrition Plans
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="trainingPlan" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Training Plans</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate(`/nutrition-and-training?client=${id}&tab=training`)}
+                  className="w-full"
+                >
+                  View Training Plans
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings">
