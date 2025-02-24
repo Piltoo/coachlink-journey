@@ -372,33 +372,45 @@ const ClientProfile = () => {
                             {format(new Date(checkIn.created_at), 'PPP')}
                           </h4>
                           <span className="text-sm text-muted-foreground">
-                            Weight: {checkIn.weight_kg} kg
+                            Vikt: {checkIn.weight_kg} kg
                           </span>
                         </div>
                         {checkIn.measurements && (
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {checkIn.measurements.neck_cm && (
                               <div>
-                                <p className="text-sm text-muted-foreground">Neck</p>
+                                <p className="text-sm text-muted-foreground">Nacke</p>
                                 <p>{checkIn.measurements.neck_cm} cm</p>
                               </div>
                             )}
                             {checkIn.measurements.chest_cm && (
                               <div>
-                                <p className="text-sm text-muted-foreground">Chest</p>
+                                <p className="text-sm text-muted-foreground">Bröst</p>
                                 <p>{checkIn.measurements.chest_cm} cm</p>
                               </div>
                             )}
                             {checkIn.measurements.waist_cm && (
                               <div>
-                                <p className="text-sm text-muted-foreground">Waist</p>
+                                <p className="text-sm text-muted-foreground">Midja</p>
                                 <p>{checkIn.measurements.waist_cm} cm</p>
                               </div>
                             )}
                             {checkIn.measurements.hips_cm && (
                               <div>
-                                <p className="text-sm text-muted-foreground">Hips</p>
+                                <p className="text-sm text-muted-foreground">Höfter</p>
                                 <p>{checkIn.measurements.hips_cm} cm</p>
+                              </div>
+                            )}
+                            {checkIn.measurements.thigh_cm && (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Lår</p>
+                                <p>{checkIn.measurements.thigh_cm} cm</p>
+                              </div>
+                            )}
+                            {checkIn.measurements.arm_cm && (
+                              <div>
+                                <p className="text-sm text-muted-foreground">Arm</p>
+                                <p>{checkIn.measurements.arm_cm} cm</p>
                               </div>
                             )}
                           </div>
