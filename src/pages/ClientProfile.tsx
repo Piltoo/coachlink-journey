@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { MeasurementCard } from "@/components/dashboard/MeasurementCard";
 import type { Measurement } from "@/components/dashboard/types";
+import { calculateBodyFat } from "@/components/dashboard/utils";
 
 const ClientProfile = () => {
   const { id } = useParams();
@@ -149,6 +150,25 @@ const ClientProfile = () => {
       arm_cm: checkIn.measurements?.arm_cm || null
     })) as Measurement[];
 
+  const getBodyFatTrend = () => {
+    if (!checkIns || !healthAssessment) return [];
+    
+    return checkIns
+      .filter(checkIn => checkIn.measurements)
+      .map(checkIn => {
+        const bodyFat = calculateBodyFat(checkIn.measurements, healthAssessment);
+        return {
+          date: format(new Date(checkIn.created_at), 'yyyy-MM-dd'),
+          bodyFat: bodyFat
+        };
+      })
+      .filter(item => item.bodyFat !== null)
+      .reverse();
+  };
+
+  const bodyFatTrend = getBodyFatTrend();
+  const latestBodyFat = bodyFatTrend[0]?.bodyFat;
+
   const handleUnsubscribe = async () => {
     if (!id) return;
     
@@ -267,6 +287,25 @@ const ClientProfile = () => {
                       <p className="text-sm text-muted-foreground">Activity Level</p>
                       <p className="text-lg font-medium">{healthAssessment.current_activity_level}</p>
                     </div>
+                    {latestBodyFat && (
+                      <div className="col-span-2">
+                        <p className="text-sm text-muted-foreground">Body Fat Trend</p>
+                        <div className="mt-2 space-y-2">
+                          <div className="bg-green-50 p-4 rounded-lg">
+                            <p className="text-sm font-medium">Senaste kroppsfettsmätning</p>
+                            <p className="text-2xl font-bold text-primary">{latestBodyFat}%</p>
+                          </div>
+                          <div className="space-y-2">
+                            {bodyFatTrend.map((measurement, index) => (
+                              <div key={index} className="flex justify-between items-center text-sm">
+                                <span>{measurement.date}</span>
+                                <span className="font-medium">{measurement.bodyFat}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
