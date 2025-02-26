@@ -68,6 +68,11 @@ export const calculateBodyFat = (
   return finalResult;
 };
 
+export const calculateBMI = (weightKg: number, heightCm: number): number => {
+  const heightM = heightCm / 100;
+  return weightKg / (heightM * heightM);
+};
+
 export const calculateProgress = (current: number, initial: number, target: number) => {
   if (initial === target) return 100;
   return Math.min(100, Math.max(0, 
