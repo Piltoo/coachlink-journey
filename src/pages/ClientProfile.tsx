@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { MeasurementCard } from "@/components/dashboard/MeasurementCard";
 import type { Measurement } from "@/components/dashboard/types";
 import { calculateBodyFat } from "@/components/dashboard/utils";
+import { Image } from "lucide-react";
 
 const ClientProfile = () => {
   const { id } = useParams();
@@ -461,6 +462,53 @@ const ClientProfile = () => {
                             Vikt: {checkIn.weight_kg} kg
                           </span>
                         </div>
+                        
+                        {(checkIn.measurements?.front_photo_url || 
+                          checkIn.measurements?.side_photo_url || 
+                          checkIn.measurements?.back_photo_url) && (
+                          <div className="mb-4">
+                            <h5 className="text-sm font-medium text-muted-foreground mb-2">Bilder</h5>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {checkIn.measurements?.front_photo_url && (
+                                <div className="relative aspect-[3/4] group">
+                                  <img
+                                    src={checkIn.measurements.front_photo_url}
+                                    alt="Framifrån"
+                                    className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                                  />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                    <p className="text-white text-sm">Framifrån</p>
+                                  </div>
+                                </div>
+                              )}
+                              {checkIn.measurements?.side_photo_url && (
+                                <div className="relative aspect-[3/4] group">
+                                  <img
+                                    src={checkIn.measurements.side_photo_url}
+                                    alt="Från sidan"
+                                    className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                                  />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                    <p className="text-white text-sm">Från sidan</p>
+                                  </div>
+                                </div>
+                              )}
+                              {checkIn.measurements?.back_photo_url && (
+                                <div className="relative aspect-[3/4] group">
+                                  <img
+                                    src={checkIn.measurements.back_photo_url}
+                                    alt="Bakifrån"
+                                    className="absolute inset-0 w-full h-full object-cover rounded-lg"
+                                  />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                    <p className="text-white text-sm">Bakifrån</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {checkIn.measurements && (
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {checkIn.measurements.neck_cm && (
