@@ -1,104 +1,164 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { GlassCard } from "@/components/ui/glass-card";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const Auth = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function Auth() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  const from = location.state?.from?.pathname || '/';
 
-  useEffect(() => {
-    if (showConfirmation) {
-      const timer = setTimeout(() => {
-        navigate("/");
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [showConfirmation, navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
-      navigate("/dashboard");
-    } catch (error: any) {
-      console.error("Error during auth:", error);
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        toast({
+          title: 'Error signing in',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        navigate(from, { replace: true });
+      }
+    } catch (error) {
+      console.error('Error during sign in:', error);
       toast({
-        title: "Error",
-        description: error.message || "An error occurred during authentication",
-        variant: "destructive",
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (showConfirmation) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100/30 to-green-50 flex items-center justify-center px-4">
-        <GlassCard className="w-full max-w-md p-8 bg-white/40 backdrop-blur-lg text-center">
-          <h2 className="text-2xl font-bold text-primary mb-4">Thank you for your request!</h2>
-          <p className="text-gray-600">
-            We will send you an email with the confirmation when a coach accepts your request.
-          </p>
-          <p className="text-sm text-gray-500 mt-4">
-            Redirecting to home page in a few seconds...
-          </p>
-        </GlassCard>
-      </div>
-    );
-  }
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const { error } = await signUp(email, password);
+      
+      if (error) {
+        toast({
+          title: 'Error signing up',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Please check your email to confirm your account',
+        });
+      }
+    } catch (error) {
+      console.error('Error during sign up:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100/30 to-green-50 flex items-center justify-center px-4">
-      <GlassCard className="w-full max-w-md p-8 bg-white/40 backdrop-blur-lg">
-        <h2 className="text-2xl font-bold text-primary text-center mb-6">
-          Welcome Back
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <Button
-            type="submit"
-            className="w-full bg-[#a7cca4] hover:bg-[#96bb93] text-white font-medium"
-            disabled={isLoading}
-          >
-            {isLoading ? "Loading..." : "Sign In"}
-          </Button>
-        </form>
-      </GlassCard>
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="w-full max-w-md">
+        <Tabs defaultValue="signin">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Welcome</CardTitle>
+            <CardDescription className="text-center">
+              Sign in to your account or create a new one
+            </CardDescription>
+            <TabsList className="grid w-full grid-cols-2 mt-4">
+              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+          </CardHeader>
+          
+          <CardContent>
+            <TabsContent value="signin">
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signin-email">Email</Label>
+                  <Input 
+                    id="signin-email" 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your.email@example.com" 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signin-password">Password</Label>
+                  <Input 
+                    id="signin-password" 
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)} 
+                    required 
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </Button>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input 
+                    id="signup-email" 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your.email@example.com" 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input 
+                    id="signup-password" 
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)} 
+                    required 
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing up...' : 'Sign Up'}
+                </Button>
+              </form>
+            </TabsContent>
+          </CardContent>
+          
+          <CardFooter className="flex justify-center text-sm text-muted-foreground">
+            Protected by FitCoach
+          </CardFooter>
+        </Tabs>
+      </Card>
     </div>
   );
-};
-
-export default Auth;
+}
