@@ -105,6 +105,76 @@ export type Database = {
         }
         Relationships: []
       }
+      client_nutrition_plans: {
+        Row: {
+          assigned_at: string | null
+          client_id: string | null
+          created_at: string | null
+          id: string
+          nutrition_plan_id: string | null
+          status: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          nutrition_plan_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          nutrition_plan_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_nutrition_plans_nutrition_plan_id_fkey"
+            columns: ["nutrition_plan_id"]
+            isOneToOne: false
+            referencedRelation: "nutrition_plan_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_training_plans: {
+        Row: {
+          assigned_at: string | null
+          client_id: string | null
+          created_at: string | null
+          id: string
+          status: string | null
+          training_plan_id: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          training_plan_id?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          training_plan_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_training_plans_training_plan_id_fkey"
+            columns: ["training_plan_id"]
+            isOneToOne: false
+            referencedRelation: "training_plan_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients_not_connected: {
         Row: {
           coach_id: string
@@ -137,6 +207,7 @@ export type Database = {
           client_id: string
           coach_id: string
           created_at: string
+          deactivated_at: string | null
           id: string
           requested_services: string[] | null
           status: string | null
@@ -145,6 +216,7 @@ export type Database = {
           client_id: string
           coach_id: string
           created_at?: string
+          deactivated_at?: string | null
           id?: string
           requested_services?: string[] | null
           status?: string | null
@@ -153,6 +225,7 @@ export type Database = {
           client_id?: string
           coach_id?: string
           created_at?: string
+          deactivated_at?: string | null
           id?: string
           requested_services?: string[] | null
           status?: string | null
@@ -410,6 +483,9 @@ export type Database = {
       }
       measurements: {
         Row: {
+          "-- Först lägger vi till kolumnen ALTER TABLE measurements ADD":
+            | string
+            | null
           arm_cm: number | null
           back_photo_url: string | null
           checkin_id: string
@@ -422,9 +498,13 @@ export type Database = {
           side_photo_url: string | null
           thigh_cm: number | null
           waist_cm: number | null
+          weekly_checkin_id: string | null
           weight_kg: number | null
         }
         Insert: {
+          "-- Först lägger vi till kolumnen ALTER TABLE measurements ADD"?:
+            | string
+            | null
           arm_cm?: number | null
           back_photo_url?: string | null
           checkin_id: string
@@ -437,9 +517,13 @@ export type Database = {
           side_photo_url?: string | null
           thigh_cm?: number | null
           waist_cm?: number | null
+          weekly_checkin_id?: string | null
           weight_kg?: number | null
         }
         Update: {
+          "-- Först lägger vi till kolumnen ALTER TABLE measurements ADD"?:
+            | string
+            | null
           arm_cm?: number | null
           back_photo_url?: string | null
           checkin_id?: string
@@ -452,12 +536,20 @@ export type Database = {
           side_photo_url?: string | null
           thigh_cm?: number | null
           waist_cm?: number | null
+          weekly_checkin_id?: string | null
           weight_kg?: number | null
         }
         Relationships: [
           {
             foreignKeyName: "measurements_checkin_id_fkey"
             columns: ["checkin_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_checkins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_checkins_measurements"
+            columns: ["weekly_checkin_id"]
             isOneToOne: false
             referencedRelation: "weekly_checkins"
             referencedColumns: ["id"]
@@ -829,6 +921,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      temp_coach_clients: {
+        Row: {
+          client_id: string | null
+          coach_id: string | null
+          created_at: string | null
+          deactivated_at: string | null
+          id: string | null
+          requested_services: string[] | null
+          status: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          deactivated_at?: string | null
+          id?: string | null
+          requested_services?: string[] | null
+          status?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          coach_id?: string | null
+          created_at?: string | null
+          deactivated_at?: string | null
+          id?: string | null
+          requested_services?: string[] | null
+          status?: string | null
+        }
+        Relationships: []
       }
       theme_preferences: {
         Row: {

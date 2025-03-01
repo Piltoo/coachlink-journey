@@ -1,12 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, SendIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
+import { ClientSelect } from "@/components/nutrition-training/training-plan/ClientSelect";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 type NutritionTotals = {
   calories: number;
@@ -19,6 +21,10 @@ type NutritionTotals = {
 export function NutritionPlansSection() {
   const navigate = useNavigate();
   const [nutritionPlans, setNutritionPlans] = useState<any[]>([]);
+  const [clients, setClients] = useState<Array<{ id: string; full_name: string }>>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [activePlanId, setActivePlanId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchNutritionPlans = async () => {
@@ -83,8 +89,38 @@ export function NutritionPlansSection() {
     }
   };
 
+  const fetchClients = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('coach_clients')
+        .select('client_id, profiles:client_id(id, full_name)')
+        .eq('coach_id', user.id)
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      const formattedClients = data.map((item: any) => ({
+        id: item.profiles.id,
+        full_name: item.profiles.full_name || 'Unnamed Client'
+      }));
+
+      setClients(formattedClients);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load clients",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchNutritionPlans();
+    fetchClients();
   }, []);
 
   const calculateTotalNutrition = (meals: any[]): NutritionTotals => {
@@ -117,6 +153,58 @@ export function NutritionPlansSection() {
     navigate(`/nutrition-and-training/create-nutrition-plan/${planId}`);
   };
 
+  const handleSendToClient = async () => {
+    if (!selectedClientId || !activePlanId) {
+      toast({
+        title: "Error",
+        description: "Please select a client",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const selectedPlan = nutritionPlans.find(plan => plan.id === activePlanId);
+      if (!selectedPlan) throw new Error("Plan not found");
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Create client nutrition plan entry
+      const { error } = await supabase
+        .from('client_nutrition_plans')
+        .insert([
+          { 
+            client_id: selectedClientId,
+            nutrition_plan_id: activePlanId,
+            status: 'active',
+            assigned_at: new Date().toISOString()
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Nutrition plan sent to client successfully",
+      });
+
+      // Reset selection and close sheet
+      setSelectedClientId("");
+      setActivePlanId(null);
+    } catch (error: any) {
+      console.error('Error sending plan to client:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send plan to client",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -135,15 +223,20 @@ export function NutritionPlansSection() {
             <Card 
               key={plan.id} 
               className="cursor-pointer hover:bg-accent/5 transition-colors"
-              onClick={() => handleEditPlan(plan.id)}
             >
-              <CardHeader>
+              <CardHeader 
+                className="cursor-pointer" 
+                onClick={() => handleEditPlan(plan.id)}
+              >
                 <CardTitle>{plan.title}</CardTitle>
                 <CardDescription>
                   Created on {new Date(plan.created_at).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent 
+                className="cursor-pointer" 
+                onClick={() => handleEditPlan(plan.id)}
+              >
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                   {plan.description}
                 </p>
@@ -171,10 +264,46 @@ export function NutritionPlansSection() {
                   </div>
                 </div>
               </CardContent>
+              <CardFooter className="flex justify-end">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => {
+                    setActivePlanId(plan.id);
+                    setSelectedClientId("");
+                  }}
+                >
+                  <SendIcon className="w-4 h-4 mr-2" />
+                  Send to Client
+                </Button>
+              </CardFooter>
             </Card>
           );
         })}
       </div>
+
+      <Sheet open={activePlanId !== null} onOpenChange={(open) => !open && setActivePlanId(null)}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Send Nutrition Plan to Client</SheetTitle>
+          </SheetHeader>
+          <div className="py-6 space-y-6">
+            <ClientSelect 
+              clients={clients} 
+              selectedClientId={selectedClientId} 
+              onClientSelect={setSelectedClientId} 
+            />
+            
+            <Button 
+              className="w-full" 
+              onClick={handleSendToClient}
+              disabled={isLoading || !selectedClientId}
+            >
+              {isLoading ? "Sending..." : "Send Plan"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
