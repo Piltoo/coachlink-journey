@@ -8,4 +8,5 @@ export interface Client {
   hasWorkoutPlan: boolean;
   hasPersonalTraining: boolean;
   requested_services: string[];
+  has_completed_assessment?: boolean;
 }

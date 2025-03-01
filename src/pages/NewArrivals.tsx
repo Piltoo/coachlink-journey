@@ -25,83 +25,54 @@ const NewArrivals = () => {
   const { isCoach, isLoading } = useCoachCheck();
 
   const fetchClients = async () => {
+    setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        console.log("No user found - user is not authenticated");
-        return;
-      }
+      if (!user) return;
 
-      // Verifiera coachrollen först
-      const { data: userProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Error fetching user profile:", profileError);
-        throw profileError;
-      }
-
-      if (!userProfile || userProfile.role !== 'coach') {
-        toast({
-          title: "Access Denied",
-          description: "Only coaches can view new arrivals",
-          variant: "destructive",
-        });
-        setClients([]);
-        return;
-      }
-
-      console.log("Fetching clients for coach:", user.id);
-
-      // Hämta alla klienter som inte är anslutna
-      const { data: notConnectedClients, error: relationshipsError } = await supabase
+      const { data, error } = await supabase
         .from('coach_clients')
         .select(`
+          id,
           client_id,
           status,
           requested_services,
-          profiles!coach_clients_client_id_fkey (
+          profiles:client_id (
             id,
-            full_name,
             email,
+            full_name,
             has_completed_assessment
           )
         `)
         .eq('coach_id', user.id)
-        .eq('status', 'not_connected')
-        .order('created_at', { ascending: false });
+        .eq('status', 'not_connected');
 
-      if (relationshipsError) throw relationshipsError;
+      if (error) throw error;
 
-      if (!notConnectedClients || notConnectedClients.length === 0) {
-        console.log("No not_connected clients found");
-        setClients([]);
-        return;
+      if (data) {
+        const clientsData: Client[] = data.map(item => ({
+          id: item.profiles.id,
+          full_name: item.profiles.full_name,
+          email: item.profiles.email,
+          status: item.status,
+          requested_services: item.requested_services || [],
+          has_completed_assessment: item.profiles.has_completed_assessment || false,
+          hasNutritionPlan: item.requested_services?.includes('nutrition_plan') || false,
+          hasWorkoutPlan: item.requested_services?.includes('workout_plan') || false,
+          hasPersonalTraining: item.requested_services?.includes('personal_training') || false
+        }));
+        
+        setClients(clientsData);
       }
-
-      // Formatera klientdata direkt från join-resultatet
-      const formattedClients = notConnectedClients.map(client => ({
-        id: client.profiles.id,
-        full_name: client.profiles.full_name,
-        email: client.profiles.email,
-        status: client.status,
-        requested_services: client.requested_services || [],
-        has_completed_assessment: client.profiles.has_completed_assessment
-      }));
-
-      console.log("Formatted clients:", formattedClients);
-      setClients(formattedClients);
-    } catch (error: any) {
-      console.error("Error in fetchClients:", error);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
       toast({
-        title: "Error",
-        description: "Failed to load new arrivals: " + error.message,
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load client data',
+        variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -153,24 +124,14 @@ const NewArrivals = () => {
     if (!clientToDelete) return;
 
     try {
-      // Radera i rätt ordning för att hantera foreign key constraints
       const deleteOperations = [
-        // Radera hälsodeklaration
         supabase.from('client_health_assessments').delete().eq('client_id', clientToDelete.id),
-        
-        // Radera mätningar och check-ins
         supabase.from('measurements').delete().eq('client_id', clientToDelete.id),
         supabase.from('weekly_checkins').delete().eq('client_id', clientToDelete.id),
-        
-        // Radera tränings- och nutritionsplaner
         supabase.from('workout_sessions').delete().eq('client_id', clientToDelete.id),
         supabase.from('workout_plans').delete().eq('client_id', clientToDelete.id),
         supabase.from('nutrition_plans').delete().eq('client_id', clientToDelete.id),
-        
-        // Radera coach-client relationen
         supabase.from('coach_clients').delete().eq('client_id', clientToDelete.id),
-        
-        // Radera profilen sist
         supabase.from('profiles').delete().eq('id', clientToDelete.id)
       ];
 
@@ -196,7 +157,7 @@ const NewArrivals = () => {
 
   const handleClientAdded = async () => {
     try {
-      await fetchClients(); // Uppdatera klientlistan
+      await fetchClients();
       toast({
         title: "Success",
         description: "Client added successfully",
@@ -223,7 +184,6 @@ const NewArrivals = () => {
         return;
       }
 
-      // Verifiera coachrollen först
       const { data: userProfile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -244,7 +204,6 @@ const NewArrivals = () => {
         return;
       }
 
-      // Uppdatera status till 'active' när klienten läggs till
       const { error } = await supabase
         .from('coach_clients')
         .update({ status: 'active' })
@@ -258,7 +217,6 @@ const NewArrivals = () => {
         description: "Client added successfully",
       });
 
-      // Använd navigate istället för window.location.href
       navigate(`/clients/${clientId}`);
     } catch (error: any) {
       console.error("Error adding client:", error);
@@ -296,6 +254,28 @@ const NewArrivals = () => {
       </div>
     );
   }
+
+  const renderClientServices = (client: Client) => {
+    const services = [];
+    
+    if (client.hasNutritionPlan) {
+      services.push('Nutrition Plan');
+    }
+    
+    if (client.hasWorkoutPlan) {
+      services.push('Workout Plan');
+    }
+    
+    if (client.hasPersonalTraining) {
+      services.push('Personal Training');
+    }
+    
+    return services.map((service, index) => (
+      <span key={index} className="mr-2">
+        {service}{index < services.length - 1 ? ', ' : ''}
+      </span>
+    ));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/50 via-green-100/30 to-green-50/50">

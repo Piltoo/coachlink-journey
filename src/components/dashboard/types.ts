@@ -1,15 +1,17 @@
 export interface Measurement {
   id?: string;
-  created_at: string;
-  neck_cm: number | null;
-  chest_cm: number | null;
-  waist_cm: number | null;
-  hips_cm: number | null;
-  thigh_cm: number | null;
-  arm_cm: number | null;
-  front_photo_url?: string | null;
-  side_photo_url?: string | null;
-  back_photo_url?: string | null;
+  created_at?: string;
+  weight_kg?: number;
+  chest_cm?: number;
+  waist_cm?: number;
+  hips_cm?: number;
+  thigh_cm?: number;
+  arm_cm?: number;
+  neck_cm?: number;
+  front_photo_url?: string;
+  side_photo_url?: string;
+  back_photo_url?: string;
+  checkin_id?: string;
 }
 
 export interface CheckIn {

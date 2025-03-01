@@ -78,28 +78,50 @@ export const useNutritionPlan = () => {
 
       if (plan) {
         setTitle(plan.title);
-        if (plan.meals && typeof plan.meals === 'object') {
+        if (plan.meals) {
           // Handle both string JSON and parsed object cases
           const mealsData = typeof plan.meals === 'string' 
             ? JSON.parse(plan.meals) 
             : plan.meals;
           
-          if (Array.isArray(mealsData)) {
-            const loadedMeals: Meal[] = mealsData.map((meal) => ({
+          if (mealsData && mealsData.meals && Array.isArray(mealsData.meals)) {
+            // Handle NutritionPlanJson format
+            const loadedMeals: Meal[] = mealsData.meals.map((meal: any) => ({
               id: meal.id || Math.random().toString(),
-              name: meal.name,
+              name: meal.name || '',
               items: Array.isArray(meal.items) ? meal.items.map((item: any) => ({
                 id: item.id || Math.random().toString(),
-                name: item.name,
-                quantity: Number(item.quantity),
-                unit: item.unit,
-                optional: Boolean(item.optional),
+                name: item.name || '',
+                quantity: Number(item.quantity) || 0,
+                unit: item.unit || 'g',
+                optional: Boolean(item.optional) || false,
                 nutrition: {
-                  calories: Number(item.nutrition.calories) || 0,
-                  protein: Number(item.nutrition.protein) || 0,
-                  carbs: Number(item.nutrition.carbs) || 0,
-                  fats: Number(item.nutrition.fats) || 0,
-                  fiber: Number(item.nutrition.fiber) || 0,
+                  calories: Number(item.nutrition?.calories) || 0,
+                  protein: Number(item.nutrition?.protein) || 0,
+                  carbs: Number(item.nutrition?.carbs) || 0,
+                  fats: Number(item.nutrition?.fats) || 0,
+                  fiber: Number(item.nutrition?.fiber) || 0,
+                }
+              })) : []
+            }));
+            setMeals(loadedMeals);
+          } else if (Array.isArray(mealsData)) {
+            // Direct array format
+            const loadedMeals: Meal[] = mealsData.map((meal: any) => ({
+              id: meal.id || Math.random().toString(),
+              name: meal.name || '',
+              items: Array.isArray(meal.items) ? meal.items.map((item: any) => ({
+                id: item.id || Math.random().toString(),
+                name: item.name || '',
+                quantity: Number(item.quantity) || 0,
+                unit: item.unit || 'g',
+                optional: Boolean(item.optional) || false,
+                nutrition: {
+                  calories: Number(item.nutrition?.calories) || 0,
+                  protein: Number(item.nutrition?.protein) || 0,
+                  carbs: Number(item.nutrition?.carbs) || 0,
+                  fats: Number(item.nutrition?.fats) || 0,
+                  fiber: Number(item.nutrition?.fiber) || 0,
                 }
               })) : []
             }));
