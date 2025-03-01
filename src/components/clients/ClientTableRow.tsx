@@ -1,8 +1,6 @@
-
 import { Client } from "./types";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { ServiceBadge } from "../new-arrivals/ServiceBadge";
-import { ClientActions } from "./ClientActions";
 import { CurrentServices } from "./CurrentServices";
 import { StatusBadge } from "./StatusBadge";
 
@@ -20,7 +18,10 @@ export function ClientTableRow({
   onDelete
 }: ClientTableRowProps) {
   return (
-    <TableRow>
+    <TableRow 
+      className="cursor-pointer hover:bg-muted/50 transition-colors"
+      onClick={() => onViewProfile(client.id)}
+    >
       <TableCell className="font-medium">
         {client.full_name || "Unnamed Client"}
       </TableCell>
@@ -43,15 +44,6 @@ export function ClientTableRow({
             <ServiceBadge key={service} service={service} />
           ))}
         </div>
-      </TableCell>
-      <TableCell className="text-right">
-        <ClientActions
-          clientId={client.id}
-          status={client.status}
-          onViewProfile={() => onViewProfile(client.id)}
-          onStatusChange={onStatusChange}
-          onDelete={onDelete}
-        />
       </TableCell>
     </TableRow>
   );

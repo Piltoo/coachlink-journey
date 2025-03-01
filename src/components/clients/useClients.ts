@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -7,7 +6,7 @@ import { Client } from "./types";
 export const useClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("active");
   const [serviceFilter, setServiceFilter] = useState("all");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -54,7 +53,8 @@ export const useClients = () => {
       const { data: clientRelationships, error: clientsError } = await supabase
         .from('coach_clients')
         .select('client_id, status, requested_services')
-        .neq('status', 'not_connected');
+        .eq('coach_id', user.id)
+        .eq('status', statusFilter);
 
       if (clientsError) {
         console.error("Error fetching client relationships:", clientsError);
@@ -138,7 +138,7 @@ export const useClients = () => {
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, [statusFilter]);
 
   return {
     clients,

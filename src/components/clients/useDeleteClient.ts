@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { createModal } from "./DeleteConfirmationModal";
@@ -121,13 +120,7 @@ export const useDeleteClient = (onClientUpdated: () => void) => {
         .delete()
         .eq('client_id', clientId);
 
-      // 7. Delete coach-client relationship
-      await supabase
-        .from('coach_clients')
-        .delete()
-        .eq('client_id', clientId);
-
-      // 8. Delete subscriptions and related payments
+      // 7. Delete subscriptions and related payments
       const { data: subscriptions } = await supabase
         .from('subscriptions')
         .select('id')
@@ -147,11 +140,17 @@ export const useDeleteClient = (onClientUpdated: () => void) => {
           .eq('client_id', clientId);
       }
 
-      // 9. Delete messages
+      // 8. Delete messages
       await supabase
         .from('messages')
         .delete()
         .or(`sender_id.eq.${clientId},receiver_id.eq.${clientId}`);
+
+      // 9. Delete coach-client relationship BEFORE profile
+      await supabase
+        .from('coach_clients')
+        .delete()
+        .eq('client_id', clientId);
 
       // 10. Finally, delete the profile
       const { error: profileError } = await supabase

@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ClientProfileCard } from "@/components/dashboard/ClientProfileCard";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { NewArrivalsHeader } from "@/components/new-arrivals/NewArrivalsHeader";
 import { ClientsTable } from "@/components/new-arrivals/ClientsTable";
@@ -12,11 +11,16 @@ import { InviteClientDialog } from "@/components/dashboard/InviteClientDialog";
 import { Users } from "lucide-react";
 import { useCoachCheck } from "@/hooks/useCoachCheck";
 import { Card } from "@/components/ui/card";
+import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
 
 const NewArrivals = () => {
+  const navigate = useNavigate();
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<{ id: string, name: string } | null>(null);
   const { toast } = useToast();
   const { isCoach, isLoading } = useCoachCheck();
 
@@ -29,70 +33,68 @@ const NewArrivals = () => {
         return;
       }
 
-      console.log("Fetching clients for coach:", user.id);
+      // Verifiera coachrollen först
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-      const { data: notConnectedClients, error: relationshipsError } = await supabase
-        .from('coach_clients')
-        .select('client_id, status, requested_services')
-        .eq('coach_id', user.id)
-        .eq('status', 'not_connected');
+      if (profileError) {
+        console.error("Error fetching user profile:", profileError);
+        throw profileError;
+      }
 
-      if (relationshipsError) throw relationshipsError;
-
-      if (!notConnectedClients || notConnectedClients.length === 0) {
+      if (!userProfile || userProfile.role !== 'coach') {
+        toast({
+          title: "Access Denied",
+          description: "Only coaches can view new arrivals",
+          variant: "destructive",
+        });
         setClients([]);
         return;
       }
 
-      const clientIds = notConnectedClients.map(rel => rel.client_id);
+      console.log("Fetching clients for coach:", user.id);
 
-      const { data: clientProfiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .in('id', clientIds)
-        .eq('role', 'client');
+      // Hämta alla klienter som inte är anslutna
+      const { data: notConnectedClients, error: relationshipsError } = await supabase
+        .from('coach_clients')
+        .select(`
+          client_id,
+          status,
+          requested_services,
+          profiles!coach_clients_client_id_fkey (
+            id,
+            full_name,
+            email,
+            has_completed_assessment
+          )
+        `)
+        .eq('coach_id', user.id)
+        .eq('status', 'not_connected')
+        .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (relationshipsError) throw relationshipsError;
 
-      if (clientProfiles) {
-        // Get additional client data for plans
-        const clientPlansPromises = clientProfiles.map(async (profile) => {
-          const [nutritionPlan, workoutPlan, workoutSession] = await Promise.all([
-            supabase
-              .from('nutrition_plans')
-              .select('id')
-              .eq('client_id', profile.id)
-              .maybeSingle(),
-            supabase
-              .from('workout_plans')
-              .select('id')
-              .eq('client_id', profile.id)
-              .maybeSingle(),
-            supabase
-              .from('workout_sessions')
-              .select('id')
-              .eq('client_id', profile.id)
-              .maybeSingle()
-          ]);
-
-          const relationshipData = notConnectedClients.find(rel => rel.client_id === profile.id);
-          
-          return {
-            id: profile.id,
-            full_name: profile.full_name,
-            email: profile.email,
-            status: 'not_connected',
-            hasNutritionPlan: !!nutritionPlan.data,
-            hasWorkoutPlan: !!workoutPlan.data,
-            hasPersonalTraining: !!workoutSession.data,
-            requested_services: relationshipData?.requested_services || []
-          } satisfies Client;
-        });
-
-        const formattedClients = await Promise.all(clientPlansPromises);
-        console.log("Formatted clients:", formattedClients);
-        setClients(formattedClients);
+      if (!notConnectedClients || notConnectedClients.length === 0) {
+        console.log("No not_connected clients found");
+        setClients([]);
+        return;
       }
+
+      // Formatera klientdata direkt från join-resultatet
+      const formattedClients = notConnectedClients.map(client => ({
+        id: client.profiles.id,
+        full_name: client.profiles.full_name,
+        email: client.profiles.email,
+        status: client.status,
+        requested_services: client.requested_services || [],
+        has_completed_assessment: client.profiles.has_completed_assessment
+      }));
+
+      console.log("Formatted clients:", formattedClients);
+      setClients(formattedClients);
     } catch (error: any) {
       console.error("Error in fetchClients:", error);
       toast({
@@ -140,35 +142,132 @@ const NewArrivals = () => {
   };
 
   const handleDeleteClient = async (clientId: string) => {
-    if (!confirm("Are you sure you want to delete this client? This will remove all their data and cannot be undone.")) {
-      return;
-    }
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+    
+    setClientToDelete({ id: clientId, name: client.full_name });
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!clientToDelete) return;
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', clientId);
+      // Radera i rätt ordning för att hantera foreign key constraints
+      const deleteOperations = [
+        // Radera hälsodeklaration
+        supabase.from('client_health_assessments').delete().eq('client_id', clientToDelete.id),
+        
+        // Radera mätningar och check-ins
+        supabase.from('measurements').delete().eq('client_id', clientToDelete.id),
+        supabase.from('weekly_checkins').delete().eq('client_id', clientToDelete.id),
+        
+        // Radera tränings- och nutritionsplaner
+        supabase.from('workout_sessions').delete().eq('client_id', clientToDelete.id),
+        supabase.from('workout_plans').delete().eq('client_id', clientToDelete.id),
+        supabase.from('nutrition_plans').delete().eq('client_id', clientToDelete.id),
+        
+        // Radera coach-client relationen
+        supabase.from('coach_clients').delete().eq('client_id', clientToDelete.id),
+        
+        // Radera profilen sist
+        supabase.from('profiles').delete().eq('id', clientToDelete.id)
+      ];
 
-      if (error) throw error;
+      await Promise.all(deleteOperations);
 
       toast({
         title: "Success",
         description: "Client deleted successfully",
       });
 
+      setIsDeleteDialogOpen(false);
+      setClientToDelete(null);
       fetchClients();
     } catch (error: any) {
+      console.error("Error deleting client:", error);
       toast({
         title: "Error",
-        description: "Failed to delete client",
+        description: "Failed to delete client: " + error.message,
         variant: "destructive",
       });
     }
   };
 
-  const handleClientAdded = () => {
-    fetchClients();
+  const handleClientAdded = async () => {
+    try {
+      await fetchClients(); // Uppdatera klientlistan
+      toast({
+        title: "Success",
+        description: "Client added successfully",
+      });
+    } catch (error: any) {
+      console.error("Error refreshing clients:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh client list: " + error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddClient = async (clientId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to perform this action",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verifiera coachrollen först
+      const { data: userProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching user profile:", profileError);
+        throw profileError;
+      }
+
+      if (!userProfile || userProfile.role !== 'coach') {
+        toast({
+          title: "Access Denied",
+          description: "Only coaches can add clients",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Uppdatera status till 'active' när klienten läggs till
+      const { error } = await supabase
+        .from('coach_clients')
+        .update({ status: 'active' })
+        .eq('coach_id', user.id)
+        .eq('client_id', clientId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Client added successfully",
+      });
+
+      // Använd navigate istället för window.location.href
+      navigate(`/clients/${clientId}`);
+    } catch (error: any) {
+      console.error("Error adding client:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add client: " + error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
@@ -221,8 +320,8 @@ const NewArrivals = () => {
                 (client.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
                 client.email.toLowerCase().includes(searchTerm.toLowerCase())
               )}
-              onViewProfile={setSelectedClientId}
-              onAddClient={(clientId) => handleStatusChange(clientId, 'active')}
+              onViewProfile={(clientId) => navigate(`/clients/${clientId}`)}
+              onAddClient={(clientId) => handleAddClient(clientId)}
               onDeleteClient={handleDeleteClient}
             />
           </ScrollArea>
@@ -238,6 +337,31 @@ const NewArrivals = () => {
                   }}
                 />
               )}
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Client</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete {clientToDelete?.name}? This action cannot be undone and will remove all their data.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={confirmDelete}
+                >
+                  Delete
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>

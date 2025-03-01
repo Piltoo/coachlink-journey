@@ -1,4 +1,3 @@
-
 import { Client } from "./types";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,13 +69,12 @@ export function ClientTable({ clients, onClientSelected, onClientUpdated }: Clie
           <TableHead>Status</TableHead>
           <TableHead>Services</TableHead>
           <TableHead>Requested Services</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {clients.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
               No clients found.
             </TableCell>
           </TableRow>

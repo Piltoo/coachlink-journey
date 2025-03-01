@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, UserX, Mail, User, Key } from "lucide-react";
+import { ChevronLeft, UserX, Mail, User, Key, RotateCcw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
@@ -9,8 +9,58 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { MeasurementCard } from "@/components/dashboard/MeasurementCard";
 import type { Measurement } from "@/components/dashboard/types";
-import { calculateBodyFat } from "@/components/dashboard/utils";
+import { calculateBodyFat, calculateBMI } from "@/components/dashboard/utils";
 import { Image } from "lucide-react";
+import { useDeleteClient } from "@/components/clients/useDeleteClient";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+const getGymEquipmentText = (value: string) => {
+  const options = {
+    "1": "1 - Kroppsvikt/hemmagym",
+    "2": "2 - Grundläggande utrustning",
+    "3": "3 - Standard gymutrustning",
+    "4": "4 - Välutrustad anläggning",
+    "5": "5 - Toppanläggning med stor variation på maskiner"
+  };
+  return options[value] || value;
+};
+
+const getStressLevelText = (value: string) => {
+  const options = {
+    "1": "1 - God möjlighet till återhämtning",
+    "2": "2 - Periodvis begränsad återhämtning",
+    "3": "3 - Mycket begränsad återhämtning"
+  };
+  return options[value] || value;
+};
+
+const getActivityLevelText = (value: string) => {
+  const options = {
+    "sedentary": "Stillasittande",
+    "light": "Lätt aktiv",
+    "moderate": "Måttligt aktiv",
+    "very": "Mycket aktiv",
+    "extra": "Extra aktiv"
+  };
+  return options[value] || value;
+};
 
 const ClientProfile = () => {
   const { id } = useParams();
@@ -18,12 +68,19 @@ const ClientProfile = () => {
   const { toast } = useToast();
   const [healthAssessment, setHealthAssessment] = useState(null);
   const [checkIns, setCheckIns] = useState<any[]>([]);
+  const [measurements, setMeasurements] = useState<any[]>([]);
   const [clientProfile, setClientProfile] = useState<{
     full_name?: string;
     email?: string;
     has_completed_assessment?: boolean;
+    status?: string;
   } | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { deleteClient } = useDeleteClient(() => {
+    // Efter borttagning, navigera till clients sidan
+    navigate('/clients');
+  });
 
   const measurementCards = [
     {
@@ -72,84 +129,165 @@ const ClientProfile = () => {
 
   useEffect(() => {
     const fetchClientData = async () => {
-      if (!id) return;
+      try {
+        setIsLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          toast({
+            title: "Error",
+            description: "You must be logged in to view client data",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('full_name, email, has_completed_assessment')
-        .eq('id', id)
-        .single();
+        // First verify the coach-client relationship
+        const { data: coachClientData, error: coachClientError } = await supabase
+          .from('coach_clients')
+          .select('status')
+          .eq('coach_id', user.id)
+          .eq('client_id', id)
+          .single();
 
-      if (profileData) {
-        setClientProfile(profileData);
-      }
+        if (coachClientError || !coachClientData) {
+          toast({
+            title: "Error",
+            description: "You don't have permission to view this client's data",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      const { data: assessmentData } = await supabase
-        .from('client_health_assessments')
-        .select('*')
-        .eq('client_id', id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (assessmentData) {
-        setHealthAssessment(assessmentData);
-      }
-
-      const { data: checkInsData, error } = await supabase
-        .from('weekly_checkins')
-        .select(`
-          *,
-          measurements (
+        // Now fetch the check-ins data
+        const { data: checkInsData, error: checkInsError } = await supabase
+          .from('weekly_checkins')
+          .select(`
+            id,
+            created_at,
             weight_kg,
-            neck_cm,
-            chest_cm,
-            waist_cm,
-            hips_cm,
-            thigh_cm,
-            arm_cm,
-            created_at
-          )
-        `)
-        .eq('client_id', id)
-        .order('created_at', { ascending: false });
+            client_id
+          `)
+          .eq('client_id', id)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching check-ins:', error);
-        return;
-      }
+        if (checkInsError) {
+          console.error('Error fetching check-ins:', checkInsError);
+          toast({
+            title: "Error",
+            description: "Failed to fetch check-in data",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      if (checkInsData) {
-        const processedCheckIns = checkInsData.map(checkIn => ({
-          ...checkIn,
-          measurements: {
-            ...checkIn.measurements,
-          }
-        }));
-        setCheckIns(processedCheckIns);
+        // Fetch measurements data
+        const { data: measurementsData, error: measurementsError } = await supabase
+          .from('measurements')
+          .select(`
+            *,
+            weekly_checkins!inner (
+              created_at,
+              client_id
+            )
+          `)
+          .eq('weekly_checkins.client_id', id)
+          .order('weekly_checkins.created_at', { ascending: false });
+
+        if (measurementsError) {
+          console.error('Error fetching measurements:', measurementsError);
+          toast({
+            title: "Error",
+            description: "Failed to fetch measurements data",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log('Raw check-ins data:', checkInsData);
+        console.log('Raw measurements data:', measurementsData);
+
+        if (checkInsData) {
+          setCheckIns(checkInsData);
+        }
+
+        if (measurementsData) {
+          setMeasurements(measurementsData);
+        }
+
+        // Fetch health assessment data
+        const { data: healthData, error: healthError } = await supabase
+          .from('client_health_assessments')
+          .select('*')
+          .eq('client_id', id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (healthError) {
+          console.error('Error fetching health assessment:', healthError);
+          toast({
+            title: "Error",
+            description: "Failed to fetch health assessment data",
+            variant: "destructive",
+          });
+        } else {
+          console.log('Health assessment data:', healthData);
+          setHealthAssessment(healthData);
+        }
+
+        // Fetch client profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name, email, has_completed_assessment')
+          .eq('id', id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          toast({
+            title: "Error",
+            description: "Failed to fetch profile data",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (profileData) {
+          setClientProfile(profileData);
+        }
+
+        // Fetch coach-client relationship data
+        const { data: coachClientRelationshipData, error: coachClientRelationshipError } = await supabase
+          .from('coach_clients')
+          .select('status')
+          .eq('client_id', id)
+          .eq('coach_id', user.id)
+          .single();
+
+        if (coachClientRelationshipError) {
+          console.error('Error fetching coach-client relationship:', coachClientRelationshipError);
+        } else if (coachClientRelationshipData) {
+          setClientProfile(prev => ({
+            ...prev!,
+            status: coachClientRelationshipData.status
+          }));
+        }
+
+      } catch (error: any) {
+        console.error('Error in fetchClientData:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch client data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchClientData();
-  }, [id]);
-
-  const last30DaysCheckIns = checkIns
-    .filter(checkIn => {
-      const checkInDate = new Date(checkIn.created_at);
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      return checkInDate >= thirtyDaysAgo;
-    })
-    .map(checkIn => ({
-      created_at: checkIn.created_at,
-      weight_kg: checkIn.weight_kg,
-      neck_cm: checkIn.measurements?.neck_cm || null,
-      chest_cm: checkIn.measurements?.chest_cm || null,
-      waist_cm: checkIn.measurements?.waist_cm || null,
-      hips_cm: checkIn.measurements?.hips_cm || null,
-      thigh_cm: checkIn.measurements?.thigh_cm || null,
-      arm_cm: checkIn.measurements?.arm_cm || null
-    })) as Measurement[];
+  }, [id, toast]);
 
   const getBodyFatTrend = () => {
     if (!checkIns || !healthAssessment) return [];
@@ -157,7 +295,14 @@ const ClientProfile = () => {
     return checkIns
       .filter(checkIn => checkIn.measurements)
       .map(checkIn => {
-        const bodyFat = calculateBodyFat(checkIn.measurements, healthAssessment);
+        const bodyFat = calculateBodyFat(
+          healthAssessment.gender,
+          {
+            weight_kg: checkIn.weight_kg,
+            ...checkIn.measurements
+          },
+          healthAssessment.height_cm
+        );
         return {
           date: format(new Date(checkIn.created_at), 'yyyy-MM-dd'),
           bodyFat: bodyFat
@@ -170,18 +315,61 @@ const ClientProfile = () => {
   const bodyFatTrend = getBodyFatTrend();
   const latestBodyFat = bodyFatTrend[0]?.bodyFat;
 
-  const handleUnsubscribe = async () => {
+  const handleStatusChange = async (newStatus: string) => {
     if (!id) return;
-    
-    const { error } = await supabase
-      .from('coach_clients')
-      .update({ status: 'inactive' })
-      .eq('client_id', id);
 
-    if (!error) {
-      navigate('/clients');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to perform this action",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Uppdatera status i coach_clients tabellen
+      const { error: updateError } = await supabase
+        .from('coach_clients')
+        .update({ status: newStatus })
+        .eq('client_id', id)
+        .eq('coach_id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Hämta den uppdaterade statusen för att bekräfta ändringen
+      const { data: updatedStatus, error: fetchError } = await supabase
+        .from('coach_clients')
+        .select('status')
+        .eq('client_id', id)
+        .eq('coach_id', user.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Uppdatera state med den bekräftade statusen
+      setClientProfile(prev => ({
+        ...prev!,
+        status: updatedStatus.status
+      }));
+      
+      toast({
+        title: "Success",
+        description: `Client is now ${updatedStatus.status}`,
+      });
+    } catch (error: any) {
+      console.error("Error updating client status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update client status: " + error.message,
+        variant: "destructive",
+      });
     }
   };
+
+  const handleUnsubscribe = () => handleStatusChange('inactive');
+  const handleActivate = () => handleStatusChange('active');
 
   const handlePasswordReset = async () => {
     if (!clientProfile?.email) {
@@ -217,6 +405,46 @@ const ClientProfile = () => {
       });
     } finally {
       setIsResettingPassword(false);
+    }
+  };
+
+  const handleReturnToNewArrivals = async () => {
+    if (!id) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to perform this action",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Uppdatera status till 'not_connected'
+      const { error } = await supabase
+        .from('coach_clients')
+        .update({ status: 'not_connected' })
+        .eq('coach_id', user.id)
+        .eq('client_id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Client returned to New Arrivals",
+      });
+
+      // Navigera till New Arrivals
+      navigate('/new-arrivals');
+    } catch (error: any) {
+      console.error("Error returning client:", error);
+      toast({
+        title: "Error",
+        description: "Failed to return client: " + error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -266,56 +494,116 @@ const ClientProfile = () => {
 
           <TabsContent value="healthAssessment" className="space-y-6">
             {healthAssessment ? (
-              <>
+              <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Physical Information</CardTitle>
+                    <CardTitle>Viktmål & Framsteg</CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Starting Weight</p>
-                      <p className="text-lg font-medium">{healthAssessment.starting_weight} kg</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Target Weight</p>
-                      <p className="text-lg font-medium">{healthAssessment.target_weight} kg</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Height</p>
-                      <p className="text-lg font-medium">{healthAssessment.height_cm} cm</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Activity Level</p>
-                      <p className="text-lg font-medium">{healthAssessment.current_activity_level}</p>
-                    </div>
-                    {latestBodyFat && (
-                      <div className="col-span-2">
-                        <p className="text-sm text-muted-foreground">Body Fat Trend</p>
-                        <div className="mt-2 space-y-2">
-                          <div className="bg-green-50 p-4 rounded-lg">
-                            <p className="text-sm font-medium">Senaste kroppsfettsmätning</p>
-                            <p className="text-2xl font-bold text-primary">{latestBodyFat}%</p>
+                  <CardContent className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Startvikt</p>
+                        <p className="mt-1">{healthAssessment.starting_weight} kg</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Målvikt</p>
+                        <p className="mt-1">{healthAssessment.target_weight} kg</p>
+                      </div>
+                      {checkIns.length > 0 && (
+                        <>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Nuvarande vikt</p>
+                            <p className="mt-1">{checkIns[0].weight_kg} kg</p>
                           </div>
-                          <div className="space-y-2">
-                            {bodyFatTrend.map((measurement, index) => (
-                              <div key={index} className="flex justify-between items-center text-sm">
-                                <span>{measurement.date}</span>
-                                <span className="font-medium">{measurement.bodyFat}%</span>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Total viktförändring</p>
+                            <p className="mt-1 font-semibold">
+                              {(checkIns[0].weight_kg - healthAssessment.starting_weight).toFixed(1)} kg
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Kvar till mål</p>
+                            <p className="mt-1">
+                              {(healthAssessment.target_weight - checkIns[0].weight_kg).toFixed(1)} kg
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Framsteg mot mål</p>
+                            <p className="mt-1">
+                              {Math.round((Math.abs(checkIns[0].weight_kg - healthAssessment.starting_weight) / 
+                                Math.abs(healthAssessment.target_weight - healthAssessment.starting_weight)) * 100)}%
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Kroppsmått Framsteg</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {measurements.length > 0 && (
+                      <div className="grid gap-4">
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="text-sm font-medium">Mått</div>
+                          <div className="text-sm font-medium text-center">Nuvarande</div>
+                          <div className="text-sm font-medium text-center">Förändring</div>
+                        </div>
+                        {[
+                          { key: 'neck_cm', label: 'Nacke' },
+                          { key: 'chest_cm', label: 'Bröst' },
+                          { key: 'waist_cm', label: 'Midja' },
+                          { key: 'hips_cm', label: 'Höfter' },
+                          { key: 'thigh_cm', label: 'Lår' },
+                          { key: 'arm_cm', label: 'Armar' }
+                        ].map(({ key, label }) => {
+                          const currentValue = measurements[0]?.[key];
+                          const firstValue = measurements[measurements.length - 1]?.[key];
+                          const change = currentValue && firstValue ? (currentValue - firstValue).toFixed(1) : null;
+                          const isPositiveChange = change && parseFloat(change) > 0;
+                          const isNegativeChange = change && parseFloat(change) < 0;
+
+                          return (
+                            <div key={key} className="grid grid-cols-3 gap-4 py-2 border-t">
+                              <div className="text-sm text-muted-foreground">{label}</div>
+                              <div className="text-sm text-center">
+                                {currentValue ? `${currentValue} cm` : 'N/A'}
                               </div>
-                            ))}
-                          </div>
+                              <div className={`text-sm text-center ${
+                                isPositiveChange ? 'text-green-600' : 
+                                isNegativeChange ? 'text-red-600' : ''
+                              }`}>
+                                {change ? `${change > 0 ? '+' : ''}${change} cm` : 'N/A'}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div className="text-xs text-muted-foreground mt-4">
+                          * Förändring sedan första mätningen ({
+                            measurements[measurements.length - 1]?.weekly_checkins?.created_at ? 
+                            format(new Date(measurements[measurements.length - 1].weekly_checkins.created_at), 'PPP') : 
+                            'N/A'
+                          })
                         </div>
                       </div>
+                    )}
+                    {!measurements.length && (
+                      <p className="text-center text-muted-foreground">
+                        Inga mätningar tillgängliga ännu
+                      </p>
                     )}
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Health Information</CardTitle>
+                    <CardTitle>Grundinformation</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div>
+                    <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">Health Goals</p>
                       <p className="mt-1">{healthAssessment.health_goals}</p>
                     </div>
@@ -341,7 +629,11 @@ const ClientProfile = () => {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Gym Equipment Access</p>
-                      <p className="mt-1">{healthAssessment.gym_equipment_access}</p>
+                      <p className="mt-1">{getGymEquipmentText(healthAssessment.gym_equipment_access)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Activity Level</p>
+                      <p className="mt-1">{getActivityLevelText(healthAssessment.current_activity_level)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Sleep Patterns</p>
@@ -349,11 +641,11 @@ const ClientProfile = () => {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Stress Levels</p>
-                      <p className="mt-1">{healthAssessment.stress_levels}</p>
+                      <p className="mt-1">{getStressLevelText(healthAssessment.stress_levels)}</p>
                     </div>
                   </CardContent>
                 </Card>
-              </>
+              </div>
             ) : (
               <Card>
                 <CardContent className="py-6 text-center text-muted-foreground">
@@ -364,193 +656,174 @@ const ClientProfile = () => {
           </TabsContent>
 
           <TabsContent value="checkIns" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Senaste Check-in</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {checkIns[0] ? (
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Datum</p>
-                      <p className="font-medium">
-                        {format(new Date(checkIns[0].created_at), 'PPP')}
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Vikt</p>
-                        <p className="font-medium">{checkIns[0].weight_kg} kg</p>
-                      </div>
-                      {checkIns[0].measurements?.neck_cm && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Nacke</p>
-                          <p className="font-medium">{checkIns[0].measurements.neck_cm} cm</p>
-                        </div>
-                      )}
-                      {checkIns[0].measurements?.chest_cm && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Bröst</p>
-                          <p className="font-medium">{checkIns[0].measurements.chest_cm} cm</p>
-                        </div>
-                      )}
-                      {checkIns[0].measurements?.waist_cm && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Midja</p>
-                          <p className="font-medium">{checkIns[0].measurements.waist_cm} cm</p>
-                        </div>
-                      )}
-                      {checkIns[0].measurements?.hips_cm && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Höfter</p>
-                          <p className="font-medium">{checkIns[0].measurements.hips_cm} cm</p>
-                        </div>
-                      )}
-                      {checkIns[0].measurements?.thigh_cm && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Lår</p>
-                          <p className="font-medium">{checkIns[0].measurements.thigh_cm} cm</p>
-                        </div>
-                      )}
-                      {checkIns[0].measurements?.arm_cm && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Arm</p>
-                          <p className="font-medium">{checkIns[0].measurements.arm_cm} cm</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">Ingen check-in data tillgänglig</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {last30DaysCheckIns.length > 0 && (
+            {isLoading ? (
               <Card>
-                <CardHeader>
-                  <CardTitle>Utveckling senaste 30 dagarna</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {measurementCards.map((card) => (
-                      <MeasurementCard
-                        key={card.key}
-                        card={card}
-                        measurements={last30DaysCheckIns}
-                      />
-                    ))}
+                <CardContent className="py-8">
+                  <div className="text-center text-muted-foreground">
+                    <p>Laddar mätningar...</p>
                   </div>
                 </CardContent>
               </Card>
-            )}
+            ) : checkIns.length > 0 ? (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Progress Översikt</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[400px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={checkIns}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="created_at" 
+                            tickFormatter={(date) => format(new Date(date), 'MMM d')}
+                          />
+                          <YAxis 
+                            yAxisId="weight"
+                            orientation="left"
+                            label={{ value: 'Vikt (kg)', angle: -90, position: 'insideLeft' }}
+                          />
+                          <YAxis 
+                            yAxisId="measurements"
+                            orientation="right"
+                            label={{ value: 'Mått (cm)', angle: 90, position: 'insideRight' }}
+                          />
+                          <Tooltip
+                            labelFormatter={(date) => format(new Date(date), 'PPP')}
+                            formatter={(value, name) => {
+                              if (name === 'Vikt') return [`${value} kg`, name];
+                              return [`${value} cm`, name];
+                            }}
+                          />
+                          <Legend />
+                          <Line
+                            yAxisId="weight"
+                            type="monotone"
+                            dataKey="weight_kg"
+                            name="Vikt"
+                            stroke="#2D6A4F"
+                            strokeWidth={2}
+                            dot={{ r: 4 }}
+                            activeDot={{ r: 8 }}
+                          />
+                          {measurementCards.slice(1).map((card) => (
+                            <Line
+                              key={card.key}
+                              yAxisId="measurements"
+                              type="monotone"
+                              dataKey={`measurements.${card.key}`}
+                              name={card.title}
+                              stroke={card.color}
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                              activeDot={{ r: 8 }}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {checkIns.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Check-in Historik</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Datum</TableHead>
+                            <TableHead>Vikt (kg)</TableHead>
+                            <TableHead>Nacke (cm)</TableHead>
+                            <TableHead>Bröst (cm)</TableHead>
+                            <TableHead>Midja (cm)</TableHead>
+                            <TableHead>Höfter (cm)</TableHead>
+                            <TableHead>Lår (cm)</TableHead>
+                            <TableHead>Arm (cm)</TableHead>
+                            <TableHead>Bilder</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {checkIns.map((checkIn) => (
+                            <TableRow key={checkIn.id}>
+                              <TableCell>
+                                {format(new Date(checkIn.created_at), 'PPP')}
+                              </TableCell>
+                              <TableCell>{checkIn.weight_kg}</TableCell>
+                              <TableCell>{checkIn.measurements?.neck_cm || 'N/A'}</TableCell>
+                              <TableCell>{checkIn.measurements?.chest_cm || 'N/A'}</TableCell>
+                              <TableCell>{checkIn.measurements?.waist_cm || 'N/A'}</TableCell>
+                              <TableCell>{checkIn.measurements?.hips_cm || 'N/A'}</TableCell>
+                              <TableCell>{checkIn.measurements?.thigh_cm || 'N/A'}</TableCell>
+                              <TableCell>{checkIn.measurements?.arm_cm || 'N/A'}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  {checkIn.measurements?.front_photo_url && (
+                                    <a 
+                                      href={checkIn.measurements.front_photo_url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-primary hover:text-primary/80"
+                                    >
+                                      <Image className="h-4 w-4" />
+                                    </a>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Statistik</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {checkIns.length > 1 && (
+                        <>
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Viktförändring (Total)</p>
+                            <p className="text-2xl font-bold">
+                              {(checkIns[0].weight_kg - checkIns[checkIns.length - 1].weight_kg).toFixed(1)} kg
+                            </p>
+                          </div>
+                          {measurementCards.slice(1).map((card) => {
+                            const firstMeasurement = checkIns[checkIns.length - 1].measurements?.[card.key];
+                            const latestMeasurement = checkIns[0].measurements?.[card.key];
+                            if (!firstMeasurement || !latestMeasurement) return null;
+                            
+                            const change = latestMeasurement - firstMeasurement;
+                            return (
+                              <div key={card.key} className="space-y-2">
+                                <p className="text-sm text-muted-foreground">{card.title} (Förändring)</p>
+                                <p className="text-2xl font-bold">
+                                  {change.toFixed(1)} cm
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
               <Card>
-                <CardHeader>
-                  <CardTitle>Check-in Historik</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {checkIns.map((checkIn) => (
-                      <div key={checkIn.id} className="border-b pb-6 last:border-b-0 last:pb-0">
-                        <div className="flex justify-between items-start mb-4">
-                          <h4 className="font-medium">
-                            {format(new Date(checkIn.created_at), 'PPP')}
-                          </h4>
-                          <span className="text-sm text-muted-foreground">
-                            Vikt: {checkIn.weight_kg} kg
-                          </span>
-                        </div>
-                        
-                        {(checkIn.measurements?.front_photo_url || 
-                          checkIn.measurements?.side_photo_url || 
-                          checkIn.measurements?.back_photo_url) && (
-                          <div className="mb-4">
-                            <h5 className="text-sm font-medium text-muted-foreground mb-2">Bilder</h5>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              {checkIn.measurements?.front_photo_url && (
-                                <div className="relative aspect-[3/4] group">
-                                  <img
-                                    src={checkIn.measurements.front_photo_url}
-                                    alt="Framifrån"
-                                    className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                                  />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                                    <p className="text-white text-sm">Framifrån</p>
-                                  </div>
-                                </div>
-                              )}
-                              {checkIn.measurements?.side_photo_url && (
-                                <div className="relative aspect-[3/4] group">
-                                  <img
-                                    src={checkIn.measurements.side_photo_url}
-                                    alt="Från sidan"
-                                    className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                                  />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                                    <p className="text-white text-sm">Från sidan</p>
-                                  </div>
-                                </div>
-                              )}
-                              {checkIn.measurements?.back_photo_url && (
-                                <div className="relative aspect-[3/4] group">
-                                  <img
-                                    src={checkIn.measurements.back_photo_url}
-                                    alt="Bakifrån"
-                                    className="absolute inset-0 w-full h-full object-cover rounded-lg"
-                                  />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                                    <p className="text-white text-sm">Bakifrån</p>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {checkIn.measurements && (
-                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {checkIn.measurements.neck_cm && (
-                              <div>
-                                <p className="text-sm text-muted-foreground">Nacke</p>
-                                <p>{checkIn.measurements.neck_cm} cm</p>
-                              </div>
-                            )}
-                            {checkIn.measurements.chest_cm && (
-                              <div>
-                                <p className="text-sm text-muted-foreground">Bröst</p>
-                                <p>{checkIn.measurements.chest_cm} cm</p>
-                              </div>
-                            )}
-                            {checkIn.measurements.waist_cm && (
-                              <div>
-                                <p className="text-sm text-muted-foreground">Midja</p>
-                                <p>{checkIn.measurements.waist_cm} cm</p>
-                              </div>
-                            )}
-                            {checkIn.measurements.hips_cm && (
-                              <div>
-                                <p className="text-sm text-muted-foreground">Höfter</p>
-                                <p>{checkIn.measurements.hips_cm} cm</p>
-                              </div>
-                            )}
-                            {checkIn.measurements.thigh_cm && (
-                              <div>
-                                <p className="text-sm text-muted-foreground">Lår</p>
-                                <p>{checkIn.measurements.thigh_cm} cm</p>
-                              </div>
-                            )}
-                            {checkIn.measurements.arm_cm && (
-                              <div>
-                                <p className="text-sm text-muted-foreground">Arm</p>
-                                <p>{checkIn.measurements.arm_cm} cm</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                <CardContent className="py-8">
+                  <div className="text-center text-muted-foreground">
+                    <p>Inga check-ins registrerade än.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -589,38 +862,72 @@ const ClientProfile = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings">
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Security</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
+          <TabsContent value="settings" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Client Management</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="font-medium">Client Status</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Change the client's status or remove them from your client list.
+                  </p>
+                  <div className="flex gap-4">
+                    {clientProfile?.status === 'active' ? (
+                      <Button
+                        variant="secondary"
+                        onClick={handleUnsubscribe}
+                      >
+                        <UserX className="h-4 w-4 mr-2" />
+                        Make Inactive
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        onClick={handleActivate}
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Make Active
+                      </Button>
+                    )}
+                    <Button
+                      variant="secondary"
+                      onClick={handleReturnToNewArrivals}
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Return to New Arrivals
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        if (id) {
+                          deleteClient(id);
+                        }
+                      }}
+                    >
+                      <UserX className="h-4 w-4 mr-2" />
+                      Delete Client
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="font-medium">Account Management</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Help your client manage their account.
+                  </p>
+                  <Button
+                    variant="outline"
                     onClick={handlePasswordReset}
                     disabled={isResettingPassword}
                   >
-                    <Key className="w-4 h-4 mr-2" />
-                    {isResettingPassword ? 'Sending Reset Email...' : 'Send Password Reset Email'}
+                    <Key className="h-4 w-4 mr-2" />
+                    {isResettingPassword ? 'Sending Reset Link...' : 'Reset Password'}
                   </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    onClick={handleUnsubscribe}
-                  >
-                    <UserX className="w-4 h-4 mr-2" />
-                    Unsubscribe Client
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

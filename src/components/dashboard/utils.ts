@@ -1,4 +1,3 @@
-
 import { Measurement, HealthAssessment } from "./types";
 
 export const calculateBodyFat = (
@@ -62,15 +61,18 @@ export const calculateBodyFat = (
     });
   }
   
-  const finalResult = Math.min(Math.max(Math.round(bodyFat * 10) / 10, 2), 45);
+  // Avrunda till en decimal utan att begränsa värdet
+  const finalResult = Math.round(bodyFat * 10) / 10;
   console.log("Final body fat percentage:", finalResult);
   
   return finalResult;
 };
 
-export const calculateBMI = (weightKg: number, heightCm: number): number => {
+export const calculateBMI = (weightKg: number | null, heightCm: number | null): number | null => {
+  if (!weightKg || !heightCm) return null;
   const heightM = heightCm / 100;
-  return weightKg / (heightM * heightM);
+  // Avrunda till en decimal
+  return Math.round((weightKg / (heightM * heightM)) * 10) / 10;
 };
 
 export const calculateProgress = (current: number, initial: number, target: number) => {

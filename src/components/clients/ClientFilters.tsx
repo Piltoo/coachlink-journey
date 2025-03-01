@@ -1,4 +1,3 @@
-
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,9 +41,9 @@ export function ClientFilters({
           <SelectValue placeholder="Filter by status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Statuses</SelectItem>
           <SelectItem value="active">Active</SelectItem>
           <SelectItem value="inactive">Inactive</SelectItem>
+          <SelectItem value="all">All Statuses</SelectItem>
         </SelectContent>
       </Select>
       <Select value={serviceFilter} onValueChange={onServiceFilterChange}>

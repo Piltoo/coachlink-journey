@@ -1,4 +1,3 @@
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -7,11 +6,21 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const formSchema = z.object({
-  starting_weight: z.string().min(1, "Vikt är obligatoriskt"),
-  height_cm: z.string().min(1, "Längd är obligatoriskt"),
-  target_weight: z.string().min(1, "Målvikt är obligatoriskt"),
+  gender: z.enum(['male', 'female'], {
+    required_error: "Kön är obligatoriskt för korrekta beräkningar",
+  }),
+  starting_weight: z.string()
+    .min(1, "Vikt är obligatoriskt")
+    .transform((val) => parseFloat(val)), // Konvertera till nummer
+  height_cm: z.string()
+    .min(1, "Längd är obligatoriskt")
+    .transform((val) => parseFloat(val)), // Konvertera till nummer
+  target_weight: z.string()
+    .min(1, "Målvikt är obligatoriskt")
+    .transform((val) => parseFloat(val)), // Konvertera till nummer
   current_activity_level: z.string().min(1, "Aktivitetsnivå är obligatoriskt"),
   previous_exercise_experience: z.string(),
   gym_equipment_access: z.string().min(1, "Träningsanläggning är obligatoriskt"),
@@ -30,6 +39,7 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      gender: undefined,
       starting_weight: "",
       height_cm: "",
       target_weight: "",
@@ -47,6 +57,41 @@ export function HealthAssessmentForm({ onSubmit }: HealthAssessmentFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Kön</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-col space-y-1"
+                >
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="male" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Man
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="female" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Kvinna
+                    </FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}

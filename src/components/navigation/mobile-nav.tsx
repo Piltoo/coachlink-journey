@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { LayoutDashboard, ClipboardCheck, Users, Dumbbell, MessageSquare, Settings, LogOut, Menu } from "lucide-react";
@@ -17,24 +16,23 @@ export function MobileNav({ open, onOpenChange, onSignOut }: MobileNavProps) {
   const [canCheckIn, setCanCheckIn] = useState(true);
   const { isCoach } = useCoachCheck();
 
+  const checkCanSubmit = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: existingCheckIn } = await supabase
+      .from('weekly_checkins')
+      .select('created_at')
+      .eq('client_id', user.id)
+      .gt('created_at', new Date(Date.now() - 60000).toISOString())
+      .maybeSingle();
+
+    setCanCheckIn(!existingCheckIn);
+  };
+
   useEffect(() => {
-    async function checkCanSubmit() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: existingCheckIn } = await supabase
-        .from('weekly_checkins')
-        .select('created_at')
-        .eq('client_id', user.id)
-        .gt('created_at', new Date(Date.now() - 300000).toISOString())
-        .maybeSingle();
-
-      setCanCheckIn(!existingCheckIn);
-    }
-
     if (!isCoach) {
       checkCanSubmit();
-      // Kolla var 10:e sekund om tidslåset har gått ut
       const interval = setInterval(checkCanSubmit, 10000);
       return () => clearInterval(interval);
     }

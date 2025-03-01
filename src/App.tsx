@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +19,8 @@ import CreateNutritionPlan from "@/pages/CreateNutritionPlan";
 import CreateTrainingPlan from "@/pages/CreateTrainingPlan";
 import HealthAssessment from "@/pages/HealthAssessment";
 import WeeklyCheckIns from "@/pages/WeeklyCheckIns";
+import MyTrainingPlans from "@/pages/client/MyTrainingPlans";
+import MyNutritionPlans from "@/pages/client/MyNutritionPlans";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,11 @@ function App() {
               <Route path="/nutrition-and-training/create-nutrition-plan" element={<CreateNutritionPlan />} />
               <Route path="/nutrition-and-training/create-nutrition-plan/:planId" element={<CreateNutritionPlan />} />
               <Route path="/nutrition-and-training/create-training-plan" element={<CreateTrainingPlan />} />
+              
+              {/* Client routes */}
+              <Route path="/client/training-plans" element={<MyTrainingPlans />} />
+              <Route path="/client/nutrition-plans" element={<MyNutritionPlans />} />
+              
               <Route path="/nutrition-training/*" element={<Navigate to="/nutrition-and-training" replace />} />
               <Route path="/program/:programId" element={<Program />} />
               <Route path="/health-assessment" element={<HealthAssessment />} />

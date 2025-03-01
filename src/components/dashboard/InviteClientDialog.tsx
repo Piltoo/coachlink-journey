@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,7 +56,10 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         throw new Error("You must be logged in to create clients");
       }
 
-      // Try to create auth user first
+      // Spara coachens session
+      const currentSession = await supabase.auth.getSession();
+      
+      // Skapa klienten
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newClientEmail,
         password: tempPassword,
@@ -70,9 +72,14 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
         }
       });
 
-      // If we successfully created an auth user
+      // Återställ coachens session direkt
+      if (currentSession.data.session) {
+        await supabase.auth.setSession(currentSession.data.session);
+      }
+
+      // Om vi lyckades skapa användaren
       if (authData.user && !authError) {
-        // First create the profile
+        // Skapa profilen
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -80,7 +87,8 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
             email: newClientEmail,
             full_name: `${firstName} ${lastName}`,
             role: 'client',
-            requested_services: selectedServices
+            requested_services: selectedServices,
+            has_completed_assessment: false
           });
 
         if (profileError) {
@@ -88,56 +96,42 @@ export const InviteClientDialog = ({ onClientAdded }: InviteClientDialogProps) =
           throw profileError;
         }
 
-        // Then create coach-client relationship
+        // Skapa coach-client relationen
         const { error: relationError } = await supabase
           .from('coach_clients')
           .insert({
             coach_id: user.id,
             client_id: authData.user.id,
             status: 'not_connected',
-            requested_services: selectedServices
+            requested_services: selectedServices,
+            created_at: new Date().toISOString()
           });
 
         if (relationError) {
           console.error("Failed to create coach-client relationship:", relationError);
-          // Even if this fails, we continue to create the not_connected entry as backup
+          throw relationError;
         }
-      } else {
-        // If auth user creation failed, log it but continue
-        console.log("Could not create auth user:", authError);
-      }
 
-      // Always create entry in clients_not_connected as backup
-      const { error: notConnectedError } = await supabase
-        .from('clients_not_connected')
-        .insert({
-          email: newClientEmail,
-          first_name: firstName,
-          last_name: lastName,
-          coach_id: user.id
+        toast({
+          title: "Success",
+          description: `Client has been added. Their temporary password is: ${tempPassword}`,
+          duration: 10000,
         });
 
-      if (notConnectedError && notConnectedError.code !== '23505') { // Ignore unique violation
-        throw notConnectedError;
-      }
+        // Återställ formuläret och stäng dialogen
+        setFirstName("");
+        setLastName("");
+        setNewClientEmail("");
+        setTempPassword("");
+        setSelectedServices([]);
+        setIsOpen(false);
 
-      toast({
-        title: "Success",
-        description: `Client has been added. Their temporary password is: ${tempPassword}`,
-        duration: 10000, // Show for 10 seconds so coach has time to copy
-      });
-
-      // Reset form and close dialog
-      setFirstName("");
-      setLastName("");
-      setNewClientEmail("");
-      setTempPassword("");
-      setSelectedServices([]);
-      setIsOpen(false);
-
-      // Call the callback to refresh the client list if provided
-      if (onClientAdded) {
-        await onClientAdded();
+        // Uppdatera klientlistan om callback finns
+        if (onClientAdded) {
+          onClientAdded();
+        }
+      } else {
+        throw new Error(authError?.message || "Failed to create client account");
       }
     } catch (error: any) {
       console.error("Error creating client:", error);
