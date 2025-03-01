@@ -25,6 +25,28 @@ export type Meal = {
   items: MealItem[];
 };
 
+// Define a type for the JSON structure used in the database
+export type NutritionPlanJson = {
+  meals: {
+    id: string;
+    name: string;
+    items: {
+      id: string;
+      name: string;
+      quantity: number;
+      unit: string;
+      optional: boolean;
+      nutrition: {
+        calories: number;
+        protein: number;
+        carbs: number;
+        fats: number;
+        fiber: number;
+      };
+    }[];
+  }[];
+};
+
 export const useNutritionPlan = () => {
   const navigate = useNavigate();
   const { planId } = useParams();
@@ -56,26 +78,33 @@ export const useNutritionPlan = () => {
 
       if (plan) {
         setTitle(plan.title);
-        if (plan.meals && Array.isArray(plan.meals)) {
-          const loadedMeals: Meal[] = (plan.meals as any[]).map((meal) => ({
-            id: meal.id || Math.random().toString(),
-            name: meal.name,
-            items: meal.items.map((item: any) => ({
-              id: item.id || Math.random().toString(),
-              name: item.name,
-              quantity: item.quantity,
-              unit: item.unit,
-              optional: item.optional,
-              nutrition: {
-                calories: parseFloat(item.nutrition.calories) || 0,
-                protein: parseFloat(item.nutrition.protein) || 0,
-                carbs: parseFloat(item.nutrition.carbs) || 0,
-                fats: parseFloat(item.nutrition.fats) || 0,
-                fiber: parseFloat(item.nutrition.fiber) || 0,
-              }
-            }))
-          }));
-          setMeals(loadedMeals);
+        if (plan.meals && typeof plan.meals === 'object') {
+          // Handle both string JSON and parsed object cases
+          const mealsData = typeof plan.meals === 'string' 
+            ? JSON.parse(plan.meals) 
+            : plan.meals;
+          
+          if (Array.isArray(mealsData)) {
+            const loadedMeals: Meal[] = mealsData.map((meal) => ({
+              id: meal.id || Math.random().toString(),
+              name: meal.name,
+              items: Array.isArray(meal.items) ? meal.items.map((item: any) => ({
+                id: item.id || Math.random().toString(),
+                name: item.name,
+                quantity: Number(item.quantity),
+                unit: item.unit,
+                optional: Boolean(item.optional),
+                nutrition: {
+                  calories: Number(item.nutrition.calories) || 0,
+                  protein: Number(item.nutrition.protein) || 0,
+                  carbs: Number(item.nutrition.carbs) || 0,
+                  fats: Number(item.nutrition.fats) || 0,
+                  fiber: Number(item.nutrition.fiber) || 0,
+                }
+              })) : []
+            }));
+            setMeals(loadedMeals);
+          }
         }
       }
     } catch (error) {
